@@ -39,6 +39,17 @@ struct SelectedAppContext {
     let snapshot: AppSnapshot?
 }
 
+/// 侧边栏计数缓存：启动时先用上一次扫描的结果完整显示，
+/// 等新扫描完成后再替换为实时数据。
+private struct SidebarCache: Codable {
+    var installedCount: Int
+    var ownAppCount: Int
+    var galleryCount: Int
+    var uninstalledCount: Int
+    var sourceCounts: [String: Int]
+    var lastScanAt: Date
+}
+
 @MainActor
 final class CustocubStore: ObservableObject {
     @Published private(set) var apps: [AppRecord] = []
@@ -70,6 +81,9 @@ final class CustocubStore: ObservableObject {
     private var iconPrefetchTask: Task<Void, Never>?
     private var enrichmentToken = UUID()
     private let liveSnapshotID = UUID()
+    private var cachedSidebar: SidebarCache?
+
+    private static let sidebarCacheKey = "sidebarCache.v1"
 
     init(
         repository: SnapshotRepository = SnapshotRepository(),
@@ -80,6 +94,7 @@ final class CustocubStore: ObservableObject {
         self.scanner = scanner
         self.sizeCache = sizeCache
         loadSnapshots()
+        loadSidebarCache()
     }
 
     // MARK: - Derived data
@@ -88,10 +103,27 @@ final class CustocubStore: ObservableObject {
         sidebarSelection ?? .installed
     }
 
-    var installedCount: Int { apps.count }
+    /// 扫描完成前使用上一次的侧边栏计数，避免列表逐步刷新。
+    private var usesCachedSidebar: Bool {
+        !hasScanned && cachedSidebar != nil
+    }
+
+    var installedCount: Int {
+        if usesCachedSidebar, let cachedSidebar { return cachedSidebar.installedCount }
+        return apps.count
+    }
     var systemCount: Int { apps.count { $0.isSystemApp } }
     var thirdPartyCount: Int { apps.count { !$0.isSystemApp } }
-    var ownAppCount: Int { apps.count { $0.isOwn } }
+    var ownAppCount: Int {
+        if usesCachedSidebar, let cachedSidebar { return cachedSidebar.ownAppCount }
+        return apps.count { $0.isOwn }
+    }
+
+    /// 侧边栏「展示框」计数；扫描前使用缓存值。
+    var sidebarGalleryCount: Int {
+        if usesCachedSidebar, let cachedSidebar { return cachedSidebar.galleryCount }
+        return galleryItems.count
+    }
 
     var ownTotalSize: Int64 {
         apps.filter(\.isOwn).compactMap(\.sizeInBytes).reduce(0, +)
@@ -105,7 +137,16 @@ final class CustocubStore: ObservableObject {
     }
 
     var sourceCounts: [AppSource: Int] {
-        Dictionary(grouping: apps, by: \.source).mapValues(\.count)
+        if usesCachedSidebar, let cachedSidebar {
+            var counts: [AppSource: Int] = [:]
+            for (rawValue, count) in cachedSidebar.sourceCounts {
+                if let source = AppSource(rawValue: rawValue) {
+                    counts[source] = count
+                }
+            }
+            return counts
+        }
+        return Dictionary(grouping: apps, by: \.source).mapValues(\.count)
     }
 
     var totalSize: Int64 {
@@ -218,6 +259,7 @@ final class CustocubStore: ObservableObject {
     }
 
     var uninstalledCount: Int {
+        if usesCachedSidebar, let cachedSidebar { return cachedSidebar.uninstalledCount }
         guard hasScanned else { return 0 }
         return galleryItems.count { $0.status == .uninstalled }
     }
@@ -283,6 +325,38 @@ final class CustocubStore: ObservableObject {
         return false
     }
 
+    // MARK: - Sidebar cache
+
+    private func loadSidebarCache() {
+        guard let data = UserDefaults.standard.data(forKey: Self.sidebarCacheKey),
+              let cache = try? JSONDecoder().decode(SidebarCache.self, from: data) else {
+            return
+        }
+        cachedSidebar = cache
+        if lastScanAt == nil {
+            lastScanAt = cache.lastScanAt
+        }
+    }
+
+    private func saveSidebarCache() {
+        guard let lastScanAt else { return }
+
+        let gallery = galleryItems
+        let cache = SidebarCache(
+            installedCount: apps.count,
+            ownAppCount: apps.count { $0.isOwn },
+            galleryCount: gallery.count,
+            uninstalledCount: gallery.count { $0.status == .uninstalled },
+            sourceCounts: Dictionary(uniqueKeysWithValues: Dictionary(grouping: apps, by: \.source)
+                .map { ($0.key.rawValue, $0.value.count) }),
+            lastScanAt: lastScanAt
+        )
+
+        if let data = try? JSONEncoder().encode(cache) {
+            UserDefaults.standard.set(data, forKey: Self.sidebarCacheKey)
+        }
+    }
+
     // MARK: - Scanning
 
     func refresh(ignoreRecentScan: Bool = false) async {
@@ -320,6 +394,7 @@ final class CustocubStore: ObservableObject {
         statusMessage = cacheHits > 0
             ? "已找到 \(scannedApps.count) 个应用（缓存 \(cacheHits)）"
             : "已找到 \(scannedApps.count) 个应用"
+        saveSidebarCache()
 
         let iconPaths = scannedApps.map(\.path)
         iconPrefetchTask = Task {
