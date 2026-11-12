@@ -6,11 +6,11 @@
 
 **Custocub = custos (Latin: guardian, keeper) + cubby (a small storage compartment).**
 
-Custocub is a native macOS app inventory and snapshot manager built with Swift and SwiftUI. It gives you a clear view of every app on your Mac: where it came from, which architecture it runs on, whether it is a system or third-party app, and what changed over time.
+Custocub is a native macOS app inventory and snapshot manager built with Swift 6 and SwiftUI. It gives you a clear view of every app on your Mac: where it came from, which architecture it runs on, whether it is a system or third-party app, and what changed over time.
 
 - **Version:** 1.0
 - **Bundle ID:** `me.whynbnb.Custocub`
-- **Platform:** macOS 14+
+- **Platform:** macOS 15+
 - **UI language:** Simplified Chinese
 - **License:** MIT
 
