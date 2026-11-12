@@ -1,96 +1,121 @@
 # Custocub
 
-**Custocub = custos（拉丁语：守护、看守）+ cubby（收纳格）。**
+[English](README.md) · [简体中文](README.zh-CN.md)
 
-一个原生 macOS 应用管理器，用 Swift / SwiftUI 编写。它把 Mac 上的应用收进一个清晰的应用清单里，说明每个应用**从哪里来、是什么平台、是系统还是第三方**，并支持历史快照与快照对比。
+> Vibe coded with DeepSeek V4.1 Flash / OpenCode.
 
-## 功能
+**Custocub = custos (Latin: guardian, keeper) + cubby (a small storage compartment).**
 
-### 1. 快速扫描应用
+Custocub is a native macOS app inventory and snapshot manager built with Swift and SwiftUI. It gives you a clear view of every app on your Mac: where it came from, which architecture it runs on, whether it is a system or third-party app, and what changed over time.
 
-扫描以下目录，自动去重符号链接：
+- **Version:** 1.0
+- **Bundle ID:** `me.whynbnb.Custocub`
+- **Platform:** macOS 14+
+- **UI language:** Simplified Chinese
 
-- `/Applications`（含子目录）
+## Highlights
+
+- **Fast metadata scan** — usually around one second; app sizes are calculated in the background.
+- **Accurate source detection** — System, App Store, App Store · iOS, Homebrew, Steam, JetBrains Toolbox, and manual installs.
+- **Clear app types** — system vs. third-party, with `arm64` / `x86_64` / universal architecture detection.
+- **Developer apps smart group** — configurable Bundle ID prefix, shown only when more than two apps match.
+- **Snapshots and comparison** — keep historical inventories, compare changes, export or import snapshots, and generate Markdown reports.
+- **Gallery** — browse installed apps and apps that have been uninstalled but still exist in historical snapshots.
+- **Native macOS experience** — native table virtualization, scrollbars, resizable columns, and system selection behavior.
+
+## Features
+
+### Fast app scanning
+
+Custocub scans the standard application locations and de-duplicates symlinks:
+
+- `/Applications` (including subdirectories)
 - `~/Applications`
 - `/System/Applications`
 - `/System/Library/CoreServices`
 - `/Library/Apple/System/Applications`
 
-元数据扫描通常在 **1 秒左右**完成；应用体积在后台分批并发计算，列表可以先出现，体积随后补齐。
+Metadata is parsed directly from `Info.plist`; app sizes are measured in the background so the list appears first and fills in sizes as they become available.
 
-体积会缓存到 `~/Library/Application Support/Custocub/size-cache.json`：
+### Source detection
 
-- 应用更新时间或安装时间变化时自动失效
-- 缓存最长保留 7 天
-- 重复扫描直接复用缓存，未变化的应用不会重新遍历文件
-- 设置中可以「清除体积缓存并重算」
-
-扫描完成后还会在后台预取应用图标，避免在「全部来源」和筛选结果之间切换时同步读取大量图标。
-
-应用列表使用 SwiftUI `Table`，底层由 NSTableView 提供虚拟化渲染，只创建可见行。
-
-表头支持原生拖拽调整列宽，滚动条由系统表格提供。
-
-### 2. 来源识别
-
-| 来源 | 判断方式 |
+| Source | Detection rule |
 | --- | --- |
-| 系统应用 | 路径位于 `/System/`、`/System/Cryptexes/` 或 `/Library/Apple/` |
-| App Store | `Contents/_MASReceipt/receipt`，并用 Spotlight 的 `kMDItemAppStoreAdamID` 兜底 |
-| App Store · iOS | `Wrapper/*.app`、`WrappedBundle`、`iTunesMetadata.plist`，以及 `DTPlatformName` / `LSRequiresIPhoneOS` 等标记 |
-| Homebrew | `/opt/homebrew/Caskroom`、`/usr/local/Caskroom` 的符号链接或 Cask 应用名索引 |
-| Steam | `Contents/MacOS/run.sh` 中带有 `steam://run/<AppID>`，或真实游戏位于 Steam 库的 `steamapps/common` 下 |
-| JetBrains Toolbox | 读取 `~/Library/Application Support/JetBrains/Toolbox/state.json` 中 `tools[].installLocation`，只匹配 Toolbox 实际安装的路径 |
-| 手动安装 | 以上规则都不匹配 |
+| System | Path under `/System/`, `/System/Cryptexes/`, or `/Library/Apple/` |
+| App Store | `Contents/_MASReceipt/receipt`, with Spotlight `kMDItemAppStoreAdamID` as a fallback |
+| App Store · iOS | `Wrapper/*.app`, `WrappedBundle`, `iTunesMetadata.plist`, plus `DTPlatformName` / `LSRequiresIPhoneOS` markers |
+| Homebrew | Symlinks into `/opt/homebrew/Caskroom` or `/usr/local/Caskroom`, plus a Cask app-name index |
+| Steam | `Contents/MacOS/run.sh` containing `steam://run/<AppID>`, or a real game under a Steam library `steamapps/common` |
+| JetBrains Toolbox | Paths listed in `~/Library/Application Support/JetBrains/Toolbox/state.json` under `tools[].installLocation` |
+| Manual | Anything that does not match the rules above |
 
-系统应用优先级最高，因此 Apple 自带应用即使带 App Store 收据也会被标为「系统应用」。Xcode、Apple Configurator 等从 App Store 安装的 Apple 工具会正确显示为 App Store。
+System apps take priority, so Apple's built-in apps remain classified as system even when they carry an App Store receipt. Apple tools installed from the App Store, such as Xcode or Apple Configurator, are correctly reported as App Store apps.
 
-侧边栏「来源」区可以一键筛选 Homebrew、App Store、App Store · iOS、Steam、JetBrains Toolbox、手动安装和系统应用，并实时显示每类应用数量；数量为 0 的来源会自动隐藏。
+Steam and JetBrains Toolbox detection use their own generated metadata/paths rather than guessing from app names, so directly installed apps with the same name are not confused with managed installs.
 
-### 开发者的应用（个人项目）
+### Developer apps
 
-在设置中配置个人应用的 Bundle ID 前缀（默认 `me.whynbnb.`）。匹配该前缀的应用会归入侧边栏的「开发者的应用」分类，但不会覆盖它们真正的安装来源。只有匹配应用数大于 2 时才显示该分类。
+Set a personal Bundle ID prefix in Settings. The default is `me.whynbnb.`.
 
-### 3. 平台与类型
+- Matching apps appear in the **Developer Apps** sidebar category.
+- The category is only shown when more than two apps match.
+- It does **not** overwrite the real installation source; source badges and snapshot data stay accurate.
 
-直接读取主可执行文件的 Mach-O 头，不调用 `lipo` 子进程：
+### Architecture and app type
 
-- `arm64`（Apple 芯片）
-- `x86_64`（Intel）
-- 通用二进制（arm64 + x86_64）
-- iOS 应用
-- 未知（脚本类或缺少可执行文件）
+Custocub reads the main executable's Mach-O header directly, without calling `lipo`:
 
-同时记录 Bundle ID、版本、构建号、最低系统版本、安装时间、更新时间、实际占用空间、可执行文件路径。
+- `arm64` (Apple silicon)
+- `x86_64` (Intel)
+- Universal (`arm64` + `x86_64`)
+- iOS apps
+- Unknown (scripts or apps without a regular executable)
 
-### 4. 快照与对比
+Each record also includes Bundle ID, version, build number, minimum macOS version, install time, update time, allocated disk size, executable path, and source.
 
-- 一键保存当前应用清单为历史快照。
-- 快照包含体积、安装时间、更新时间、Bundle ID、版本、架构、来源和 **PNG 图标**。
-- 每个快照单独存为一个 JSON 文件，重命名/写备注不会重写所有历史快照。
-- 支持导入、导出单个或一组快照。
-- 快照对比会列出新增、移除、更新，并显示字段级变化（版本、大小、路径、架构等）。
-- 可以把「当前状态」作为比较的一方。
+### Snapshots and comparison
 
-### 5. 展示框
+- Save the current app inventory as a historical snapshot with one command.
+- A snapshot contains size, install/update time, Bundle ID, version, architecture, source, and a **PNG icon**.
+- Each snapshot is stored as its own JSON file; renaming or editing a note does not rewrite every snapshot.
+- Import or export individual snapshots or a collection of snapshots.
+- Compare two snapshots to see added, removed, and updated apps with field-level changes.
+- Compare against the **Current State** without saving it first.
+- Export a Markdown comparison report.
 
-「展示框」用图标网格浏览所有软件：
+### Gallery
 
-- 已安装应用来自实时扫描。
-- **已卸载应用**来自历史快照；即使磁盘上的应用已经删除，仍会用快照中的图标和元数据继续展示它们。
-- 支持按已安装/已卸载、来源、平台、系统/第三方筛选和搜索。
+The Gallery is an icon-grid view of your software collection:
 
-## 构建
+- Installed apps come from the latest live scan.
+- **Uninstalled apps** come from historical snapshots. Even after the app bundle is deleted, Custocub can keep showing its icon and last-known metadata.
+- Filter by installed/uninstalled, source, platform, and system/third-party type.
 
-已在 macOS 14+ 上测试。仓库中已经包含生成好的 `Custocub.xcodeproj`：
+## Performance notes
+
+- **Size cache** at `~/Library/Application Support/Custocub/size-cache.json`
+  - Entries are invalidated when an app's update or install date changes.
+  - Cache entries expire after 7 days.
+  - Unchanged apps are not re-walked on every scan.
+  - Settings → Data → **Clear Size Cache & Recalculate** forces a full re-measure.
+- **Async icons** are loaded off the main thread and prefetched in the background after scanning.
+- **Batched size updates** avoid refreshing the whole table for every app.
+- **Native SwiftUI Table** is used for NSTableView-backed virtualization, native scrollbars, and resizable columns.
+- Switching sources rebuilds the table instead of animating hundreds of row removals, which keeps the UI responsive.
+
+The first size scan can take longer because it must walk app bundles; later scans reuse the cache. Metadata scanning itself is fast.
+
+## Build
+
+The generated Xcode project is included:
 
 ```bash
 open Custocub.xcodeproj
 ```
 
-选择 `Custocub` scheme 运行即可。
+Select the `Custocub` scheme and run.
 
-也可以使用命令行构建：
+Command-line build:
 
 ```bash
 xcodebuild -project Custocub.xcodeproj \
@@ -100,52 +125,66 @@ xcodebuild -project Custocub.xcodeproj \
   CODE_SIGNING_ALLOWED=NO build
 ```
 
-如果修改了 `project.yml`，重新生成工程：
+If you edit `project.yml`, regenerate the project:
 
 ```bash
 xcodegen generate
 ```
 
-## 数据位置
+Project settings:
 
-快照保存在：
+- Marketing version: `1.0`
+- Bundle identifier: `me.whynbnb.Custocub`
 
-```
+## Data locations
+
+Snapshots:
+
+```text
 ~/Library/Application Support/Custocub/Snapshots/<UUID>.json
 ```
 
-设置中可以重新扫描或清除图标缓存。应用本身不需要 App Sandbox 权限（仅读取应用目录并写入自己的 Application Support 目录）。
+Size cache:
 
-## 快捷键
-
-| 快捷键 | 操作 |
-| --- | --- |
-| `⌘R` | 重新扫描应用 |
-| `⌘S` | 保存当前快照 |
-| `⇧⌘O` | 导入快照 |
-| `⇧⌘E` | 导出当前快照 |
-| `⌘,` | 打开设置 |
-
-## 工程结构
-
+```text
+~/Library/Application Support/Custocub/size-cache.json
 ```
+
+Custocub is not sandboxed. It only reads application directories and writes its own Application Support data. It does not send data over the network.
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+| --- | --- |
+| `⌘R` | Rescan applications |
+| `⌘S` | Save the current snapshot |
+| `⇧⌘O` | Import snapshots |
+| `⇧⌘E` | Export the selected snapshot |
+| `⌘,` | Open Settings |
+
+## Project structure
+
+```text
 Custocub/
 ├─ App/
-│  ├─ CustocubApp.swift       # App 入口、菜单命令
-│  └─ CustocubStore.swift     # 扫描、快照、展示框状态
+│  ├─ CustocubApp.swift          # App entry point and menu commands
+│  └─ CustocubStore.swift        # Scan, snapshot, gallery, and selection state
 ├─ Models/
-│  ├─ AppSource.swift         # 来源与平台枚举
-│  ├─ AppRecord.swift         # 应用记录
-│  ├─ AppSnapshot.swift       # 快照
-│  ├─ AppChange.swift         # 快照对比与 Markdown 报告
-│  └─ GalleryItem.swift       # 展示框条目
+│  ├─ AppSource.swift            # Source and platform enums
+│  ├─ AppRecord.swift            # App record
+│  ├─ AppSnapshot.swift          # Snapshot model
+│  ├─ AppChange.swift            # Snapshot comparison and Markdown report
+│  └─ GalleryItem.swift          # Gallery item model
 ├─ Services/
-│  ├─ AppScanner.swift        # 目录发现、Info.plist、来源识别
-│  ├─ HomebrewIndex.swift     # Caskroom 索引
-│  ├─ MachOReader.swift       # Mach-O 架构解析
-│  ├─ DirectorySize.swift     # 应用体积
-│  ├─ IconProvider.swift      # 图标读取与快照 PNG
-│  └─ SnapshotRepository.swift
+│  ├─ AppScanner.swift           # Directory discovery, Info.plist, source detection
+│  ├─ HomebrewIndex.swift        # Caskroom index
+│  ├─ SteamDetector.swift        # Steam shortcut and library detection
+│  ├─ JetBrainsToolboxIndex.swift # Toolbox install-location index
+│  ├─ MachOReader.swift          # Mach-O architecture parsing
+│  ├─ DirectorySize.swift        # App size measurement
+│  ├─ SizeCache.swift            # Persistent size cache
+│  ├─ IconProvider.swift         # Icon loading, prefetching, snapshot PNGs
+│  └─ SnapshotRepository.swift   # Snapshot persistence
 ├─ Views/
 │  ├─ ContentView.swift
 │  ├─ SidebarView.swift
@@ -159,4 +198,4 @@ Custocub/
 └─ Resources/Assets.xcassets
 ```
 
-`sample/` 中是制作过程中的参考项目，不参与本工程构建。
+The `sample/` directory contains reference projects used during development and is excluded from the build.
