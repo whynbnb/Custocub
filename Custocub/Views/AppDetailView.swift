@@ -92,6 +92,12 @@ struct AppDetailView: View {
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
+                    if app.source == .jetbrainsToolbox {
+                        Text("该应用由 JetBrains Toolbox 安装和管理。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     if app.isIOSApp {
                         DetailRow(label: "运行方式", value: "iPhone / iPad 应用（Apple 芯片）")
                     }

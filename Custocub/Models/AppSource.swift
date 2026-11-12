@@ -8,6 +8,7 @@ enum AppSource: String, Codable, CaseIterable, Identifiable, Sendable {
     case appStoreIOS
     case homebrew
     case steam
+    case jetbrainsToolbox
     case manual
 
     var id: String { rawValue }
@@ -19,7 +20,20 @@ enum AppSource: String, Codable, CaseIterable, Identifiable, Sendable {
         case .appStoreIOS: "App Store · iOS"
         case .homebrew: "Homebrew"
         case .steam: "Steam"
+        case .jetbrainsToolbox: "JetBrains Toolbox"
         case .manual: "手动安装"
+        }
+    }
+
+    var shortTitle: String {
+        switch self {
+        case .system: "系统"
+        case .appStore: "App Store"
+        case .appStoreIOS: "iOS"
+        case .homebrew: "Homebrew"
+        case .steam: "Steam"
+        case .jetbrainsToolbox: "Toolbox"
+        case .manual: "手动"
         }
     }
 
@@ -30,6 +44,7 @@ enum AppSource: String, Codable, CaseIterable, Identifiable, Sendable {
         case .appStoreIOS: "iphone.gen3"
         case .homebrew: "mug.fill"
         case .steam: "gamecontroller.fill"
+        case .jetbrainsToolbox: "wrench.and.screwdriver.fill"
         case .manual: "shippingbox.fill"
         }
     }
@@ -41,6 +56,7 @@ enum AppSource: String, Codable, CaseIterable, Identifiable, Sendable {
         case .appStoreIOS: .indigo
         case .homebrew: .orange
         case .steam: Color(red: 0.16, green: 0.52, blue: 0.78)
+        case .jetbrainsToolbox: Color(red: 0.86, green: 0.18, blue: 0.50)
         case .manual: .green
         }
     }

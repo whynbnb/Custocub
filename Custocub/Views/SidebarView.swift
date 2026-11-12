@@ -8,6 +8,7 @@ struct SidebarView: View {
         .appStore,
         .appStoreIOS,
         .steam,
+        .jetbrainsToolbox,
         .system,
         .manual
     ]

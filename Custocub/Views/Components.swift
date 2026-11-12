@@ -31,7 +31,7 @@ struct SourceBadge: View {
     var compact = false
 
     var body: some View {
-        Label(source.title, systemImage: source.symbol)
+        Label(compact ? source.shortTitle : source.title, systemImage: source.symbol)
             .font(.caption.weight(.medium))
             .lineLimit(1)
             .foregroundStyle(source.color)

@@ -58,7 +58,7 @@ struct SettingsView: View {
             }
 
             Section("关于") {
-                LabeledContent("Custocub", value: "1.2.1")
+                LabeledContent("Custocub", value: "1.3.0")
                 Text("Custocub = custos（守护） + cubby（收纳格）。用于清点 macOS 软件来源、架构与变化。")
                     .font(.caption)
                     .foregroundStyle(.secondary)

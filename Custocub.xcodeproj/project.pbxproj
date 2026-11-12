@@ -19,6 +19,7 @@
 		8BF008D7CB9164F84F40C6AC /* MachOReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90B5B27E6EE91F5B84801601 /* MachOReader.swift */; };
 		9483234C449CDAAB343C5D5B /* AppSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AB50555493B4354CE8877CD /* AppSnapshot.swift */; };
 		9AA8A20CEA0C439C09970C52 /* CustocubApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB55B6C1241B00D36BC70F76 /* CustocubApp.swift */; };
+		9E57412E1D2880829EE98C96 /* JetBrainsToolboxIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB29DD222217857737C23E7C /* JetBrainsToolboxIndex.swift */; };
 		9FE995377D530554C954C8AF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CFF2ABDA02E2B93882C8B1FA /* Assets.xcassets */; };
 		A6AA667D52C030239A97EC90 /* HomebrewIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DD24184BC491E6AB1A21E7D /* HomebrewIndex.swift */; };
 		C7E4BCDAC58B3F81935C7958 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC486FE5333357ECBB841C9 /* SidebarView.swift */; };
@@ -52,6 +53,7 @@
 		A6D97BB0861124D1642EB69C /* AppListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppListView.swift; sourceTree = "<group>"; };
 		B844A82A4A7559A059AEE0E3 /* AppDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDetailView.swift; sourceTree = "<group>"; };
 		BD2333F60586494596629257 /* GalleryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryItem.swift; sourceTree = "<group>"; };
+		CB29DD222217857737C23E7C /* JetBrainsToolboxIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JetBrainsToolboxIndex.swift; sourceTree = "<group>"; };
 		CFF2ABDA02E2B93882C8B1FA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D3AD33022FDAC6BD741EE6C1 /* CustocubStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustocubStore.swift; sourceTree = "<group>"; };
 		DDEDA7C65BB44C967065B4E2 /* SnapshotRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotRepository.swift; sourceTree = "<group>"; };
@@ -122,6 +124,7 @@
 				58FF69E32C98890ED8128E09 /* DirectorySize.swift */,
 				6DD24184BC491E6AB1A21E7D /* HomebrewIndex.swift */,
 				49DF1B3BF2E854CB0A1D189E /* IconProvider.swift */,
+				CB29DD222217857737C23E7C /* JetBrainsToolboxIndex.swift */,
 				90B5B27E6EE91F5B84801601 /* MachOReader.swift */,
 				DDEDA7C65BB44C967065B4E2 /* SnapshotRepository.swift */,
 				1D9F35333C91991D3E58F940 /* SteamDetector.swift */,
@@ -237,6 +240,7 @@
 				5D61423B0768E2F287CEBB77 /* GalleryView.swift in Sources */,
 				A6AA667D52C030239A97EC90 /* HomebrewIndex.swift in Sources */,
 				F5F26B8FF3FB294266A44468 /* IconProvider.swift in Sources */,
+				9E57412E1D2880829EE98C96 /* JetBrainsToolboxIndex.swift in Sources */,
 				8BF008D7CB9164F84F40C6AC /* MachOReader.swift in Sources */,
 				4C715978C469DC4F64F992A3 /* SettingsView.swift in Sources */,
 				C7E4BCDAC58B3F81935C7958 /* SidebarView.swift in Sources */,
@@ -302,7 +306,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -323,7 +327,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.2.1;
+				MARKETING_VERSION = 1.3.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -372,7 +376,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -387,7 +391,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.2.1;
+				MARKETING_VERSION = 1.3.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

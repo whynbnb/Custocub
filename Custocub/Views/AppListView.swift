@@ -61,6 +61,9 @@ private struct InstalledHeader: View {
                 if store.sourceCounts[.steam, default: 0] > 0 {
                     MetricChip(title: "Steam", value: "\(store.sourceCounts[.steam, default: 0])", symbol: "gamecontroller", color: AppSource.steam.color)
                 }
+                if store.sourceCounts[.jetbrainsToolbox, default: 0] > 0 {
+                    MetricChip(title: "Toolbox", value: "\(store.sourceCounts[.jetbrainsToolbox, default: 0])", symbol: "wrench.and.screwdriver", color: AppSource.jetbrainsToolbox.color)
+                }
                 MetricChip(title: "占用", value: store.totalSizeText, symbol: "internaldrive", color: .purple)
                 Spacer()
             }
@@ -133,6 +136,9 @@ private struct SnapshotHeaderView: View {
                 MetricChip(title: "Homebrew", value: "\(snapshot.homebrewCount)", symbol: "mug", color: .orange)
                 if snapshot.sourceCounts[.steam, default: 0] > 0 {
                     MetricChip(title: "Steam", value: "\(snapshot.sourceCounts[.steam, default: 0])", symbol: "gamecontroller", color: AppSource.steam.color)
+                }
+                if snapshot.sourceCounts[.jetbrainsToolbox, default: 0] > 0 {
+                    MetricChip(title: "Toolbox", value: "\(snapshot.sourceCounts[.jetbrainsToolbox, default: 0])", symbol: "wrench.and.screwdriver", color: AppSource.jetbrainsToolbox.color)
                 }
                 MetricChip(title: "占用", value: snapshot.totalSizeText, symbol: "internaldrive", color: .purple)
                 Spacer()

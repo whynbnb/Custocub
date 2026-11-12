@@ -27,11 +27,12 @@
 | App Store · iOS | `Wrapper/*.app`、`WrappedBundle`、`iTunesMetadata.plist`，以及 `DTPlatformName` / `LSRequiresIPhoneOS` 等标记 |
 | Homebrew | `/opt/homebrew/Caskroom`、`/usr/local/Caskroom` 的符号链接或 Cask 应用名索引 |
 | Steam | `Contents/MacOS/run.sh` 中带有 `steam://run/<AppID>`，或真实游戏位于 Steam 库的 `steamapps/common` 下 |
+| JetBrains Toolbox | 读取 `~/Library/Application Support/JetBrains/Toolbox/state.json` 中 `tools[].installLocation`，只匹配 Toolbox 实际安装的路径 |
 | 手动安装 | 以上规则都不匹配 |
 
 系统应用优先级最高，因此 Apple 自带应用即使带 App Store 收据也会被标为「系统应用」。Xcode、Apple Configurator 等从 App Store 安装的 Apple 工具会正确显示为 App Store。
 
-侧边栏「来源」区可以一键筛选 Homebrew、App Store、App Store · iOS、Steam、手动安装和系统应用，并实时显示每类应用数量；数量为 0 的来源会自动隐藏。
+侧边栏「来源」区可以一键筛选 Homebrew、App Store、App Store · iOS、Steam、JetBrains Toolbox、手动安装和系统应用，并实时显示每类应用数量；数量为 0 的来源会自动隐藏。
 
 ### 3. 平台与类型
 

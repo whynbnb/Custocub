@@ -13,6 +13,7 @@ struct AppScanner: Sendable {
         let started = Date()
         let brewIndex = HomebrewIndex.build()
         let steamIndex = SteamLibraryIndex.build()
+        let toolboxIndex = JetBrainsToolboxIndex.build()
         let discovered = discoverApplications()
         let now = Date()
 
@@ -25,6 +26,7 @@ struct AppScanner: Sendable {
                 resolvedURL: item.resolvedURL,
                 brewIndex: brewIndex,
                 steamIndex: steamIndex,
+                toolboxIndex: toolboxIndex,
                 now: now
             ) {
                 records.append(record)
@@ -103,6 +105,7 @@ struct AppScanner: Sendable {
         resolvedURL: URL,
         brewIndex: HomebrewIndex,
         steamIndex: SteamLibraryIndex,
+        toolboxIndex: JetBrainsToolboxIndex,
         now: Date
     ) -> AppRecord? {
         let fileManager = FileManager.default
@@ -130,6 +133,7 @@ struct AppScanner: Sendable {
         let isHomebrew = brewIndex.contains(appURL: appURL, resolvedPath: resolvedPath)
         let steamAppID = SteamDetector.shortcutAppID(for: appURL, info: info)
         let isSteam = steamAppID != nil || steamIndex.contains(resolvedPath: resolvedPath)
+        let isToolboxApp = toolboxIndex.contains(path: originalPath, resolvedPath: resolvedPath)
         let hasReceipt = hasAppStoreReceipt(
             appURL: appURL,
             resolvedURL: resolvedURL,
@@ -145,6 +149,9 @@ struct AppScanner: Sendable {
             // Steam 快捷方式的 run.sh + steam://run/<appid> 特征非常明确，
             // 优先于名称可能撞车的 Homebrew Cask 判断。
             source = .steam
+        } else if isToolboxApp {
+            // 只认 Toolbox state.json 中记录的真实安装路径。
+            source = .jetbrainsToolbox
         } else if isHomebrew {
             source = .homebrew
         } else if hasReceipt {
