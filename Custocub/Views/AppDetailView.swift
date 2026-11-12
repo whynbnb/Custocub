@@ -81,6 +81,17 @@ struct AppDetailView: View {
                     DetailRow(label: "来源", value: app.source.title)
                     DetailRow(label: "类型", value: app.isSystemApp ? "系统内置应用" : "第三方应用")
                     DetailRow(label: "架构", value: app.architectureText, monospaced: true)
+                    if let steamAppID = app.steamAppID {
+                        DetailRow(label: "Steam App ID", value: steamAppID, monospaced: true)
+                    }
+                    if app.source == .steam {
+                        Text(app.steamAppID == nil
+                            ? "该应用位于 Steam 库中，由 Steam 管理。"
+                            : "这是 Steam 创建的启动快捷方式；游戏本体由 Steam 管理。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     if app.isIOSApp {
                         DetailRow(label: "运行方式", value: "iPhone / iPad 应用（Apple 芯片）")
                     }
@@ -157,7 +168,7 @@ struct AppDetailView: View {
                     Spacer(minLength: 0)
                 }
 
-                Text(app.displayBundleIdentifier)
+                Text(app.listSubtitle)
                     .font(.caption.monospaced())
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

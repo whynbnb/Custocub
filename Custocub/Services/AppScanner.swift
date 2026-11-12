@@ -12,6 +12,7 @@ struct AppScanner: Sendable {
     private static func scanSynchronously() -> [AppRecord] {
         let started = Date()
         let brewIndex = HomebrewIndex.build()
+        let steamIndex = SteamLibraryIndex.build()
         let discovered = discoverApplications()
         let now = Date()
 
@@ -19,7 +20,13 @@ struct AppScanner: Sendable {
         records.reserveCapacity(discovered.count)
 
         for item in discovered {
-            if let record = makeRecord(appURL: item.url, resolvedURL: item.resolvedURL, brewIndex: brewIndex, now: now) {
+            if let record = makeRecord(
+                appURL: item.url,
+                resolvedURL: item.resolvedURL,
+                brewIndex: brewIndex,
+                steamIndex: steamIndex,
+                now: now
+            ) {
                 records.append(record)
             }
         }
@@ -95,6 +102,7 @@ struct AppScanner: Sendable {
         appURL: URL,
         resolvedURL: URL,
         brewIndex: HomebrewIndex,
+        steamIndex: SteamLibraryIndex,
         now: Date
     ) -> AppRecord? {
         let fileManager = FileManager.default
@@ -120,6 +128,8 @@ struct AppScanner: Sendable {
         let isSystem = isSystemPath(originalPath) || isSystemPath(resolvedPath)
         let isIOS = bundle.isIOS
         let isHomebrew = brewIndex.contains(appURL: appURL, resolvedPath: resolvedPath)
+        let steamAppID = SteamDetector.shortcutAppID(for: appURL, info: info)
+        let isSteam = steamAppID != nil || steamIndex.contains(resolvedPath: resolvedPath)
         let hasReceipt = hasAppStoreReceipt(
             appURL: appURL,
             resolvedURL: resolvedURL,
@@ -131,6 +141,10 @@ struct AppScanner: Sendable {
             source = .system
         } else if isIOS {
             source = .appStoreIOS
+        } else if isSteam {
+            // Steam 快捷方式的 run.sh + steam://run/<appid> 特征非常明确，
+            // 优先于名称可能撞车的 Homebrew Cask 判断。
+            source = .steam
         } else if isHomebrew {
             source = .homebrew
         } else if hasReceipt {
@@ -197,7 +211,8 @@ struct AppScanner: Sendable {
             updatedAt: updatedAt,
             minimumSystemVersion: minimumSystemVersion,
             iconData: nil,
-            lastSeenAt: now
+            lastSeenAt: now,
+            steamAppID: steamAppID
         )
     }
 

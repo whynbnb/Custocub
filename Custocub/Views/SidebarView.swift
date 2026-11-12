@@ -7,6 +7,7 @@ struct SidebarView: View {
         .homebrew,
         .appStore,
         .appStoreIOS,
+        .steam,
         .system,
         .manual
     ]

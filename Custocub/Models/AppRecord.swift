@@ -20,6 +20,7 @@ struct AppRecord: Identifiable, Codable, Hashable, Sendable {
     var minimumSystemVersion: String?
     var iconData: Data?
     var lastSeenAt: Date
+    var steamAppID: String? = nil
 
     var id: String { path }
 
@@ -31,6 +32,17 @@ struct AppRecord: Identifiable, Codable, Hashable, Sendable {
     var displayBundleIdentifier: String {
         guard let bundleIdentifier, !bundleIdentifier.isEmpty else { return "无 Bundle ID" }
         return bundleIdentifier
+    }
+
+    /// 列表/详情标题下方的副标题：没有 Bundle ID 的 Steam 快捷方式显示 App ID。
+    var listSubtitle: String {
+        if let bundleIdentifier, !bundleIdentifier.isEmpty {
+            return bundleIdentifier
+        }
+        if let steamAppID {
+            return "Steam App ID \(steamAppID)"
+        }
+        return "无 Bundle ID"
     }
 
     var platform: AppPlatform {
@@ -105,6 +117,7 @@ struct AppRecord: Identifiable, Codable, Hashable, Sendable {
             && lhs.installedAt == rhs.installedAt
             && lhs.updatedAt == rhs.updatedAt
             && lhs.minimumSystemVersion == rhs.minimumSystemVersion
+            && lhs.steamAppID == rhs.steamAppID
     }
 
     func hash(into hasher: inout Hasher) {

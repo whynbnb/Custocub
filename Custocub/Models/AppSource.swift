@@ -7,6 +7,7 @@ enum AppSource: String, Codable, CaseIterable, Identifiable, Sendable {
     case appStore
     case appStoreIOS
     case homebrew
+    case steam
     case manual
 
     var id: String { rawValue }
@@ -17,6 +18,7 @@ enum AppSource: String, Codable, CaseIterable, Identifiable, Sendable {
         case .appStore: "App Store"
         case .appStoreIOS: "App Store · iOS"
         case .homebrew: "Homebrew"
+        case .steam: "Steam"
         case .manual: "手动安装"
         }
     }
@@ -27,6 +29,7 @@ enum AppSource: String, Codable, CaseIterable, Identifiable, Sendable {
         case .appStore: "bag.fill"
         case .appStoreIOS: "iphone.gen3"
         case .homebrew: "mug.fill"
+        case .steam: "gamecontroller.fill"
         case .manual: "shippingbox.fill"
         }
     }
@@ -37,6 +40,7 @@ enum AppSource: String, Codable, CaseIterable, Identifiable, Sendable {
         case .appStore: .blue
         case .appStoreIOS: .indigo
         case .homebrew: .orange
+        case .steam: Color(red: 0.16, green: 0.52, blue: 0.78)
         case .manual: .green
         }
     }

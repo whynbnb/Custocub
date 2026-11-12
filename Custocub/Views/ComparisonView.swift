@@ -373,6 +373,9 @@ private struct MetadataDetails: View {
             }
             Text("版本：\(app.displayVersion)\(app.build.map { " (\($0))" } ?? "")")
             Text("Bundle ID：\(app.displayBundleIdentifier)")
+            if let steamAppID = app.steamAppID {
+                Text("Steam App ID：\(steamAppID)")
+            }
             Text("大小：\(app.displaySize)")
             Text("位置：\(app.path)")
             Text("安装：\(app.installedAtText)　更新：\(app.updatedAtText)")

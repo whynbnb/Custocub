@@ -34,6 +34,7 @@ struct AppChange: Identifiable, Hashable, Sendable {
             case path = "安装位置"
             case resolvedPath = "实际路径"
             case source = "来源"
+            case steamAppID = "Steam App ID"
             case systemType = "应用类型"
             case architecture = "架构"
             case size = "大小"
@@ -77,6 +78,7 @@ struct AppChange: Identifiable, Hashable, Sendable {
         append(.path, before.path, after.path)
         append(.resolvedPath, before.resolvedPath, after.resolvedPath)
         append(.source, before.source.title, after.source.title)
+        append(.steamAppID, before.steamAppID, after.steamAppID)
         append(.systemType, before.typeTitle, after.typeTitle)
         append(.architecture, before.architectureText, after.architectureText)
         append(.size, before.displaySize, after.displaySize)
@@ -175,6 +177,9 @@ enum ComparisonReport {
                 lines.append("### \(change.app.name)")
                 lines.append("")
                 lines.append("- Bundle ID：\(change.app.bundleIdentifier ?? "未知")")
+                if let steamAppID = change.app.steamAppID {
+                    lines.append("- Steam App ID：\(steamAppID)")
+                }
                 lines.append("- 来源：\(change.app.source.title)")
                 lines.append("- 类型：\(change.app.typeTitle)")
                 lines.append("- 架构：\(change.app.architectureText)")

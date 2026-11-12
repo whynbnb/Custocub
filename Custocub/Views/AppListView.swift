@@ -58,6 +58,9 @@ private struct InstalledHeader: View {
                 MetricChip(title: "第三方", value: "\(store.thirdPartyCount)", symbol: "shippingbox", color: .green)
                 MetricChip(title: "App Store", value: "\(store.sourceCounts[.appStore, default: 0] + store.sourceCounts[.appStoreIOS, default: 0])", symbol: "bag", color: .blue)
                 MetricChip(title: "Homebrew", value: "\(store.sourceCounts[.homebrew, default: 0])", symbol: "mug", color: .orange)
+                if store.sourceCounts[.steam, default: 0] > 0 {
+                    MetricChip(title: "Steam", value: "\(store.sourceCounts[.steam, default: 0])", symbol: "gamecontroller", color: AppSource.steam.color)
+                }
                 MetricChip(title: "占用", value: store.totalSizeText, symbol: "internaldrive", color: .purple)
                 Spacer()
             }
@@ -128,6 +131,9 @@ private struct SnapshotHeaderView: View {
                 MetricChip(title: "第三方", value: "\(snapshot.thirdPartyCount)", symbol: "shippingbox", color: .green)
                 MetricChip(title: "App Store", value: "\(snapshot.appStoreCount)", symbol: "bag", color: .blue)
                 MetricChip(title: "Homebrew", value: "\(snapshot.homebrewCount)", symbol: "mug", color: .orange)
+                if snapshot.sourceCounts[.steam, default: 0] > 0 {
+                    MetricChip(title: "Steam", value: "\(snapshot.sourceCounts[.steam, default: 0])", symbol: "gamecontroller", color: AppSource.steam.color)
+                }
                 MetricChip(title: "占用", value: snapshot.totalSizeText, symbol: "internaldrive", color: .purple)
                 Spacer()
             }
@@ -233,7 +239,7 @@ private struct AppTable: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(app.name)
                             .lineLimit(1)
-                        Text(app.displayBundleIdentifier)
+                        Text(app.listSubtitle)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)

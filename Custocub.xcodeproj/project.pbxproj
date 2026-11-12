@@ -28,11 +28,13 @@
 		D9E0945BB07BDA33E8E9758C /* ComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32FC1CD964603D78201C400F /* ComparisonView.swift */; };
 		DC7B02217750489EB802C9F8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A02C718C475E6C56A81700D /* ContentView.swift */; };
 		DCCAE7D65C4E610674CD154C /* DirectorySize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58FF69E32C98890ED8128E09 /* DirectorySize.swift */; };
+		E7C92538E7FED887FF76C3FF /* SteamDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9F35333C91991D3E58F940 /* SteamDetector.swift */; };
 		F03530AC880B6F95CD2C45D0 /* AppScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 223E84F5782B3A096DB0CD7B /* AppScanner.swift */; };
 		F5F26B8FF3FB294266A44468 /* IconProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49DF1B3BF2E854CB0A1D189E /* IconProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1D9F35333C91991D3E58F940 /* SteamDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SteamDetector.swift; sourceTree = "<group>"; };
 		1DC486FE5333357ECBB841C9 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
 		223E84F5782B3A096DB0CD7B /* AppScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppScanner.swift; sourceTree = "<group>"; };
 		2A02C718C475E6C56A81700D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -122,6 +124,7 @@
 				49DF1B3BF2E854CB0A1D189E /* IconProvider.swift */,
 				90B5B27E6EE91F5B84801601 /* MachOReader.swift */,
 				DDEDA7C65BB44C967065B4E2 /* SnapshotRepository.swift */,
+				1D9F35333C91991D3E58F940 /* SteamDetector.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -238,6 +241,7 @@
 				4C715978C469DC4F64F992A3 /* SettingsView.swift in Sources */,
 				C7E4BCDAC58B3F81935C7958 /* SidebarView.swift in Sources */,
 				CCBDA4B579BFE87EDB33FD17 /* SnapshotRepository.swift in Sources */,
+				E7C92538E7FED887FF76C3FF /* SteamDetector.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -298,7 +302,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -319,7 +323,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -368,7 +372,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -383,7 +387,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
