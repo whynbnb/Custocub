@@ -42,13 +42,15 @@ struct SidebarView: View {
                 )
 
                 ForEach(Self.sourceOrder, id: \.self) { source in
-                    SourceFilterRow(
-                        source: source,
-                        title: source.title,
-                        symbol: source.symbol,
-                        color: source.color,
-                        count: store.sourceCounts[source, default: 0]
-                    )
+                    if store.sourceCounts[source, default: 0] > 0 {
+                        SourceFilterRow(
+                            source: source,
+                            title: source.title,
+                            symbol: source.symbol,
+                            color: source.color,
+                            count: store.sourceCounts[source, default: 0]
+                        )
+                    }
                 }
             }
 
@@ -189,7 +191,6 @@ private struct SourceFilterRow: View {
                 in: RoundedRectangle(cornerRadius: 7)
             )
             .contentShape(RoundedRectangle(cornerRadius: 7))
-            .opacity(count == 0 && !isSelected ? 0.55 : 1)
         }
         .buttonStyle(.plain)
         .selectionDisabled()

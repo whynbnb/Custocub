@@ -282,6 +282,11 @@ final class CustocubStore: ObservableObject {
         statusMessage = "已找到 \(scannedApps.count) 个应用"
         IconProvider.shared.clear()
 
+        // 当前筛选的来源如果已经不存在，自动回到全部来源。
+        if let sourceFilter, (sourceCounts[sourceFilter] ?? 0) == 0 {
+            self.sourceFilter = nil
+        }
+
         if let selectedAppID, !scannedApps.contains(where: { $0.id == selectedAppID }) {
             self.selectedAppID = nil
         }
