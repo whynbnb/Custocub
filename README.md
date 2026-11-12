@@ -12,6 +12,7 @@ Custocub is a native macOS app inventory and snapshot manager built with Swift a
 - **Bundle ID:** `me.whynbnb.Custocub`
 - **Platform:** macOS 14+
 - **UI language:** Simplified Chinese
+- **License:** MIT
 
 ## Highlights
 
@@ -198,4 +199,9 @@ Custocub/
 └─ Resources/Assets.xcassets
 ```
 
-The `sample/` directory contains reference projects used during development and is excluded from the build.
+## License
+
+Custocub is released under the [MIT License](LICENSE).
+
+Copyright © 2026 0x574859.
+

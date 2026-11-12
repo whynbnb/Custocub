@@ -12,6 +12,7 @@ Custocub 是一个用 Swift / SwiftUI 编写的原生 macOS 应用清单与快�
 - **Bundle ID：** `me.whynbnb.Custocub`
 - **平台：** macOS 14+
 - **界面语言：** 简体中文
+- **许可证：** MIT
 
 ## 核心亮点
 
@@ -198,4 +199,9 @@ Custocub/
 └─ Resources/Assets.xcassets
 ```
 
-`sample/` 中是开发过程中的参考项目，不参与本工程构建。
+## 许可证
+
+Custocub 以 [MIT License](LICENSE) 开源发布。
+
+Copyright © 2026 0x574859。
+
