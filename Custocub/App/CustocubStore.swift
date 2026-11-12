@@ -61,22 +61,23 @@ final class CustocubStore: ObservableObject {
     @Published var platformFilter: AppPlatform?
     @Published var typeFilter: AppTypeFilter = .all
     @Published var galleryStatusFilter: GalleryItem.Status?
-    @Published var sortOrder: [KeyPathComparator<AppRecord>] = [
-        KeyPathComparator(\AppRecord.name, order: .forward)
-    ]
 
     private let repository: SnapshotRepository
     private let scanner: AppScanner
+    private var sizeCache: SizeCache
     private var enrichmentTask: Task<Void, Never>?
+    private var iconPrefetchTask: Task<Void, Never>?
     private var enrichmentToken = UUID()
     private let liveSnapshotID = UUID()
 
     init(
         repository: SnapshotRepository = SnapshotRepository(),
-        scanner: AppScanner = AppScanner()
+        scanner: AppScanner = AppScanner(),
+        sizeCache: SizeCache = SizeCache.load()
     ) {
         self.repository = repository
         self.scanner = scanner
+        self.sizeCache = sizeCache
         loadSnapshots()
     }
 
@@ -96,7 +97,10 @@ final class CustocubStore: ObservableObject {
     }
 
     var ownTotalSizeText: String {
-        ByteCountFormatter.string(fromByteCount: ownTotalSize, countStyle: .file)
+        if apps.contains(where: { $0.isOwn && $0.sizeInBytes == nil }) {
+            return "计算中…"
+        }
+        return ownTotalSize.formatted(.byteCount(style: .file))
     }
 
     var sourceCounts: [AppSource: Int] {
@@ -108,7 +112,10 @@ final class CustocubStore: ObservableObject {
     }
 
     var totalSizeText: String {
-        ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
+        if apps.contains(where: { $0.sizeInBytes == nil }) {
+            return "计算中…"
+        }
+        return totalSize.formatted(.byteCount(style: .file))
     }
 
     var liveSnapshot: AppSnapshot? {
@@ -216,7 +223,7 @@ final class CustocubStore: ObservableObject {
 
     // MARK: - Filtering
 
-    func filteredApps(_ input: [AppRecord]) -> [AppRecord] {
+    func filteredApps(_ input: [AppRecord], sortOrder: [KeyPathComparator<AppRecord>]) -> [AppRecord] {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return input.filter { app in
@@ -284,14 +291,30 @@ final class CustocubStore: ObservableObject {
         enrichmentTask?.cancel()
         enrichmentToken = UUID()
         isEnriching = false
+        iconPrefetchTask?.cancel()
 
-        let scannedApps = await scanner.scan()
+        var scannedApps = await scanner.scan()
+        var cacheHits = 0
+
+        for index in scannedApps.indices {
+            if let cachedSize = sizeCache.size(for: scannedApps[index]) {
+                scannedApps[index].sizeInBytes = cachedSize
+                cacheHits += 1
+            }
+        }
+
         apps = scannedApps
         hasScanned = true
         lastScanAt = Date()
         isScanning = false
-        statusMessage = "已找到 \(scannedApps.count) 个应用"
-        IconProvider.shared.clear()
+        statusMessage = cacheHits > 0
+            ? "已找到 \(scannedApps.count) 个应用（缓存 \(cacheHits)）"
+            : "已找到 \(scannedApps.count) 个应用"
+
+        let iconPaths = scannedApps.map(\.path)
+        iconPrefetchTask = Task {
+            await IconProvider.shared.prefetch(paths: iconPaths)
+        }
 
         // 当前筛选的来源如果已经不存在，自动回到全部来源。
         if let sourceFilter, (sourceCounts[sourceFilter] ?? 0) == 0 {
@@ -317,6 +340,12 @@ final class CustocubStore: ObservableObject {
         await refresh(ignoreRecentScan: true)
     }
 
+    func clearSizeCacheAndRefresh() async {
+        sizeCache.removeFile()
+        sizeCache = SizeCache(fileURL: SizeCache.defaultFileURL)
+        await refresh(ignoreRecentScan: true)
+    }
+
     private func beginSizeEnrichment() {
         enrichmentTask?.cancel()
         let token = UUID()
@@ -325,12 +354,14 @@ final class CustocubStore: ObservableObject {
         let computeSizes = UserDefaults.standard.object(forKey: "computeSizes") as? Bool ?? true
         guard computeSizes else {
             isEnriching = false
+            persistSizeCache()
             return
         }
 
         let pending = apps.filter { $0.sizeInBytes == nil }
         guard !pending.isEmpty else {
             isEnriching = false
+            persistSizeCache()
             return
         }
 
@@ -344,7 +375,7 @@ final class CustocubStore: ObservableObject {
     }
 
     private func computeSizes(records: [AppRecord], token: UUID) async {
-        let chunkSize = 8
+        let chunkSize = 12
         var start = 0
 
         while start < records.count {
@@ -352,7 +383,7 @@ final class CustocubStore: ObservableObject {
             let end = min(start + chunkSize, records.count)
             let chunk = Array(records[start..<end])
 
-            await withTaskGroup(of: (String, Int64).self) { group in
+            let updates = await withTaskGroup(of: (String, Int64).self) { group -> [(String, Int64)] in
                 for record in chunk {
                     group.addTask {
                         let size = DirectorySize.bytes(at: URL(fileURLWithPath: record.resolvedPath))
@@ -360,27 +391,43 @@ final class CustocubStore: ObservableObject {
                     }
                 }
 
-                for await (path, size) in group {
-                    guard token == self.enrichmentToken, !Task.isCancelled else { continue }
-                    if let index = self.apps.firstIndex(where: { $0.path == path }) {
-                        self.apps[index].sizeInBytes = size
-                    }
-                    self.enrichmentDone += 1
+                var results: [(String, Int64)] = []
+                for await result in group {
+                    results.append(result)
                 }
+                return results
             }
 
+            guard token == enrichmentToken, !Task.isCancelled else { break }
+
+            // 每 8 个应用批量写回一次，避免逐个应用刷新整张表。
+            var updatedApps = apps
+            var changed = false
+            for (path, size) in updates {
+                guard let index = updatedApps.firstIndex(where: { $0.path == path }) else { continue }
+                updatedApps[index].sizeInBytes = size
+                if size > 0 {
+                    sizeCache.update(app: updatedApps[index], size: size)
+                }
+                changed = true
+            }
+            if changed {
+                apps = updatedApps
+            }
+            enrichmentDone += updates.count
             start = end
         }
 
         if token == enrichmentToken {
             isEnriching = false
             enrichmentTask = nil
+            persistSizeCache()
         }
     }
 
     private func computeSizesMap(for records: [AppRecord]) async -> [String: Int64] {
         var result: [String: Int64] = [:]
-        let chunkSize = 8
+        let chunkSize = 12
         var start = 0
 
         while start < records.count {
@@ -403,6 +450,11 @@ final class CustocubStore: ObservableObject {
         }
 
         return result
+    }
+
+    private func persistSizeCache() {
+        sizeCache.prune(validPaths: Set(apps.map(\.resolvedPath)))
+        sizeCache.save()
     }
 
     // MARK: - Snapshots
@@ -450,14 +502,19 @@ final class CustocubStore: ObservableObject {
 
         if !missingSizes.isEmpty {
             let sizes = await computeSizesMap(for: missingSizes)
+            var updatedLiveApps = apps
             for index in result.indices where result[index].sizeInBytes == nil {
-                if let size = sizes[result[index].path] {
-                    result[index].sizeInBytes = size
-                    if let liveIndex = apps.firstIndex(where: { $0.path == result[index].path }) {
-                        apps[liveIndex].sizeInBytes = size
-                    }
+                guard let size = sizes[result[index].path] else { continue }
+                result[index].sizeInBytes = size
+                if size > 0 {
+                    sizeCache.update(app: result[index], size: size)
+                }
+                if let liveIndex = updatedLiveApps.firstIndex(where: { $0.path == result[index].path }) {
+                    updatedLiveApps[liveIndex].sizeInBytes = size
                 }
             }
+            apps = updatedLiveApps
+            persistSizeCache()
         }
 
         let missingIconPaths = result.filter { $0.iconData == nil }.map(\.path)

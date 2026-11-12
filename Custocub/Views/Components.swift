@@ -6,10 +6,26 @@ struct AppIconView: View {
     var size: CGFloat = 40
     var cornerRadius: CGFloat = 9
 
+    @State private var image: NSImage?
+
+    init(app: AppRecord, size: CGFloat = 40, cornerRadius: CGFloat = 9) {
+        self.app = app
+        self.size = size
+        self.cornerRadius = cornerRadius
+        let cached = IconProvider.shared.cachedIcon(forPath: app.path)
+        let stored = app.iconData.flatMap { NSImage(data: $0) }
+        _image = State(initialValue: cached ?? stored)
+    }
+
     var body: some View {
         Group {
-            if let image = IconProvider.shared.icon(for: app) {
+            if let image {
                 Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+            } else if let iconData = app.iconData, let stored = NSImage(data: iconData) {
+                Image(nsImage: stored)
                     .resizable()
                     .interpolation(.high)
                     .scaledToFit()
@@ -23,6 +39,22 @@ struct AppIconView: View {
             }
         }
         .frame(width: size, height: size)
+        .task(id: app.path) {
+            if image != nil { return }
+            if let cached = IconProvider.shared.cachedIcon(forPath: app.path) {
+                image = cached
+                return
+            }
+            if let loaded = await IconProvider.shared.iconAsync(forPath: app.path) {
+                image = loaded
+            } else if let iconData = app.iconData, let stored = NSImage(data: iconData) {
+                image = stored
+            }
+        }
+        .onChange(of: app.path) {
+            image = IconProvider.shared.cachedIcon(forPath: app.path)
+                ?? app.iconData.flatMap { NSImage(data: $0) }
+        }
     }
 }
 

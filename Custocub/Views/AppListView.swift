@@ -287,99 +287,235 @@ struct MetricChip: View {
     }
 }
 
+private enum AppTableColumn {
+    static let version: CGFloat = 70
+    static let source: CGFloat = 108
+    static let platform: CGFloat = 92
+    static let type: CGFloat = 58
+    static let size: CGFloat = 82
+    static let updated: CGFloat = 100
+}
+
 private struct AppTable: View {
     @EnvironmentObject private var store: CustocubStore
     let apps: [AppRecord]
     let emptyMessage: String
 
-    var body: some View {
-        let filtered = store.filteredApps(apps)
+    @State private var sortField: SortField = .name
+    @State private var sortAscending = true
 
-        Table(filtered, selection: $store.selectedAppID, sortOrder: $store.sortOrder) {
-            TableColumn("应用", value: \.name) { app in
-                HStack(spacing: 9) {
-                    AppIconView(app: app, size: 30)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(app.name)
-                            .lineLimit(1)
-                        Text(app.listSubtitle)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                    .padding(.vertical, 3)
-                }
-            }
-            .width(min: 220, ideal: 300)
+    private enum SortField: String {
+        case name = "应用"
+        case version = "版本"
+        case source = "来源"
+        case platform = "平台"
+        case type = "类型"
+        case size = "大小"
+        case updated = "更新"
+    }
 
-            TableColumn("版本", value: \.versionSortValue) { app in
-                Text(app.displayVersion)
-                    .monospacedDigit()
-                    .lineLimit(1)
-            }
-            .width(min: 65, ideal: 90, max: 130)
+    private var sortComparator: KeyPathComparator<AppRecord> {
+        let order: SortOrder = sortAscending ? .forward : .reverse
 
-            TableColumn("来源") { app in
-                SourceBadge(source: app.source, compact: true)
-            }
-            .width(min: 100, ideal: 118, max: 140)
-
-            TableColumn("平台") { app in
-                PlatformBadge(platform: app.platform)
-            }
-            .width(min: 96, ideal: 108, max: 128)
-
-            TableColumn("类型") { app in
-                TypeBadge(isSystem: app.isSystemApp)
-            }
-            .width(min: 56, ideal: 64, max: 76)
-
-            TableColumn("大小", value: \.sizeSortValue) { app in
-                Text(app.displaySize)
-                    .monospacedDigit()
-                    .foregroundStyle(app.sizeInBytes == nil ? .secondary : .primary)
-            }
-            .width(min: 74, ideal: 88, max: 110)
-
-            TableColumn("更新于", value: \.updatedSortValue) { app in
-                Text(app.updatedAt.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "未知")
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            .width(min: 88, ideal: 105, max: 130)
-
-            TableColumn("位置") { app in
-                Text(app.path)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .help(app.path)
-            }
-            .width(min: 140, ideal: 220)
+        switch sortField {
+        case .name:
+            return KeyPathComparator(\AppRecord.name, order: order)
+        case .version:
+            return KeyPathComparator(\AppRecord.versionSortValue, order: order)
+        case .source:
+            return KeyPathComparator(\AppRecord.sourceSortValue, order: order)
+        case .platform:
+            return KeyPathComparator(\AppRecord.platformSortValue, order: order)
+        case .type:
+            return KeyPathComparator(\AppRecord.typeSortValue, order: order)
+        case .size:
+            return KeyPathComparator(\AppRecord.sizeSortValue, order: order)
+        case .updated:
+            return KeyPathComparator(\AppRecord.updatedSortValue, order: order)
         }
-        .overlay {
-            if filtered.isEmpty {
-                if store.isScanning && apps.isEmpty {
-                    VStack(spacing: 12) {
-                        ProgressView()
-                        Text("正在扫描应用…")
-                            .foregroundStyle(.secondary)
+    }
+
+    private var filtered: [AppRecord] {
+        store.filteredApps(apps, sortOrder: [sortComparator])
+    }
+
+    var body: some View {
+        let items = filtered
+
+        VStack(spacing: 0) {
+            header
+            Divider()
+
+            if items.isEmpty {
+                emptyState
+            } else {
+                // LazyVStack 只创建可见行，避免从 99 行切到 405 行时一次性布局整张表。
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(items) { app in
+                            AppTableRow(
+                                app: app,
+                                isSelected: store.selectedAppID == app.id
+                            )
+                            .onTapGesture {
+                                store.selectedAppID = app.id
+                            }
+
+                            Divider()
+                                .padding(.leading, 52)
+                        }
                     }
-                } else if store.searchText.isEmpty && !hasActiveFilter {
-                    ContentUnavailableView(emptyMessage, systemImage: "app.dashed")
-                } else {
-                    ContentUnavailableView(
-                        "没有符合条件的应用",
-                        systemImage: "line.3.horizontal.decrease.circle",
-                        description: Text("请调整搜索内容或筛选条件。")
-                    )
+                }
+                .transaction { transaction in
+                    transaction.animation = nil
                 }
             }
         }
     }
 
+    private var header: some View {
+        HStack(spacing: 0) {
+            headerButton("应用", field: .name)
+                .frame(minWidth: 180, idealWidth: 280, maxWidth: 360, alignment: .leading)
+
+            headerButton("版本", field: .version, width: AppTableColumn.version)
+            headerButton("来源", field: .source, width: AppTableColumn.source)
+            headerButton("平台", field: .platform, width: AppTableColumn.platform)
+            headerButton("类型", field: .type, width: AppTableColumn.type)
+            headerButton("大小", field: .size, width: AppTableColumn.size, alignment: .trailing, trailingPadding: 14, arrowFirst: true)
+            headerButton("更新于", field: .updated, width: AppTableColumn.updated)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 32)
+        .background(.bar)
+    }
+
+    private func headerButton(
+        _ title: String,
+        field: SortField,
+        width: CGFloat? = nil,
+        alignment: Alignment = .leading,
+        trailingPadding: CGFloat = 0,
+        arrowFirst: Bool = false
+    ) -> some View {
+        Button {
+            toggleSort(field)
+        } label: {
+            HStack(spacing: 3) {
+                if arrowFirst, sortField == field {
+                    sortIndicator
+                }
+                Text(title)
+                if !arrowFirst, sortField == field {
+                    sortIndicator
+                }
+            }
+            .padding(.trailing, trailingPadding)
+            .frame(width: width, alignment: alignment)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(sortField == field ? Color.primary : Color.secondary)
+        .help("按\(title)排序")
+    }
+
+    private var sortIndicator: some View {
+        Image(systemName: sortAscending ? "chevron.up" : "chevron.down")
+            .font(.system(size: 8, weight: .bold))
+    }
+
+    private func toggleSort(_ field: SortField) {
+        if sortField == field {
+            sortAscending.toggle()
+        } else {
+            sortField = field
+            sortAscending = true
+        }
+    }
+
+    @ViewBuilder
+    private var emptyState: some View {
+        if store.isScanning && apps.isEmpty {
+            VStack(spacing: 12) {
+                ProgressView()
+                Text("正在扫描应用…")
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if store.searchText.isEmpty && !hasActiveFilter {
+            ContentUnavailableView(emptyMessage, systemImage: "app.dashed")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            ContentUnavailableView(
+                "没有符合条件的应用",
+                systemImage: "line.3.horizontal.decrease.circle",
+                description: Text("请调整搜索内容或筛选条件。")
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
     private var hasActiveFilter: Bool {
         store.sourceFilter != nil || store.platformFilter != nil || store.typeFilter != .all
+    }
+}
+
+private struct AppTableRow: View {
+    let app: AppRecord
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 0) {
+            HStack(spacing: 9) {
+                AppIconView(app: app, size: 30)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(app.name)
+                        .lineLimit(1)
+                    Text(app.listSubtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            .frame(minWidth: 180, idealWidth: 280, maxWidth: 360, alignment: .leading)
+
+            Text(app.displayVersion)
+                .font(.callout.monospacedDigit())
+                .lineLimit(1)
+                .frame(width: AppTableColumn.version, alignment: .leading)
+
+            SourceBadge(source: app.source, compact: true)
+                .frame(width: AppTableColumn.source, alignment: .leading)
+
+            PlatformBadge(platform: app.platform)
+                .frame(width: AppTableColumn.platform, alignment: .leading)
+
+            TypeBadge(isSystem: app.isSystemApp)
+                .frame(width: AppTableColumn.type, alignment: .leading)
+
+            Text(app.displaySize)
+                .font(.callout.monospacedDigit())
+                .foregroundStyle(app.sizeInBytes == nil ? .secondary : .primary)
+                .lineLimit(1)
+                .padding(.trailing, 14)
+                .frame(width: AppTableColumn.size, alignment: .trailing)
+
+            Text(app.updatedAtListText)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .frame(width: AppTableColumn.updated, alignment: .leading)
+
+            Spacer(minLength: 0)
+        }
+        .font(.callout)
+        .padding(.horizontal, 12)
+        .frame(height: 44)
+        .background(isSelected ? Color.accentColor.opacity(0.16) : Color.clear)
+        .contentShape(Rectangle())
+        .help("\(app.name)\n\(app.path)")
     }
 }

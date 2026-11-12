@@ -34,7 +34,7 @@ struct AppSnapshot: Identifiable, Codable, Hashable, Sendable {
     }
 
     var totalSizeText: String {
-        ByteCountFormatter.string(fromByteCount: totalSize, countStyle: .file)
+        totalSize.formatted(.byteCount(style: .file))
     }
 
     var sourceCounts: [AppSource: Int] {

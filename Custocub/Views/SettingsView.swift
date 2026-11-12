@@ -48,6 +48,15 @@ struct SettingsView: View {
                         IconProvider.shared.clear()
                     }
 
+                    Button("清除体积缓存并重算") {
+                        Task { await store.clearSizeCacheAndRefresh() }
+                    }
+                    .disabled(store.isScanning)
+
+                    Spacer()
+                }
+
+                HStack {
                     Button("在访达中显示快照文件夹") {
                         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
                         let directory = support
@@ -66,7 +75,7 @@ struct SettingsView: View {
             }
 
             Section("关于") {
-                LabeledContent("Custocub", value: "1.4.0")
+                LabeledContent("Custocub", value: "1.5.0")
                 Text("Custocub = custos（守护） + cubby（收纳格）。用于清点 macOS 软件来源、架构与变化。")
                     .font(.caption)
                     .foregroundStyle(.secondary)

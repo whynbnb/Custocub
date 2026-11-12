@@ -13,28 +13,66 @@ final class IconProvider {
         cache.countLimit = 600
     }
 
-    func icon(forPath path: String) -> NSImage? {
-        guard FileManager.default.fileExists(atPath: path) else { return nil }
+    func cachedIcon(forPath path: String) -> NSImage? {
+        cache.object(forKey: path as NSString)
+    }
 
-        let key = path as NSString
-        if let cached = cache.object(forKey: key) {
+    /// 异步行加载图标，避免切换筛选时在 MainActor 上同步读取大量图标。
+    func iconAsync(forPath path: String) async -> NSImage? {
+        if let cached = cachedIcon(forPath: path) {
             return cached
         }
+        guard FileManager.default.fileExists(atPath: path) else { return nil }
 
-        let image = NSWorkspace.shared.icon(forFile: path)
-        cache.setObject(image, forKey: key)
+        let image = await Task.detached(priority: .utility) {
+            Self.loadIcon(forPath: path)
+        }.value
+
+        if let image {
+            cache.setObject(image, forKey: path as NSString)
+        }
         return image
     }
 
-    func icon(for app: AppRecord) -> NSImage? {
-        // 已安装时优先使用磁盘上的最新图标；应用被卸载后回退到快照中的 PNG。
-        if let image = icon(forPath: app.path) {
-            return image
+    /// 扫描完成后在后台预取图标，让「全部来源」等大列表切换时直接命中缓存。
+    func prefetch(paths: [String]) async {
+        let missing = paths.filter { cachedIcon(forPath: $0) == nil }
+        guard !missing.isEmpty else { return }
+
+        let chunkSize = 8
+        var start = 0
+
+        while start < missing.count {
+            if Task.isCancelled { return }
+            let end = min(start + chunkSize, missing.count)
+            let chunk = Array(missing[start..<end])
+
+            let loaded = await withTaskGroup(of: (String, NSImage?).self) { group in
+                for path in chunk {
+                    group.addTask {
+                        (path, Self.loadIcon(forPath: path))
+                    }
+                }
+                var results: [(String, NSImage?)] = []
+                for await result in group {
+                    results.append(result)
+                }
+                return results
+            }
+
+            for (path, image) in loaded {
+                if let image {
+                    cache.setObject(image, forKey: path as NSString)
+                }
+            }
+
+            start = end
         }
-        if let data = app.iconData, let image = NSImage(data: data) {
-            return image
-        }
-        return nil
+    }
+
+    nonisolated private static func loadIcon(forPath path: String) -> NSImage? {
+        guard FileManager.default.fileExists(atPath: path) else { return nil }
+        return NSWorkspace.shared.icon(forFile: path)
     }
 
     /// 把应用图标渲染成固定尺寸 PNG，用于写入快照。

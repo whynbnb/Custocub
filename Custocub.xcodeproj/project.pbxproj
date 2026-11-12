@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		020D9F0EF618B0DB8AC16A4F /* FileActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = E776D8D8CDDD0D61BC927FC1 /* FileActions.swift */; };
 		0264632A7BD956E10F06318A /* GalleryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD2333F60586494596629257 /* GalleryItem.swift */; };
+		03067CD0CA970901A58A1421 /* SizeCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E304477F8D3049D1B72C716 /* SizeCache.swift */; };
 		13AABF84A022A67BEE4E77E1 /* AppDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B844A82A4A7559A059AEE0E3 /* AppDetailView.swift */; };
 		33B49897B520BEB8BEE6B6FB /* AppListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D97BB0861124D1642EB69C /* AppListView.swift */; };
 		43598E67937BC21B5E8BA946 /* AppRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DA09AF85222FE4871D4FE0A /* AppRecord.swift */; };
@@ -40,6 +41,7 @@
 		223E84F5782B3A096DB0CD7B /* AppScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppScanner.swift; sourceTree = "<group>"; };
 		2A02C718C475E6C56A81700D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		32FC1CD964603D78201C400F /* ComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComparisonView.swift; sourceTree = "<group>"; };
+		3E304477F8D3049D1B72C716 /* SizeCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SizeCache.swift; sourceTree = "<group>"; };
 		49DF1B3BF2E854CB0A1D189E /* IconProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconProvider.swift; sourceTree = "<group>"; };
 		4DA09AF85222FE4871D4FE0A /* AppRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRecord.swift; sourceTree = "<group>"; };
 		58FF69E32C98890ED8128E09 /* DirectorySize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectorySize.swift; sourceTree = "<group>"; };
@@ -126,6 +128,7 @@
 				49DF1B3BF2E854CB0A1D189E /* IconProvider.swift */,
 				CB29DD222217857737C23E7C /* JetBrainsToolboxIndex.swift */,
 				90B5B27E6EE91F5B84801601 /* MachOReader.swift */,
+				3E304477F8D3049D1B72C716 /* SizeCache.swift */,
 				DDEDA7C65BB44C967065B4E2 /* SnapshotRepository.swift */,
 				1D9F35333C91991D3E58F940 /* SteamDetector.swift */,
 			);
@@ -244,6 +247,7 @@
 				8BF008D7CB9164F84F40C6AC /* MachOReader.swift in Sources */,
 				4C715978C469DC4F64F992A3 /* SettingsView.swift in Sources */,
 				C7E4BCDAC58B3F81935C7958 /* SidebarView.swift in Sources */,
+				03067CD0CA970901A58A1421 /* SizeCache.swift in Sources */,
 				CCBDA4B579BFE87EDB33FD17 /* SnapshotRepository.swift in Sources */,
 				E7C92538E7FED887FF76C3FF /* SteamDetector.swift in Sources */,
 			);
@@ -306,7 +310,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -327,7 +331,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.5.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -376,7 +380,7 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -391,7 +395,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.5.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

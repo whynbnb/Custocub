@@ -68,7 +68,7 @@ struct AppRecord: Identifiable, Codable, Hashable, Sendable {
 
     var displaySize: String {
         guard let sizeInBytes else { return "计算中…" }
-        return ByteCountFormatter.string(fromByteCount: sizeInBytes, countStyle: .file)
+        return sizeInBytes.formatted(.byteCount(style: .file))
     }
 
     var typeTitle: String {
@@ -97,10 +97,19 @@ struct AppRecord: Identifiable, Codable, Hashable, Sendable {
         lastSeenAt.formatted(date: .abbreviated, time: .shortened)
     }
 
+    private static let listDateStyle = Date.FormatStyle(date: .abbreviated, time: .omitted)
+
+    var updatedAtListText: String {
+        updatedAt?.formatted(Self.listDateStyle) ?? "未知"
+    }
+
     // 供 Table 排序使用的非可选键。
     var versionSortValue: String { displayVersion }
     var sizeSortValue: Int64 { sizeInBytes ?? -1 }
     var updatedSortValue: Date { updatedAt ?? .distantPast }
+    var sourceSortValue: String { source.title }
+    var platformSortValue: String { platform.shortTitle }
+    var typeSortValue: String { typeTitle }
 
     // 快照比较不应把「最后出现时间」和图标数据视为内容变化。
     static func == (lhs: AppRecord, rhs: AppRecord) -> Bool {
