@@ -5,6 +5,7 @@ enum SidebarSelection: Hashable {
     case installed
     case own
     case gallery
+    case source(AppSource?)
     case snapshot(UUID)
 }
 
@@ -144,7 +145,7 @@ final class CustocubStore: ObservableObject {
         guard let selectedAppID else { return nil }
 
         switch activeSelection {
-        case .installed, .own:
+        case .installed, .own, .source:
             guard let app = apps.first(where: { $0.id == selectedAppID }) else { return nil }
             return SelectedAppContext(app: app, galleryItem: nil, snapshot: nil)
 
@@ -266,11 +267,20 @@ final class CustocubStore: ObservableObject {
         galleryStatusFilter = nil
     }
 
-    /// 侧边栏的来源快捷筛选：切回已安装列表并应用来源过滤。
-    func applySourceFilter(_ source: AppSource?) {
-        sourceFilter = source
-        sidebarSelection = .installed
-        selectedAppID = nil
+    func syncSourceFilterForSelection() {
+        switch activeSelection {
+        case .source(let source):
+            sourceFilter = source
+        case .installed:
+            sourceFilter = nil
+        default:
+            break
+        }
+    }
+
+    var isSourceSelection: Bool {
+        if case .source = activeSelection { return true }
+        return false
     }
 
     // MARK: - Scanning

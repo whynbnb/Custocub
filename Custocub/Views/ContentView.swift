@@ -113,7 +113,7 @@ struct ContentView: View {
     @ViewBuilder
     private var content: some View {
         switch store.activeSelection {
-        case .installed, .own:
+        case .installed, .own, .source:
             InstalledAppsView()
         case .gallery:
             GalleryView()

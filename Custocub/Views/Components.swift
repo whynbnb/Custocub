@@ -174,6 +174,23 @@ struct FilterBar: View {
     @EnvironmentObject private var store: CustocubStore
     var showsStatusFilter = false
 
+    private var sourcePickerSelection: Binding<AppSource?> {
+        Binding(
+            get: { store.sourceFilter },
+            set: { newValue in
+                store.sourceFilter = newValue
+
+                // 在已安装列表/来源列表中操作时，让侧边栏选择保持同步。
+                if store.activeSelection == .installed || store.isSourceSelection {
+                    let target = SidebarSelection.source(newValue)
+                    if store.sidebarSelection != target {
+                        store.sidebarSelection = target
+                    }
+                }
+            }
+        )
+    }
+
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass")
@@ -195,7 +212,7 @@ struct FilterBar: View {
 
             Divider().frame(height: 18)
 
-            Picker("来源", selection: $store.sourceFilter) {
+            Picker("来源", selection: sourcePickerSelection) {
                 Text("全部来源").tag(AppSource?.none)
                 ForEach(AppSource.allCases) { source in
                     Label(source.title, systemImage: source.symbol).tag(Optional(source))

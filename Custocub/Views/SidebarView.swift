@@ -20,7 +20,8 @@ struct SidebarView: View {
                     title: "已安装应用",
                     symbol: "square.grid.2x2.fill",
                     count: store.installedCount,
-                    tint: .accentColor
+                    tint: .accentColor,
+                    isSelected: store.sidebarSelection == .installed
                 )
                 .tag(SidebarSelection.installed)
 
@@ -29,7 +30,8 @@ struct SidebarView: View {
                         title: "开发者的应用",
                         symbol: "chevron.left.forwardslash.chevron.right",
                         count: store.ownAppCount,
-                        tint: .purple
+                        tint: .purple,
+                        isSelected: store.sidebarSelection == .own
                     )
                     .tag(SidebarSelection.own)
                 }
@@ -38,29 +40,32 @@ struct SidebarView: View {
                     title: "展示框",
                     symbol: "rectangle.grid.2x2.fill",
                     count: store.galleryItems.count,
-                    tint: .purple
+                    tint: .purple,
+                    isSelected: store.sidebarSelection == .gallery
                 )
                 .tag(SidebarSelection.gallery)
             }
 
             Section("来源") {
-                SourceFilterRow(
-                    source: nil,
+                SidebarRow(
                     title: "全部来源",
                     symbol: "tray.full.fill",
-                    color: .accentColor,
-                    count: store.installedCount
+                    count: store.installedCount,
+                    tint: .accentColor,
+                    isSelected: store.sidebarSelection == .source(nil)
                 )
+                .tag(SidebarSelection.source(nil))
 
                 ForEach(Self.sourceOrder, id: \.self) { source in
                     if store.sourceCounts[source, default: 0] > 0 {
-                        SourceFilterRow(
-                            source: source,
+                        SidebarRow(
                             title: source.title,
                             symbol: source.symbol,
-                            color: source.color,
-                            count: store.sourceCounts[source, default: 0]
+                            count: store.sourceCounts[source, default: 0],
+                            tint: source.color,
+                            isSelected: store.sidebarSelection == .source(source)
                         )
+                        .tag(SidebarSelection.source(source))
                     }
                 }
             }
@@ -115,6 +120,7 @@ struct SidebarView: View {
         }
         .onChange(of: store.sidebarSelection) {
             store.selectedAppID = nil
+            store.syncSourceFilterForSelection()
         }
     }
 }
@@ -124,6 +130,7 @@ private struct SidebarRow: View {
     let symbol: String
     let count: Int
     let tint: Color
+    var isSelected = false
 
     var body: some View {
         HStack(spacing: 9) {
@@ -133,15 +140,16 @@ private struct SidebarRow: View {
                 .frame(width: 16, height: 16)
                 .frame(width: 18)
                 .fixedSize()
-                .foregroundStyle(tint)
+                .foregroundStyle(isSelected ? Color.white : tint)
             Text(title)
                 .lineLimit(1)
                 .truncationMode(.tail)
+                .foregroundStyle(isSelected ? Color.white : Color.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if count > 0 {
                 Text("\(count)")
                     .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(isSelected ? Color.white.opacity(0.9) : Color.secondary)
                     .fixedSize()
             }
         }
@@ -175,55 +183,5 @@ private struct SnapshotSidebarRow: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 3)
         .clipped()
-    }
-}
-
-private struct SourceFilterRow: View {
-    @EnvironmentObject private var store: CustocubStore
-
-    let source: AppSource?
-    let title: String
-    let symbol: String
-    let color: Color
-    let count: Int
-
-    private var isSelected: Bool {
-        store.sourceFilter == source
-    }
-
-    var body: some View {
-        Button {
-            store.applySourceFilter(source)
-        } label: {
-            HStack(spacing: 9) {
-                Image(systemName: symbol)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 16, height: 16)
-                    .frame(width: 18)
-                    .fixedSize()
-                    .foregroundStyle(color)
-                Text(title)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Text("\(count)")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-                    .fixedSize()
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 5)
-            .background(
-                isSelected ? Color.accentColor.opacity(0.16) : Color.clear,
-                in: RoundedRectangle(cornerRadius: 7)
-            )
-            .contentShape(RoundedRectangle(cornerRadius: 7))
-            .clipped()
-        }
-        .buttonStyle(.plain)
-        .selectionDisabled()
-        .help(source.map { "只看 \($0.title)" } ?? "清除来源筛选")
     }
 }
