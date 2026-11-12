@@ -205,3 +205,10 @@ Custocub is released under the [MIT License](LICENSE).
 
 Copyright © 2026 0x574859.
 
+## Acknowledgements
+
+Thanks to the large language model companies, to DeepSeek, and to the various community API relay sites. Without tokens, I could not have run the many tests needed to build this app (even though it did take a few months).
+
+Finally, thanks to Homebrew, the best package manager on macOS.
+
+

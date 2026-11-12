@@ -205,3 +205,10 @@ Custocub 以 [MIT License](LICENSE) 开源发布。
 
 Copyright © 2026 0x574859。
 
+## 鸣谢
+
+感谢各大模型公司，感谢 DeepSeek，感谢各种公益站。没有 token，我就没办法做大量测试并做出这个软件（虽然还是拖延了几个月）。
+
+最后，也感谢 macOS 上最好用的包管理器 Homebrew。
+
+
