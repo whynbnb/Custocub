@@ -48,12 +48,14 @@ private struct InstalledHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 7) {
                     Text("已安装应用")
                         .font(.title2.weight(.semibold))
-                    Text("扫描 /Applications、~/Applications 与系统应用目录，并识别每个应用的来源和架构。")
+                    Image(systemName: "info.circle")
                         .font(.callout)
                         .foregroundStyle(.secondary)
+                        .help("扫描 /Applications、~/Applications 与系统应用目录，并识别每个应用的来源和架构。")
+                        .accessibilityLabel("扫描说明")
                 }
                 Spacer()
                 if let lastScanAt = store.lastScanAt {
@@ -94,13 +96,14 @@ private struct OwnAppsHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 7) {
                     Text("开发者的应用")
                         .font(.title2.weight(.semibold))
-                    Text("Bundle ID 前缀：\(prefix)")
+                    Image(systemName: "info.circle")
                         .font(.callout)
                         .foregroundStyle(.secondary)
-                        .textSelection(.enabled)
+                        .help("Bundle ID 前缀：\(prefix)")
+                        .accessibilityLabel("开发者应用说明")
                 }
                 Spacer()
                 Text("\(store.ownAppCount) 个应用")

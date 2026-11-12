@@ -62,12 +62,14 @@ struct GalleryView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 7) {
                     Text("展示框")
                         .font(.title2.weight(.semibold))
-                    Text("像收藏柜一样浏览所有软件，包括已经卸载、但仍保存在历史快照中的应用。")
+                    Image(systemName: "info.circle")
                         .font(.callout)
                         .foregroundStyle(.secondary)
+                        .help("像收藏柜一样浏览所有软件，包括已经卸载、但仍保存在历史快照中的应用。")
+                        .accessibilityLabel("展示框说明")
                 }
                 Spacer()
             }
