@@ -128,17 +128,26 @@ private struct SidebarRow: View {
     var body: some View {
         HStack(spacing: 9) {
             Image(systemName: symbol)
-                .foregroundStyle(tint)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 16, height: 16)
                 .frame(width: 18)
+                .fixedSize()
+                .foregroundStyle(tint)
             Text(title)
-            Spacer()
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .frame(maxWidth: .infinity, alignment: .leading)
             if count > 0 {
                 Text("\(count)")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
+                    .fixedSize()
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 2)
+        .clipped()
     }
 }
 
@@ -163,7 +172,9 @@ private struct SnapshotSidebarRow: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 3)
+        .clipped()
     }
 }
 
@@ -186,15 +197,22 @@ private struct SourceFilterRow: View {
         } label: {
             HStack(spacing: 9) {
                 Image(systemName: symbol)
-                    .foregroundStyle(color)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 16, height: 16)
                     .frame(width: 18)
+                    .fixedSize()
+                    .foregroundStyle(color)
                 Text(title)
                     .lineLimit(1)
-                Spacer(minLength: 4)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 Text("\(count)")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
+                    .fixedSize()
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 7)
             .padding(.vertical, 5)
             .background(
@@ -202,6 +220,7 @@ private struct SourceFilterRow: View {
                 in: RoundedRectangle(cornerRadius: 7)
             )
             .contentShape(RoundedRectangle(cornerRadius: 7))
+            .clipped()
         }
         .buttonStyle(.plain)
         .selectionDisabled()

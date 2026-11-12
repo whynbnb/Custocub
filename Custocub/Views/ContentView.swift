@@ -21,6 +21,7 @@ struct ContentView: View {
             AppDetailView(context: store.selectedAppContext)
                 .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 430)
         }
+        .navigationSplitViewStyle(.balanced)
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button {
