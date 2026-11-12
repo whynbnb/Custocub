@@ -3,6 +3,7 @@ import Foundation
 
 enum SidebarSelection: Hashable {
     case installed
+    case own
     case gallery
     case snapshot(UUID)
 }
@@ -88,6 +89,15 @@ final class CustocubStore: ObservableObject {
     var installedCount: Int { apps.count }
     var systemCount: Int { apps.count { $0.isSystemApp } }
     var thirdPartyCount: Int { apps.count { !$0.isSystemApp } }
+    var ownAppCount: Int { apps.count { $0.isOwn } }
+
+    var ownTotalSize: Int64 {
+        apps.filter(\.isOwn).compactMap(\.sizeInBytes).reduce(0, +)
+    }
+
+    var ownTotalSizeText: String {
+        ByteCountFormatter.string(fromByteCount: ownTotalSize, countStyle: .file)
+    }
 
     var sourceCounts: [AppSource: Int] {
         Dictionary(grouping: apps, by: \.source).mapValues(\.count)
@@ -127,7 +137,7 @@ final class CustocubStore: ObservableObject {
         guard let selectedAppID else { return nil }
 
         switch activeSelection {
-        case .installed:
+        case .installed, .own:
             guard let app = apps.first(where: { $0.id == selectedAppID }) else { return nil }
             return SelectedAppContext(app: app, galleryItem: nil, snapshot: nil)
 
@@ -213,12 +223,13 @@ final class CustocubStore: ObservableObject {
             let matchesSource = sourceFilter == nil || app.source == sourceFilter
             let matchesPlatform = platformFilter == nil || app.platform == platformFilter
             let matchesType = typeFilter.matches(app)
+            let matchesOwn = activeSelection != .own || app.isOwn
             let matchesSearch = query.isEmpty
                 || app.name.localizedCaseInsensitiveContains(query)
                 || app.bundleIdentifier?.localizedCaseInsensitiveContains(query) == true
                 || app.path.localizedCaseInsensitiveContains(query)
                 || app.source.title.localizedCaseInsensitiveContains(query)
-            return matchesSource && matchesPlatform && matchesType && matchesSearch
+            return matchesSource && matchesPlatform && matchesType && matchesOwn && matchesSearch
         }
         .sorted(using: sortOrder)
     }
@@ -285,6 +296,12 @@ final class CustocubStore: ObservableObject {
         // 当前筛选的来源如果已经不存在，自动回到全部来源。
         if let sourceFilter, (sourceCounts[sourceFilter] ?? 0) == 0 {
             self.sourceFilter = nil
+        }
+
+        // 「开发者的应用」分类只在 3 个及以上匹配应用时显示。
+        if activeSelection == .own && ownAppCount <= 2 {
+            sidebarSelection = .installed
+            selectedAppID = nil
         }
 
         if let selectedAppID, !scannedApps.contains(where: { $0.id == selectedAppID }) {

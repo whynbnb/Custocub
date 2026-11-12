@@ -7,9 +7,17 @@ struct SettingsView: View {
     @AppStorage("autoScanOnLaunch") private var autoScanOnLaunch = true
     @AppStorage("refreshOnActivate") private var refreshOnActivate = true
     @AppStorage("computeSizes") private var computeSizes = true
+    @AppStorage("developerBundlePrefix") private var developerBundlePrefix = "me.whynbnb."
 
     var body: some View {
         Form {
+            Section("个人应用") {
+                TextField("Bundle ID 前缀", text: $developerBundlePrefix)
+                Text("Bundle ID 匹配此前缀的应用会归入「开发者的应用」。匹配数量大于 2 时才会在侧边栏显示该分类；留空可关闭。修改后请重新扫描。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("扫描") {
                 Toggle("启动时自动扫描", isOn: $autoScanOnLaunch)
                 Toggle("回到应用时自动刷新", isOn: $refreshOnActivate)
@@ -58,14 +66,14 @@ struct SettingsView: View {
             }
 
             Section("关于") {
-                LabeledContent("Custocub", value: "1.3.0")
+                LabeledContent("Custocub", value: "1.4.0")
                 Text("Custocub = custos（守护） + cubby（收纳格）。用于清点 macOS 软件来源、架构与变化。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
-        .frame(width: 520, height: 430)
+        .frame(width: 520, height: 520)
         .navigationTitle("Custocub 设置")
     }
 }

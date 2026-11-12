@@ -88,6 +88,17 @@ struct GalleryStatusBadge: View {
     }
 }
 
+struct OwnAppBadge: View {
+    var body: some View {
+        Label("开发者的应用", systemImage: "chevron.left.forwardslash.chevron.right")
+            .font(.caption.weight(.medium))
+            .foregroundStyle(.purple)
+            .padding(.horizontal, 7)
+            .frame(height: 22)
+            .background(Color.purple.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
+    }
+}
+
 struct DetailRow: View {
     let label: String
     let value: String

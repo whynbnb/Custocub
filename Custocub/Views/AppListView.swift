@@ -3,15 +3,26 @@ import SwiftUI
 struct InstalledAppsView: View {
     @EnvironmentObject private var store: CustocubStore
 
+    private var isOwnMode: Bool { store.activeSelection == .own }
+
     var body: some View {
         VStack(spacing: 0) {
-            InstalledHeader()
+            if isOwnMode {
+                OwnAppsHeader()
+            } else {
+                InstalledHeader()
+            }
             Divider()
             FilterBar()
             Divider()
-            AppTable(apps: store.apps, emptyMessage: store.hasScanned ? "没有发现应用" : "尚未扫描。点击工具栏的「扫描应用」开始。")
+            AppTable(
+                apps: store.apps,
+                emptyMessage: isOwnMode
+                    ? "没有匹配个人应用前缀的应用"
+                    : (store.hasScanned ? "没有发现应用" : "尚未扫描。点击工具栏的「扫描应用」开始。")
+            )
         }
-        .navigationTitle("已安装应用")
+        .navigationTitle(isOwnMode ? "开发者的应用" : "已安装应用")
     }
 }
 
@@ -65,6 +76,52 @@ private struct InstalledHeader: View {
                     MetricChip(title: "Toolbox", value: "\(store.sourceCounts[.jetbrainsToolbox, default: 0])", symbol: "wrench.and.screwdriver", color: AppSource.jetbrainsToolbox.color)
                 }
                 MetricChip(title: "占用", value: store.totalSizeText, symbol: "internaldrive", color: .purple)
+                Spacer()
+            }
+        }
+        .padding(16)
+        .background(.background)
+    }
+}
+
+private struct OwnAppsHeader: View {
+    @EnvironmentObject private var store: CustocubStore
+
+    private var prefix: String {
+        let raw = UserDefaults.standard.string(forKey: "developerBundlePrefix") ?? "me.whynbnb."
+        return raw.isEmpty ? "未设置" : raw
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("开发者的应用")
+                        .font(.title2.weight(.semibold))
+                    Text("Bundle ID 前缀：\(prefix)")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+                Spacer()
+                Text("\(store.ownAppCount) 个应用")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 10) {
+                MetricChip(
+                    title: "开发者的应用",
+                    value: "\(store.ownAppCount)",
+                    symbol: "chevron.left.forwardslash.chevron.right",
+                    color: .purple
+                )
+                MetricChip(
+                    title: "占用",
+                    value: store.ownTotalSizeText,
+                    symbol: "internaldrive",
+                    color: .purple
+                )
                 Spacer()
             }
         }

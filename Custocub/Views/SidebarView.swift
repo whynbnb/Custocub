@@ -24,6 +24,16 @@ struct SidebarView: View {
                 )
                 .tag(SidebarSelection.installed)
 
+                if store.ownAppCount > 2 {
+                    SidebarRow(
+                        title: "开发者的应用",
+                        symbol: "chevron.left.forwardslash.chevron.right",
+                        count: store.ownAppCount,
+                        tint: .purple
+                    )
+                    .tag(SidebarSelection.own)
+                }
+
                 SidebarRow(
                     title: "展示框",
                     symbol: "rectangle.grid.2x2.fill",

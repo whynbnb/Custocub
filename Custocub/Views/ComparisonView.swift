@@ -370,6 +370,9 @@ private struct MetadataDetails: View {
                 SourceBadge(source: app.source)
                 PlatformBadge(platform: app.platform)
                 TypeBadge(isSystem: app.isSystemApp)
+                if app.isOwn {
+                    OwnAppBadge()
+                }
             }
             Text("版本：\(app.displayVersion)\(app.build.map { " (\($0))" } ?? "")")
             Text("Bundle ID：\(app.displayBundleIdentifier)")

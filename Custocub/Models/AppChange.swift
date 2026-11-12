@@ -35,6 +35,7 @@ struct AppChange: Identifiable, Hashable, Sendable {
             case resolvedPath = "实际路径"
             case source = "来源"
             case steamAppID = "Steam App ID"
+            case ownApp = "开发者的应用"
             case systemType = "应用类型"
             case architecture = "架构"
             case size = "大小"
@@ -79,6 +80,7 @@ struct AppChange: Identifiable, Hashable, Sendable {
         append(.resolvedPath, before.resolvedPath, after.resolvedPath)
         append(.source, before.source.title, after.source.title)
         append(.steamAppID, before.steamAppID, after.steamAppID)
+        append(.ownApp, before.isOwn ? "是" : "否", after.isOwn ? "是" : "否")
         append(.systemType, before.typeTitle, after.typeTitle)
         append(.architecture, before.architectureText, after.architectureText)
         append(.size, before.displaySize, after.displaySize)

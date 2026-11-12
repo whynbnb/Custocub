@@ -51,7 +51,7 @@ struct AppDetailView: View {
                     }
                     .disabled(app.bundleIdentifier == nil)
 
-                    if case .installed = store.activeSelection, isInstalled {
+                    if (store.activeSelection == .installed || store.activeSelection == .own), isInstalled {
                         Button {
                             store.sidebarSelection = .gallery
                             store.galleryStatusFilter = nil
@@ -168,6 +168,9 @@ struct AppDetailView: View {
                     SourceBadge(source: app.source)
                     PlatformBadge(platform: app.platform)
                     TypeBadge(isSystem: app.isSystemApp)
+                    if app.isOwn {
+                        OwnAppBadge()
+                    }
                     if let item = context.galleryItem, item.status == .uninstalled {
                         GalleryStatusBadge(status: .uninstalled)
                     }

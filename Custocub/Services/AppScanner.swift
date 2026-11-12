@@ -14,6 +14,7 @@ struct AppScanner: Sendable {
         let brewIndex = HomebrewIndex.build()
         let steamIndex = SteamLibraryIndex.build()
         let toolboxIndex = JetBrainsToolboxIndex.build()
+        let ownBundlePrefix = developerBundlePrefix()
         let discovered = discoverApplications()
         let now = Date()
 
@@ -27,6 +28,7 @@ struct AppScanner: Sendable {
                 brewIndex: brewIndex,
                 steamIndex: steamIndex,
                 toolboxIndex: toolboxIndex,
+                ownBundlePrefix: ownBundlePrefix,
                 now: now
             ) {
                 records.append(record)
@@ -106,6 +108,7 @@ struct AppScanner: Sendable {
         brewIndex: HomebrewIndex,
         steamIndex: SteamLibraryIndex,
         toolboxIndex: JetBrainsToolboxIndex,
+        ownBundlePrefix: String?,
         now: Date
     ) -> AppRecord? {
         let fileManager = FileManager.default
@@ -134,6 +137,12 @@ struct AppScanner: Sendable {
         let steamAppID = SteamDetector.shortcutAppID(for: appURL, info: info)
         let isSteam = steamAppID != nil || steamIndex.contains(resolvedPath: resolvedPath)
         let isToolboxApp = toolboxIndex.contains(path: originalPath, resolvedPath: resolvedPath)
+        let isOwnApp: Bool? = {
+            guard let ownBundlePrefix,
+                  let bundleIdentifier,
+                  !bundleIdentifier.isEmpty else { return nil }
+            return bundleIdentifier.lowercased().hasPrefix(ownBundlePrefix)
+        }()
         let hasReceipt = hasAppStoreReceipt(
             appURL: appURL,
             resolvedURL: resolvedURL,
@@ -219,7 +228,8 @@ struct AppScanner: Sendable {
             minimumSystemVersion: minimumSystemVersion,
             iconData: nil,
             lastSeenAt: now,
-            steamAppID: steamAppID
+            steamAppID: steamAppID,
+            isOwnApp: isOwnApp
         )
     }
 
@@ -404,6 +414,13 @@ struct AppScanner: Sendable {
         path.hasPrefix("/System/")
             || path.hasPrefix("/Library/Apple/")
             || path.hasPrefix("/System/Cryptexes/")
+    }
+
+    /// 个人应用使用可配置的 Bundle ID 前缀；默认针对 me.whynbnb.*。
+    private static func developerBundlePrefix() -> String? {
+        let raw = UserDefaults.standard.string(forKey: "developerBundlePrefix") ?? "me.whynbnb."
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     private static func stringValue(_ value: Any?) -> String? {

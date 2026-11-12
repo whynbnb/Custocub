@@ -76,6 +76,15 @@ struct ContentView: View {
             guard phase == .active, refreshOnActivate else { return }
             Task { await store.refreshIfStale() }
         }
+        .onChange(of: store.sidebarSelection) { _, selection in
+            guard selection == .own else { return }
+            // 进入「开发者的应用」时清除会限制结果的筛选条件。
+            store.searchText = ""
+            store.sourceFilter = nil
+            store.platformFilter = nil
+            store.typeFilter = .all
+            store.galleryStatusFilter = nil
+        }
         .sheet(isPresented: $showingComparison) {
             ComparisonView()
                 .environmentObject(store)
@@ -103,7 +112,7 @@ struct ContentView: View {
     @ViewBuilder
     private var content: some View {
         switch store.activeSelection {
-        case .installed:
+        case .installed, .own:
             InstalledAppsView()
         case .gallery:
             GalleryView()

@@ -21,8 +21,11 @@ struct AppRecord: Identifiable, Codable, Hashable, Sendable {
     var iconData: Data?
     var lastSeenAt: Date
     var steamAppID: String? = nil
+    var isOwnApp: Bool? = nil
 
     var id: String { path }
+
+    var isOwn: Bool { isOwnApp == true }
 
     var displayVersion: String {
         guard let version, !version.isEmpty else { return "未知" }
@@ -118,6 +121,7 @@ struct AppRecord: Identifiable, Codable, Hashable, Sendable {
             && lhs.updatedAt == rhs.updatedAt
             && lhs.minimumSystemVersion == rhs.minimumSystemVersion
             && lhs.steamAppID == rhs.steamAppID
+            && lhs.isOwnApp == rhs.isOwnApp
     }
 
     func hash(into hasher: inout Hasher) {
