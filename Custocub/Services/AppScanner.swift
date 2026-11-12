@@ -120,8 +120,6 @@ struct AppScanner: Sendable {
         let isSystem = isSystemPath(originalPath) || isSystemPath(resolvedPath)
         let isIOS = bundle.isIOS
         let isHomebrew = brewIndex.contains(appURL: appURL, resolvedPath: resolvedPath)
-        let isSetapp = originalPath.lowercased().contains("/setapp/")
-            || resolvedPath.lowercased().contains("/setapp/")
         let hasReceipt = hasAppStoreReceipt(
             appURL: appURL,
             resolvedURL: resolvedURL,
@@ -135,8 +133,6 @@ struct AppScanner: Sendable {
             source = .appStoreIOS
         } else if isHomebrew {
             source = .homebrew
-        } else if isSetapp {
-            source = .setapp
         } else if hasReceipt {
             source = .appStore
         } else {

@@ -26,10 +26,11 @@
 | App Store | `Contents/_MASReceipt/receipt`，并用 Spotlight 的 `kMDItemAppStoreAdamID` 兜底 |
 | App Store · iOS | `Wrapper/*.app`、`WrappedBundle`、`iTunesMetadata.plist`，以及 `DTPlatformName` / `LSRequiresIPhoneOS` 等标记 |
 | Homebrew | `/opt/homebrew/Caskroom`、`/usr/local/Caskroom` 的符号链接或 Cask 应用名索引 |
-| Setapp | 路径中包含 `/Setapp/` |
 | 手动安装 | 以上规则都不匹配 |
 
 系统应用优先级最高，因此 Apple 自带应用即使带 App Store 收据也会被标为「系统应用」。Xcode、Apple Configurator 等从 App Store 安装的 Apple 工具会正确显示为 App Store。
+
+侧边栏「来源」区可以一键筛选 Homebrew、App Store、App Store · iOS、手动安装和系统应用，并实时显示每类应用数量。
 
 ### 3. 平台与类型
 

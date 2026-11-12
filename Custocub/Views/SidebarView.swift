@@ -3,6 +3,14 @@ import SwiftUI
 struct SidebarView: View {
     @EnvironmentObject private var store: CustocubStore
 
+    private static let sourceOrder: [AppSource] = [
+        .homebrew,
+        .appStore,
+        .appStoreIOS,
+        .system,
+        .manual
+    ]
+
     var body: some View {
         List(selection: $store.sidebarSelection) {
             Section("应用") {
@@ -21,6 +29,26 @@ struct SidebarView: View {
                     tint: .purple
                 )
                 .tag(SidebarSelection.gallery)
+            }
+
+            Section("来源") {
+                SourceFilterRow(
+                    source: nil,
+                    title: "全部来源",
+                    symbol: "tray.full.fill",
+                    color: .accentColor,
+                    count: store.installedCount
+                )
+
+                ForEach(Self.sourceOrder, id: \.self) { source in
+                    SourceFilterRow(
+                        source: source,
+                        title: source.title,
+                        symbol: source.symbol,
+                        color: source.color,
+                        count: store.sourceCounts[source, default: 0]
+                    )
+                }
             }
 
             Section("快照") {
@@ -122,5 +150,48 @@ private struct SnapshotSidebarRow: View {
             .foregroundStyle(.secondary)
         }
         .padding(.vertical, 3)
+    }
+}
+
+private struct SourceFilterRow: View {
+    @EnvironmentObject private var store: CustocubStore
+
+    let source: AppSource?
+    let title: String
+    let symbol: String
+    let color: Color
+    let count: Int
+
+    private var isSelected: Bool {
+        store.sourceFilter == source
+    }
+
+    var body: some View {
+        Button {
+            store.applySourceFilter(source)
+        } label: {
+            HStack(spacing: 9) {
+                Image(systemName: symbol)
+                    .foregroundStyle(color)
+                    .frame(width: 18)
+                Text(title)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                Text("\(count)")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 7)
+            .padding(.vertical, 5)
+            .background(
+                isSelected ? Color.accentColor.opacity(0.16) : Color.clear,
+                in: RoundedRectangle(cornerRadius: 7)
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 7))
+            .opacity(count == 0 && !isSelected ? 0.55 : 1)
+        }
+        .buttonStyle(.plain)
+        .selectionDisabled()
+        .help(source.map { "只看 \($0.title)" } ?? "清除来源筛选")
     }
 }

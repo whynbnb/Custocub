@@ -248,6 +248,13 @@ final class CustocubStore: ObservableObject {
         galleryStatusFilter = nil
     }
 
+    /// 侧边栏的来源快捷筛选：切回已安装列表并应用来源过滤。
+    func applySourceFilter(_ source: AppSource?) {
+        sourceFilter = source
+        sidebarSelection = .installed
+        selectedAppID = nil
+    }
+
     // MARK: - Scanning
 
     func refresh(ignoreRecentScan: Bool = false) async {
