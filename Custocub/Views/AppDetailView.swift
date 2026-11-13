@@ -41,14 +41,18 @@ struct AppDetailView: View {
                             NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: app.path)])
                         } label: {
                             Label("在访达中显示", systemImage: "folder")
+                                .labelStyle(.iconOnly)
                         }
+                        .help(Text(L.t("在访达中显示")))
                     }
 
                     Button {
                         copy(app.displayBundleIdentifier)
                     } label: {
                         Label("复制 Bundle ID", systemImage: "doc.on.doc")
+                            .labelStyle(.iconOnly)
                     }
+                    .help(Text(L.t("复制 Bundle ID")))
                     .disabled(app.bundleIdentifier == nil)
 
                     if (store.activeSelection == .installed || store.activeSelection == .own), isInstalled {
@@ -58,17 +62,19 @@ struct AppDetailView: View {
                             store.selectedAppID = app.id
                         } label: {
                             Label("在展示框中查看", systemImage: "rectangle.grid.2x2")
+                                .labelStyle(.iconOnly)
                         }
+                        .help(Text(L.t("在展示框中查看")))
                     }
                 }
                 .controlSize(.small)
 
                 SectionCard(title: "基本信息") {
                     DetailRow(label: "版本", value: app.displayVersion)
-                    DetailRow(label: "构建号", value: app.build ?? "无")
+                    DetailRow(label: "构建号", value: app.build ?? L.t("无"))
                     DetailRow(label: "Bundle ID", value: app.displayBundleIdentifier, monospaced: true)
                     DetailRow(label: "大小", value: app.displaySize)
-                    DetailRow(label: "最低系统", value: app.minimumSystemVersion ?? "未声明")
+                    DetailRow(label: "最低系统", value: app.minimumSystemVersion ?? L.t("未声明"))
                 }
 
                 SectionCard(title: "来源与平台") {
@@ -79,15 +85,15 @@ struct AppDetailView: View {
                         Spacer()
                     }
                     DetailRow(label: "来源", value: app.source.title)
-                    DetailRow(label: "类型", value: app.isSystemApp ? "系统内置应用" : "第三方应用")
+                    DetailRow(label: "类型", value: app.isSystemApp ? L.t("系统内置应用") : L.t("第三方应用"))
                     DetailRow(label: "架构", value: app.architectureText, monospaced: true)
                     if let steamAppID = app.steamAppID {
                         DetailRow(label: "Steam App ID", value: steamAppID, monospaced: true)
                     }
                     if app.source == .steam {
                         Text(app.steamAppID == nil
-                            ? "该应用位于 Steam 库中，由 Steam 管理。"
-                            : "这是 Steam 创建的启动快捷方式；游戏本体由 Steam 管理。")
+                            ? L.t("该应用位于 Steam 库中，由 Steam 管理。")
+                            : L.t("这是 Steam 创建的启动快捷方式；游戏本体由 Steam 管理。"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
@@ -99,7 +105,7 @@ struct AppDetailView: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     if app.isIOSApp {
-                        DetailRow(label: "运行方式", value: "iPhone / iPad 应用（Apple 芯片）")
+                        DetailRow(label: "运行方式", value: L.t("iPhone / iPad 应用（Apple 芯片）"))
                     }
                     if let wrapped = app.wrappedAppPath {
                         DetailRow(label: "包装路径", value: wrapped, monospaced: true)
@@ -127,7 +133,7 @@ struct AppDetailView: View {
                         HStack(spacing: 8) {
                             GalleryStatusBadge(status: item.status)
                             if let snapshotName = item.snapshotName {
-                                Text("最后出现于快照「\(snapshotName)」")
+                                Text(L.t("最后出现于快照「%@」", snapshotName))
                                     .font(.callout)
                                     .foregroundStyle(.secondary)
                             }

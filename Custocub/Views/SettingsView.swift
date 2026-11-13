@@ -8,9 +8,40 @@ struct SettingsView: View {
     @AppStorage("refreshOnActivate") private var refreshOnActivate = true
     @AppStorage("computeSizes") private var computeSizes = true
     @AppStorage("developerBundlePrefix") private var developerBundlePrefix = "me.whynbnb."
+    @AppStorage("appLanguage") private var appLanguage = AppLanguage.system.rawValue
+    @AppStorage("appearanceMode") private var appearanceMode = AppAppearance.system.rawValue
+
+    @State private var showingRestartAlert = false
 
     var body: some View {
         Form {
+            Section("通用") {
+                Picker("语言", selection: $appLanguage) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(language.title).tag(language.rawValue)
+                    }
+                }
+                .onChange(of: appLanguage) { _, newValue in
+                    guard let language = AppLanguage(rawValue: newValue) else { return }
+                    AppLanguage.set(language)
+                    showingRestartAlert = true
+                }
+
+                Picker("外观", selection: $appearanceMode) {
+                    ForEach(AppAppearance.allCases) { appearance in
+                        Text(appearance.title).tag(appearance.rawValue)
+                    }
+                }
+                .onChange(of: appearanceMode) { _, newValue in
+                    guard let appearance = AppAppearance(rawValue: newValue) else { return }
+                    AppAppearance.set(appearance)
+                }
+
+                Text("切换语言后需要重新启动 Custocub。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("个人应用") {
                 TextField("Bundle ID 前缀", text: $developerBundlePrefix)
                 Text("Bundle ID 匹配此前缀的应用会归入「开发者的应用」。匹配数量大于 2 时才会在侧边栏显示该分类；留空可关闭。修改后请重新扫描。")
@@ -68,7 +99,7 @@ struct SettingsView: View {
 
                     Spacer()
 
-                    Text("\(store.snapshots.count) 个已保存快照")
+                    Text(L.t("%d 个已保存快照", store.snapshots.count))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -82,7 +113,15 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 520, height: 520)
+        .frame(width: 540, height: 640)
         .navigationTitle("Custocub 设置")
+        .alert("语言已更改", isPresented: $showingRestartAlert) {
+            Button("立即重启") {
+                AppRestart.relaunch()
+            }
+            Button("稍后", role: .cancel) {}
+        } message: {
+            Text("重新启动 Custocub 后生效。")
+        }
     }
 }

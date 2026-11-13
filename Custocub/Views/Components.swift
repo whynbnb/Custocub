@@ -84,7 +84,7 @@ struct PlatformBadge: View {
             .padding(.horizontal, 7)
             .frame(height: 22)
             .background(platform.color.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
-            .help(platform == .universal ? "通用二进制：arm64 + x86_64" : platform.title)
+            .help(Text(platform == .universal ? L.t("通用二进制：arm64 + x86_64") : platform.title))
     }
 }
 
@@ -92,7 +92,7 @@ struct TypeBadge: View {
     let isSystem: Bool
 
     var body: some View {
-        Text(isSystem ? "系统" : "第三方")
+        Text(isSystem ? L.t("系统") : L.t("第三方"))
             .font(.caption.weight(.medium))
             .foregroundStyle(isSystem ? Color.secondary : Color.green)
             .padding(.horizontal, 7)
@@ -138,9 +138,9 @@ struct DetailRow: View {
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(label)
+            Text(LocalizedStringKey(label))
                 .foregroundStyle(.secondary)
-                .frame(width: 92, alignment: .leading)
+                .frame(width: 108, alignment: .leading)
             Text(value)
                 .font(monospaced ? .callout.monospaced() : .callout)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -156,7 +156,7 @@ struct SectionCard<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.headline)
             content
         }
@@ -219,7 +219,7 @@ struct FilterBar: View {
                 }
             }
             .labelsHidden()
-            .frame(width: 138)
+            .frame(width: 150)
 
             Picker("平台", selection: $store.platformFilter) {
                 Text("全部平台").tag(AppPlatform?.none)
@@ -283,7 +283,7 @@ struct ScanStatusView: View {
                 )
                 .controlSize(.small)
                 .frame(width: 54)
-                Text("计算体积 \(store.enrichmentDone)/\(store.enrichmentTotal)")
+                Text(L.t("计算体积 %d/%d", store.enrichmentDone, store.enrichmentTotal))
             } else if store.isSavingSnapshot {
                 ProgressView().controlSize(.small)
                 Text("正在保存快照…")
@@ -294,7 +294,9 @@ struct ScanStatusView: View {
                     .lineLimit(1)
             } else {
                 Image(systemName: "clock")
-                Text(store.lastScanAt.map { "上次扫描 \($0.formatted(date: .omitted, time: .shortened))" } ?? "尚未扫描")
+                Text(store.lastScanAt.map {
+                    L.t("上次扫描 %@", $0.formatted(date: .omitted, time: .shortened))
+                } ?? L.t("尚未扫描"))
             }
             Spacer(minLength: 0)
         }

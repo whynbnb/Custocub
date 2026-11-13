@@ -10,8 +10,8 @@ struct GalleryItem: Identifiable, Hashable, Sendable {
 
         var title: String {
             switch self {
-            case .installed: "已安装"
-            case .uninstalled: "已卸载"
+            case .installed: L.t("已安装")
+            case .uninstalled: L.t("已卸载")
             }
         }
 

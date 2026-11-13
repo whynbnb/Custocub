@@ -13,7 +13,7 @@ struct ContentView: View {
     var body: some View {
         NavigationSplitView {
             SidebarView()
-                .navigationSplitViewColumnWidth(min: 208, ideal: 232, max: 285)
+                .navigationSplitViewColumnWidth(min: 220, ideal: 240, max: 300)
         } content: {
             content
                 .navigationSplitViewColumnWidth(min: 650, ideal: 880)
@@ -96,7 +96,7 @@ struct ContentView: View {
             titleVisibility: .visible
         ) {
             if let snapshot = store.selectedSnapshot {
-                Button("删除「\(snapshot.name)」", role: .destructive) {
+                Button(L.t("删除「%@」", snapshot.name), role: .destructive) {
                     store.deleteSnapshot(id: snapshot.id)
                 }
             }
@@ -106,7 +106,7 @@ struct ContentView: View {
         .alert("发生错误", isPresented: errorPresented) {
             Button("好") { store.errorMessage = nil }
         } message: {
-            Text(store.errorMessage ?? "未知错误")
+            Text(store.errorMessage ?? L.t("未知错误"))
         }
     }
 

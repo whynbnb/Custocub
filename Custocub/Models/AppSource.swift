@@ -15,25 +15,25 @@ enum AppSource: String, Codable, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .system: "系统应用"
+        case .system: L.t("系统应用")
         case .appStore: "App Store"
         case .appStoreIOS: "App Store · iOS"
         case .homebrew: "Homebrew"
         case .steam: "Steam"
         case .jetbrainsToolbox: "JetBrains Toolbox"
-        case .manual: "手动安装"
+        case .manual: L.t("手动安装")
         }
     }
 
     var shortTitle: String {
         switch self {
-        case .system: "系统"
+        case .system: L.t("系统")
         case .appStore: "App Store"
         case .appStoreIOS: "iOS"
         case .homebrew: "Homebrew"
         case .steam: "Steam"
         case .jetbrainsToolbox: "Toolbox"
-        case .manual: "手动"
+        case .manual: L.t("手动")
         }
     }
 
@@ -78,11 +78,11 @@ enum AppPlatform: String, Codable, CaseIterable, Identifiable, Sendable {
 
     var title: String {
         switch self {
-        case .appleSilicon: "Apple 芯片"
+        case .appleSilicon: L.t("Apple 芯片")
         case .intel: "Intel"
-        case .universal: "通用"
+        case .universal: L.t("通用")
         case .ios: "iOS"
-        case .unknown: "未知"
+        case .unknown: L.t("未知")
         }
     }
 
@@ -92,7 +92,7 @@ enum AppPlatform: String, Codable, CaseIterable, Identifiable, Sendable {
         case .intel: "x86_64"
         case .universal: "arm64+x64"
         case .ios: "iOS"
-        case .unknown: "未知"
+        case .unknown: L.t("未知")
         }
     }
 

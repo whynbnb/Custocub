@@ -18,9 +18,9 @@ enum AppTypeFilter: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .all: "全部类型"
-        case .system: "系统应用"
-        case .thirdParty: "第三方应用"
+        case .all: L.t("全部类型")
+        case .system: L.t("系统应用")
+        case .thirdParty: L.t("第三方应用")
         }
     }
 
@@ -131,7 +131,7 @@ final class CustocubStore: ObservableObject {
 
     var ownTotalSizeText: String {
         if apps.contains(where: { $0.isOwn && $0.sizeInBytes == nil }) {
-            return "计算中…"
+            return L.t("计算中…")
         }
         return ownTotalSize.formatted(.byteCount(style: .file))
     }
@@ -155,7 +155,7 @@ final class CustocubStore: ObservableObject {
 
     var totalSizeText: String {
         if apps.contains(where: { $0.sizeInBytes == nil }) {
-            return "计算中…"
+            return L.t("计算中…")
         }
         return totalSize.formatted(.byteCount(style: .file))
     }
@@ -164,7 +164,7 @@ final class CustocubStore: ObservableObject {
         guard hasScanned else { return nil }
         return AppSnapshot(
             id: liveSnapshotID,
-            name: "当前状态",
+            name: L.t("当前状态"),
             createdAt: lastScanAt ?? Date(),
             apps: apps
         )
@@ -370,7 +370,7 @@ final class CustocubStore: ObservableObject {
 
         isScanning = true
         errorMessage = nil
-        statusMessage = "正在扫描应用…"
+        statusMessage = L.t("正在扫描应用…")
 
         enrichmentTask?.cancel()
         enrichmentToken = UUID()
@@ -392,8 +392,8 @@ final class CustocubStore: ObservableObject {
         lastScanAt = Date()
         isScanning = false
         statusMessage = cacheHits > 0
-            ? "已找到 \(scannedApps.count) 个应用（缓存 \(cacheHits)）"
-            : "已找到 \(scannedApps.count) 个应用"
+            ? L.t("已找到 %d 个应用（缓存 %d）", scannedApps.count, cacheHits)
+            : L.t("已找到 %d 个应用", scannedApps.count)
         saveSidebarCache()
 
         let iconPaths = scannedApps.map(\.path)
@@ -547,12 +547,12 @@ final class CustocubStore: ObservableObject {
     func saveSnapshot() async {
         guard hasScanned, !isScanning, !isSavingSnapshot else { return }
         guard !apps.isEmpty else {
-            errorMessage = "当前扫描结果为空，无法保存快照。"
+            errorMessage = L.t("当前扫描结果为空，无法保存快照。")
             return
         }
 
         isSavingSnapshot = true
-        statusMessage = "正在准备快照…"
+        statusMessage = L.t("正在准备快照…")
         defer {
             isSavingSnapshot = false
         }
@@ -560,7 +560,7 @@ final class CustocubStore: ObservableObject {
         let preparedApps = await prepareSnapshotApps()
         let now = Date()
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.locale = Locale.current
         formatter.dateFormat = "yyyy-MM-dd HH:mm"
 
         let snapshot = AppSnapshot(
@@ -573,7 +573,7 @@ final class CustocubStore: ObservableObject {
         sidebarSelection = .snapshot(snapshot.id)
         selectedAppID = nil
         persist(snapshot)
-        statusMessage = "已保存快照 · \(snapshot.name) · \(snapshot.appCount) 个应用"
+        statusMessage = L.t("已保存快照 · %@ · %d 个应用", snapshot.name, snapshot.appCount)
     }
 
     /// 等待后台体积计算完成，补齐所有体积与图标后再写入快照。
@@ -622,9 +622,9 @@ final class CustocubStore: ObservableObject {
         do {
             try repository.delete(id: id)
         } catch {
-            errorMessage = "无法删除快照文件：\(error.localizedDescription)"
+            errorMessage = L.t("无法删除快照文件：%@", error.localizedDescription)
         }
-        statusMessage = "已删除快照"
+        statusMessage = L.t("已删除快照")
     }
 
     func renameSnapshot(id: UUID, name: String) {
@@ -645,7 +645,7 @@ final class CustocubStore: ObservableObject {
         do {
             let imported = try repository.decodeImport(from: url)
             guard !imported.isEmpty else {
-                errorMessage = "所选文件中没有可导入的快照。"
+                errorMessage = L.t("所选文件中没有可导入的快照。")
                 return
             }
 
@@ -659,18 +659,18 @@ final class CustocubStore: ObservableObject {
                 sidebarSelection = .snapshot(first.id)
                 selectedAppID = nil
             }
-            statusMessage = "已导入 \(imported.count) 个快照"
+            statusMessage = L.t("已导入 %d 个快照", imported.count)
         } catch {
-            errorMessage = "无法导入快照：\(error.localizedDescription)"
+            errorMessage = L.t("无法导入快照：%@", error.localizedDescription)
         }
     }
 
     func exportSnapshot(_ snapshot: AppSnapshot, to url: URL) {
         do {
             try repository.export(snapshot, to: url)
-            statusMessage = "已导出快照 · \(snapshot.name)"
+            statusMessage = L.t("已导出快照 · %@", snapshot.name)
         } catch {
-            errorMessage = "无法导出快照：\(error.localizedDescription)"
+            errorMessage = L.t("无法导出快照：%@", error.localizedDescription)
         }
     }
 
@@ -680,7 +680,7 @@ final class CustocubStore: ObservableObject {
         do {
             snapshots = try repository.load().sorted { $0.createdAt > $1.createdAt }
         } catch {
-            errorMessage = "无法读取快照：\(error.localizedDescription)"
+            errorMessage = L.t("无法读取快照：%@", error.localizedDescription)
         }
     }
 
@@ -688,7 +688,7 @@ final class CustocubStore: ObservableObject {
         do {
             try repository.save(snapshot)
         } catch {
-            errorMessage = "无法保存快照：\(error.localizedDescription)"
+            errorMessage = L.t("无法保存快照：%@", error.localizedDescription)
         }
     }
 }

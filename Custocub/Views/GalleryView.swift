@@ -21,11 +21,11 @@ struct GalleryView: View {
 
                     if items.isEmpty {
                         ContentUnavailableView(
-                            store.galleryItems.isEmpty ? "展示框还是空的" : "没有符合条件的应用",
+                            store.galleryItems.isEmpty ? L.t("展示框还是空的") : L.t("没有符合条件的应用"),
                             systemImage: store.galleryItems.isEmpty ? "rectangle.grid.2x2" : "line.3.horizontal.decrease.circle",
                             description: Text(store.galleryItems.isEmpty
-                                ? "保存一个快照后，这里会像收藏柜一样展示软件；已卸载的软件也会被保留。"
-                                : "请调整搜索内容或筛选条件。")
+                                ? L.t("保存一个快照后，这里会像收藏柜一样展示软件；已卸载的软件也会被保留。")
+                                : L.t("请调整搜索内容或筛选条件。"))
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
@@ -134,7 +134,7 @@ struct GalleryView: View {
 
         if let snapshotName = item.snapshotName {
             Divider()
-            Text("最后出现于快照：\(snapshotName)")
+            Text(L.t("最后出现于快照：%@", snapshotName))
         }
     }
 }
@@ -164,7 +164,7 @@ private struct GalleryCard: View {
                     .font(.callout.weight(.semibold))
                     .lineLimit(1)
                     .truncationMode(.middle)
-                Text("版本 \(app.displayVersion)")
+                Text(L.t("版本 %@", app.displayVersion))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -181,7 +181,7 @@ private struct GalleryCard: View {
             }
 
             if let lastSeenAt = item.lastSeenAt, item.status == .uninstalled {
-                Text("最后出现于 \(lastSeenAt.formatted(date: .abbreviated, time: .omitted))")
+                Text(L.t("最后出现于 %@", lastSeenAt.formatted(date: .abbreviated, time: .omitted)))
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)

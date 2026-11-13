@@ -136,11 +136,11 @@ struct ComparisonView: View {
             )
         } else if filteredChanges.isEmpty {
             ContentUnavailableView(
-                changes.isEmpty ? "两个快照完全一致" : "没有符合条件的变更",
+                changes.isEmpty ? L.t("两个快照完全一致") : L.t("没有符合条件的变更"),
                 systemImage: changes.isEmpty ? "checkmark.circle" : "line.3.horizontal.decrease.circle",
                 description: Text(changes.isEmpty
-                    ? "应用列表及已记录的元数据均未发生变化。"
-                    : "请调整搜索内容或筛选条件。")
+                    ? L.t("应用列表及已记录的元数据均未发生变化。")
+                    : L.t("请调整搜索内容或筛选条件。"))
             )
         } else {
             List(filteredChanges) { change in
@@ -213,8 +213,8 @@ struct ComparisonView: View {
 
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.plainText]
-        panel.nameFieldStringValue = "Custocub-\(olderSnapshot.name)-\(newerSnapshot.name)-对比.md"
-        panel.message = "导出当前快照对比报告"
+        panel.nameFieldStringValue = "Custocub-\(olderSnapshot.name)-\(newerSnapshot.name)-" + L.t("对比") + ".md"
+        panel.message = L.t("导出当前快照对比报告")
 
         if panel.runModal() == .OK, let url = panel.url {
             do {
@@ -224,7 +224,7 @@ struct ComparisonView: View {
                     changes: changes
                 ).write(to: url, atomically: true, encoding: .utf8)
             } catch {
-                store.errorMessage = "无法导出对比报告：\(error.localizedDescription)"
+                store.errorMessage = L.t("无法导出对比报告：%@", error.localizedDescription)
             }
         }
     }
@@ -238,10 +238,10 @@ private struct SnapshotPicker: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Picker(title, selection: $selection) {
+            Picker(LocalizedStringKey(title), selection: $selection) {
                 ForEach(snapshots) { snapshot in
                     Text("\(snapshot.name) · \(snapshot.createdAt.formatted(date: .abbreviated, time: .shortened))")
                         .tag(Optional(snapshot.id))
@@ -272,7 +272,7 @@ private struct SummaryMetric: View {
                     Text(value, format: .number)
                         .font(.title3.weight(.semibold))
                         .monospacedDigit()
-                    Text(title)
+                    Text(LocalizedStringKey(title))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -363,7 +363,7 @@ private struct MetadataDetails: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(label)
+            Text(LocalizedStringKey(label))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             HStack(spacing: 8) {
@@ -374,14 +374,14 @@ private struct MetadataDetails: View {
                     OwnAppBadge()
                 }
             }
-            Text("版本：\(app.displayVersion)\(app.build.map { " (\($0))" } ?? "")")
-            Text("Bundle ID：\(app.displayBundleIdentifier)")
+            Text(L.t("版本：%@", app.displayVersion + (app.build.map { " (\($0))" } ?? "")))
+            Text(L.t("Bundle ID：%@", app.displayBundleIdentifier))
             if let steamAppID = app.steamAppID {
-                Text("Steam App ID：\(steamAppID)")
+                Text(L.t("Steam App ID：%@", steamAppID))
             }
-            Text("大小：\(app.displaySize)")
-            Text("位置：\(app.path)")
-            Text("安装：\(app.installedAtText)　更新：\(app.updatedAtText)")
+            Text(L.t("大小：%@", app.displaySize))
+            Text(L.t("位置：%@", app.path))
+            Text(L.t("安装：%@　更新：%@", app.installedAtText, app.updatedAtText))
         }
         .font(.callout)
         .textSelection(.enabled)

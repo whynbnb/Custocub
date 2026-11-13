@@ -28,12 +28,12 @@ struct AppRecord: Identifiable, Codable, Hashable, Sendable {
     var isOwn: Bool { isOwnApp == true }
 
     var displayVersion: String {
-        guard let version, !version.isEmpty else { return "未知" }
+        guard let version, !version.isEmpty else { return L.t("未知") }
         return version
     }
 
     var displayBundleIdentifier: String {
-        guard let bundleIdentifier, !bundleIdentifier.isEmpty else { return "无 Bundle ID" }
+        guard let bundleIdentifier, !bundleIdentifier.isEmpty else { return L.t("无 Bundle ID") }
         return bundleIdentifier
     }
 
@@ -45,7 +45,7 @@ struct AppRecord: Identifiable, Codable, Hashable, Sendable {
         if let steamAppID {
             return "Steam App ID \(steamAppID)"
         }
-        return "无 Bundle ID"
+        return L.t("无 Bundle ID")
     }
 
     var platform: AppPlatform {
@@ -62,17 +62,17 @@ struct AppRecord: Identifiable, Codable, Hashable, Sendable {
     }
 
     var architectureText: String {
-        if architectures.isEmpty { return "未知" }
+        if architectures.isEmpty { return L.t("未知") }
         return architectures.joined(separator: " + ")
     }
 
     var displaySize: String {
-        guard let sizeInBytes else { return "计算中…" }
+        guard let sizeInBytes else { return L.t("计算中…") }
         return sizeInBytes.formatted(.byteCount(style: .file))
     }
 
     var typeTitle: String {
-        isSystemApp ? "系统" : "第三方"
+        isSystemApp ? L.t("系统") : L.t("第三方")
     }
 
     /// 用于跨快照识别同一应用。Bundle ID 更稳定，缺失时退回安装路径。
@@ -86,11 +86,11 @@ struct AppRecord: Identifiable, Codable, Hashable, Sendable {
     }
 
     var installedAtText: String {
-        installedAt?.formatted(date: .abbreviated, time: .shortened) ?? "未知"
+        installedAt?.formatted(date: .abbreviated, time: .shortened) ?? L.t("未知")
     }
 
     var updatedAtText: String {
-        updatedAt?.formatted(date: .abbreviated, time: .shortened) ?? "未知"
+        updatedAt?.formatted(date: .abbreviated, time: .shortened) ?? L.t("未知")
     }
 
     var lastSeenAtText: String {
@@ -100,7 +100,7 @@ struct AppRecord: Identifiable, Codable, Hashable, Sendable {
     private static let listDateStyle = Date.FormatStyle(date: .abbreviated, time: .omitted)
 
     var updatedAtListText: String {
-        updatedAt?.formatted(Self.listDateStyle) ?? "未知"
+        updatedAt?.formatted(Self.listDateStyle) ?? L.t("未知")
     }
 
     // 供 Table 排序使用的非可选键。

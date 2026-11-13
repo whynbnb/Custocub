@@ -18,11 +18,11 @@ struct InstalledAppsView: View {
             AppTable(
                 apps: store.apps,
                 emptyMessage: isOwnMode
-                    ? "没有匹配个人应用前缀的应用"
-                    : (store.hasScanned ? "没有发现应用" : "尚未扫描。点击工具栏的「扫描应用」开始。")
+                    ? L.t("没有匹配个人应用前缀的应用")
+                    : (store.hasScanned ? L.t("没有发现应用") : L.t("尚未扫描。点击工具栏的「扫描应用」开始。"))
             )
         }
-        .navigationTitle(isOwnMode ? "开发者的应用" : "已安装应用")
+        .navigationTitle(isOwnMode ? L.t("开发者的应用") : L.t("已安装应用"))
     }
 }
 
@@ -36,7 +36,7 @@ struct SnapshotAppsView: View {
             Divider()
             FilterBar()
             Divider()
-            AppTable(apps: snapshot.apps, emptyMessage: "这个快照中没有符合条件的应用")
+            AppTable(apps: snapshot.apps, emptyMessage: L.t("这个快照中没有符合条件的应用"))
         }
         .navigationTitle(snapshot.name)
     }
@@ -90,7 +90,7 @@ private struct OwnAppsHeader: View {
 
     private var prefix: String {
         let raw = UserDefaults.standard.string(forKey: "developerBundlePrefix") ?? "me.whynbnb."
-        return raw.isEmpty ? "未设置" : raw
+        return raw.isEmpty ? L.t("未设置") : raw
     }
 
     var body: some View {
@@ -102,11 +102,11 @@ private struct OwnAppsHeader: View {
                     Image(systemName: "info.circle")
                         .font(.callout)
                         .foregroundStyle(.secondary)
-                        .help("Bundle ID 前缀：\(prefix)")
+                        .help(Text(L.t("Bundle ID 前缀：%@", prefix)))
                         .accessibilityLabel("开发者应用说明")
                 }
                 Spacer()
-                Text("\(store.ownAppCount) 个应用")
+                Text(L.t("%d 个应用", store.ownAppCount))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -177,7 +177,7 @@ private struct SnapshotHeaderView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
-                .help(isEditingName ? "完成重命名" : "重命名快照")
+                .help(Text(L.t(isEditingName ? "完成重命名" : "重命名快照")))
 
                 Spacer()
 
@@ -277,7 +277,7 @@ struct MetricChip: View {
             Text(value)
                 .fontWeight(.semibold)
                 .monospacedDigit()
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .foregroundStyle(.secondary)
         }
         .font(.caption)
@@ -353,7 +353,7 @@ private struct AppTable: View {
             TableColumn("类型") { app in
                 TypeBadge(isSystem: app.isSystemApp)
             }
-            .width(min: 50, ideal: 70, max: 100)
+            .width(min: 80, ideal: 96, max: 130)
 
             TableColumn("大小", value: \.sizeSortValue) { app in
                 Text(app.displaySize)

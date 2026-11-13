@@ -141,7 +141,7 @@ private struct SidebarRow: View {
                 .frame(width: 18)
                 .fixedSize()
                 .foregroundStyle(isSelected ? Color.white : tint)
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .foregroundStyle(isSelected ? Color.white : Color.primary)
@@ -175,7 +175,7 @@ private struct SnapshotSidebarRow: View {
             HStack(spacing: 5) {
                 Text(snapshot.createdAt, format: .dateTime.month().day().hour().minute())
                 Text("·")
-                Text("\(snapshot.appCount) 个")
+                Text(L.t("%d 个", snapshot.appCount))
             }
             .font(.caption)
             .foregroundStyle(.secondary)

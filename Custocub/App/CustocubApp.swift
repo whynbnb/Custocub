@@ -110,7 +110,7 @@ enum AboutPanel {
             result.append(NSAttributedString(string: "\n\n", attributes: base))
         }
 
-        appendLink(title: "开源地址", url: repositoryURL, showsURL: true)
+        appendLink(title: L.t("开源地址"), url: repositoryURL, showsURL: true)
         appendLink(title: "MIT License", url: licenseURL, showsURL: false)
         result.append(NSAttributedString(string: "© 2026 0x574859", attributes: base))
 
@@ -122,6 +122,8 @@ enum AboutPanel {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillFinishLaunching(_ notification: Notification) {
         NSApplication.shared.setActivationPolicy(.regular)
+        AppLanguage.applyStoredPreference()
+        AppAppearance.applyStoredPreference()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
