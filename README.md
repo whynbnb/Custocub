@@ -67,6 +67,14 @@ Developer apps are identified by the fixed Bundle ID prefix `me.whynbnb.`.
 - Selecting the Developer Apps filter still shows every app that matches the Bundle ID prefix, including apps from other sources.
 - It does **not** overwrite the real installation source; source badges and snapshot data stay accurate.
 
+### Manager nodes (Steam and JetBrains Toolbox)
+
+The Steam client and the JetBrains Toolbox client are added to their own source categories as manager nodes:
+
+- The Steam app appears in the **Steam** category, and the JetBrains Toolbox app appears in the **JetBrains Toolbox** category.
+- They are marked with a **Manager** badge and are not counted again in that category.
+- They remain counted under their real source, such as Manual Install or Homebrew, so source totals do not change and still add up.
+
 ### Architecture and app type
 
 Custocub reads the main executable's Mach-O header directly, without calling `lipo`:

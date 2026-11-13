@@ -27,6 +27,16 @@ struct AppRecord: Identifiable, Codable, Hashable, Sendable {
 
     var isOwn: Bool { isOwnApp == true }
 
+    /// 来源管理器本身（Steam 客户端、JetBrains Toolbox 客户端）。
+    /// 浏览对应来源时，它们会作为不计数的管理工具额外显示。
+    var managerSource: AppSource? {
+        switch bundleIdentifier?.lowercased() {
+        case "com.valvesoftware.steam": .steam
+        case "com.jetbrains.toolbox": .jetbrainsToolbox
+        default: nil
+        }
+    }
+
     var displayVersion: String {
         guard let version, !version.isEmpty else { return L.t("未知") }
         return version

@@ -174,6 +174,9 @@ struct AppDetailView: View {
                     SourceBadge(source: app.source)
                     PlatformBadge(platform: app.platform)
                     TypeBadge(isSystem: app.isSystemApp)
+                    if store.isManagerNode(app) {
+                        ManagerBadge()
+                    }
                     if app.isOwn {
                         OwnAppBadge()
                     }

@@ -67,6 +67,14 @@ Steam 和 JetBrains Toolbox 使用它们自己生成的元数据/路径进行判
 - 点击「开发者的应用」筛选时，仍会显示所有匹配该 Bundle ID 前缀的应用，包括来自其他来源的应用
 - 不会覆盖真实的安装来源，来源徽章和快照数据仍然保持准确
 
+### 管理工具节点（Steam 与 JetBrains Toolbox）
+
+Steam 客户端和 JetBrains Toolbox 客户端会作为管理工具加入各自的来源分类：
+
+- Steam 应用出现在 **Steam** 分类中，JetBrains Toolbox 应用出现在 **JetBrains Toolbox** 分类中
+- 它们带有「管理工具」标记，且不会在该分类中重复计数
+- 它们仍按真实来源（如手动安装、Homebrew）计数，因此来源总数不变，并且仍然相加相等
+
 ### 平台与类型
 
 直接读取主可执行文件的 Mach-O 头，不调用 `lipo` 子进程：

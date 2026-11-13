@@ -320,8 +320,13 @@ private struct AppTable: View {
                 HStack(spacing: 9) {
                     AppIconView(app: app, size: 30)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(app.name)
-                            .lineLimit(1)
+                        HStack(spacing: 6) {
+                            Text(app.name)
+                                .lineLimit(1)
+                            if store.isManagerNode(app) {
+                                ManagerBadge()
+                            }
+                        }
                         Text(app.listSubtitle)
                             .font(.caption)
                             .foregroundStyle(.secondary)

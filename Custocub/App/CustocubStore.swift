@@ -84,7 +84,7 @@ final class CustocubStore: ObservableObject {
     private let liveSnapshotID = UUID()
     private var cachedSidebar: SidebarCache?
 
-    private static let sidebarCacheKey = "sidebarCache.v1"
+    private static let sidebarCacheKey = "sidebarCache.v2"
 
     init(
         repository: SnapshotRepository = SnapshotRepository(),
@@ -127,6 +127,12 @@ final class CustocubStore: ObservableObject {
             return cachedSidebar.ownManualCount ?? cachedSidebar.ownAppCount
         }
         return apps.count { $0.isOwn && $0.source == .manual }
+    }
+
+    /// 当前浏览的来源分类中，某个应用是否是额外插入的管理工具节点。
+    func isManagerNode(_ app: AppRecord) -> Bool {
+        guard let managerSource = app.managerSource else { return false }
+        return sourceFilter == managerSource && app.source != managerSource
     }
 
     /// 侧边栏「展示框」计数；扫描前使用缓存值。
@@ -285,6 +291,7 @@ final class CustocubStore: ObservableObject {
         return input.filter { app in
             let matchesSource = sourceFilter == nil
                 || (app.source == sourceFilter && !(sourceFilter == .manual && app.isOwn))
+                || (sourceFilter == app.managerSource && app.source != sourceFilter)
             let matchesPlatform = platformFilter == nil || app.platform == platformFilter
             let matchesType = typeFilter.matches(app)
             let matchesOwn = activeSelection != .own || app.isOwn
@@ -305,6 +312,7 @@ final class CustocubStore: ObservableObject {
             let matchesStatus = galleryStatusFilter == nil || item.status == galleryStatusFilter
             let matchesSource = sourceFilter == nil
                 || (item.app.source == sourceFilter && !(sourceFilter == .manual && item.app.isOwn))
+                || (sourceFilter == item.app.managerSource && item.app.source != sourceFilter)
             let matchesPlatform = platformFilter == nil || item.app.platform == platformFilter
             let matchesType = typeFilter.matches(item.app)
             let matchesSearch = query.isEmpty

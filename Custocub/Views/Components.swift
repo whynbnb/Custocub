@@ -120,6 +120,19 @@ struct GalleryStatusBadge: View {
     }
 }
 
+struct ManagerBadge: View {
+    var body: some View {
+        Text(L.t("管理工具"))
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 5)
+            .frame(height: 17)
+            .background(Color.secondary.opacity(0.12), in: Capsule())
+            .fixedSize()
+            .help(Text(L.t("该应用是此来源的管理工具，显示在该分类中，但不重复计数。")))
+    }
+}
+
 struct OwnAppBadge: View {
     var body: some View {
         Label("开发者的应用", systemImage: "chevron.left.forwardslash.chevron.right")

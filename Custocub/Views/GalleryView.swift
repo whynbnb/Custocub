@@ -34,7 +34,8 @@ struct GalleryView: View {
                                 ForEach(items) { item in
                                     GalleryCard(
                                         item: item,
-                                        isSelected: store.selectedAppID == item.app.id
+                                        isSelected: store.selectedAppID == item.app.id,
+                                        isManager: store.isManagerNode(item.app)
                                     )
                                     .onTapGesture {
                                         store.selectedAppID = item.app.id
@@ -142,6 +143,7 @@ struct GalleryView: View {
 private struct GalleryCard: View {
     let item: GalleryItem
     let isSelected: Bool
+    var isManager = false
 
     private var app: AppRecord { item.app }
 
@@ -149,6 +151,9 @@ private struct GalleryCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 GalleryStatusBadge(status: item.status)
+                if isManager {
+                    ManagerBadge()
+                }
                 Spacer(minLength: 0)
                 PlatformBadge(platform: app.platform)
             }
