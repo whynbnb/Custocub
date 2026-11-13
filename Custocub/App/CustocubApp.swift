@@ -42,6 +42,12 @@ struct CustocubCommands: Commands {
             .disabled(store.isScanning || store.isSavingSnapshot || !store.hasScanned || store.apps.isEmpty)
         }
 
+        CommandGroup(replacing: .appInfo) {
+            Button("关于 Custocub") {
+                AboutPanel.show()
+            }
+        }
+
         CommandGroup(after: .newItem) {
             Divider()
 
@@ -56,13 +62,59 @@ struct CustocubCommands: Commands {
             .keyboardShortcut("e", modifiers: [.command, .shift])
             .disabled(store.selectedSnapshot == nil)
         }
+    }
+}
 
-        CommandGroup(replacing: .appSettings) {
-            SettingsLink {
-                Label("设置…", systemImage: "gearshape")
+/// 自定义「关于」面板：展示版本、开源仓库和许可证链接。
+@MainActor
+enum AboutPanel {
+    private static let repositoryURL = URL(string: "https://github.com/whynbnb/Custocub")!
+    private static let licenseURL = URL(string: "https://github.com/whynbnb/Custocub/blob/main/LICENSE")!
+
+    static func show() {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+            ?? "1.0"
+
+        NSApplication.shared.orderFrontStandardAboutPanel(options: [
+            .applicationName: "Custocub",
+            .applicationVersion: version,
+            .credits: credits()
+        ])
+        NSApplication.shared.activate(ignoringOtherApps: true)
+    }
+
+    private static func credits() -> NSAttributedString {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
+        paragraph.lineSpacing = 3
+
+        let base: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 11),
+            .foregroundColor: NSColor.secondaryLabelColor,
+            .paragraphStyle: paragraph
+        ]
+
+        let result = NSMutableAttributedString()
+
+        func appendLink(title: String, url: URL, showsURL: Bool) {
+            var linkAttributes = base
+            linkAttributes[.link] = url
+            linkAttributes[.foregroundColor] = NSColor.linkColor
+
+            if showsURL {
+                result.append(NSAttributedString(string: title + "\n", attributes: base))
+                result.append(NSAttributedString(string: url.absoluteString, attributes: linkAttributes))
+            } else {
+                result.append(NSAttributedString(string: title, attributes: linkAttributes))
             }
-            .keyboardShortcut(",", modifiers: [.command])
+            result.append(NSAttributedString(string: "\n\n", attributes: base))
         }
+
+        appendLink(title: "开源地址", url: repositoryURL, showsURL: true)
+        appendLink(title: "MIT License", url: licenseURL, showsURL: false)
+        result.append(NSAttributedString(string: "© 2026 0x574859", attributes: base))
+
+        return result
     }
 }
 
