@@ -132,6 +132,16 @@ If you edit `project.yml`, regenerate the project:
 xcodegen generate
 ```
 
+### Regenerating the app icon
+
+The icon is drawn entirely in code. To regenerate all macOS icon sizes:
+
+```bash
+swift Tools/GenerateAppIcon.swift
+```
+
+This writes the full set of AppIcon PNGs into `Custocub/Resources/Assets.xcassets/AppIcon.appiconset`.
+
 Project settings:
 
 - Marketing version: `1.0`

@@ -132,6 +132,16 @@ xcodebuild -project Custocub.xcodeproj \
 xcodegen generate
 ```
 
+### 重新生成应用图标
+
+图标完全由代码绘制。重新生成全部 macOS 尺寸：
+
+```bash
+swift Tools/GenerateAppIcon.swift
+```
+
+脚本会把完整的 AppIcon PNG 写入 `Custocub/Resources/Assets.xcassets/AppIcon.appiconset`。
+
 工程设置：
 
 - Marketing Version：`1.0`
