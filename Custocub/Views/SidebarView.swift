@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SidebarView: View {
     @EnvironmentObject private var store: CustocubStore
+    @AppStorage("showDeveloperApps") private var showDeveloperApps = true
 
     private static let sourceOrder: [AppSource] = [
         .homebrew,
@@ -25,7 +26,7 @@ struct SidebarView: View {
                 )
                 .tag(SidebarSelection.installed)
 
-                if store.ownAppCount > 2 {
+                if showDeveloperApps && store.ownAppCount > 2 {
                     SidebarRow(
                         title: "开发者的应用",
                         symbol: "chevron.left.forwardslash.chevron.right",
@@ -121,6 +122,12 @@ struct SidebarView: View {
         .onChange(of: store.sidebarSelection) {
             store.selectedAppID = nil
             store.syncSourceFilterForSelection()
+        }
+        .onChange(of: showDeveloperApps) { _, isVisible in
+            if !isVisible && store.activeSelection == .own {
+                store.sidebarSelection = .installed
+                store.selectedAppID = nil
+            }
         }
     }
 }

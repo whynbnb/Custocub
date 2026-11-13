@@ -89,8 +89,7 @@ private struct OwnAppsHeader: View {
     @EnvironmentObject private var store: CustocubStore
 
     private var prefix: String {
-        let raw = UserDefaults.standard.string(forKey: "developerBundlePrefix") ?? "me.whynbnb."
-        return raw.isEmpty ? L.t("未设置") : raw
+        AppConstants.developerBundlePrefix
     }
 
     var body: some View {

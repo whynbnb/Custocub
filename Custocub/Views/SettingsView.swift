@@ -7,7 +7,7 @@ struct SettingsView: View {
     @AppStorage("autoScanOnLaunch") private var autoScanOnLaunch = true
     @AppStorage("refreshOnActivate") private var refreshOnActivate = true
     @AppStorage("computeSizes") private var computeSizes = true
-    @AppStorage("developerBundlePrefix") private var developerBundlePrefix = "me.whynbnb."
+    @AppStorage("showDeveloperApps") private var showDeveloperApps = true
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.system.rawValue
     @AppStorage("appearanceMode") private var appearanceMode = AppAppearance.system.rawValue
 
@@ -42,9 +42,13 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section("个人应用") {
-                TextField("Bundle ID 前缀", text: $developerBundlePrefix)
-                Text("Bundle ID 匹配此前缀的应用会归入「开发者的应用」。匹配数量大于 2 时才会在侧边栏显示该分类；留空可关闭。修改后请重新扫描。")
+            Section("开发者的应用") {
+                Toggle("显示开发者的应用", isOn: $showDeveloperApps)
+
+                LabeledContent("Bundle ID 前缀", value: AppConstants.developerBundlePrefix)
+                    .textSelection(.enabled)
+
+                Text("Bundle ID 以 me.whynbnb. 开头的应用会归入「开发者的应用」。匹配数量大于 2 时才会在侧边栏显示该分类。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

@@ -14,7 +14,7 @@ struct AppScanner: Sendable {
         let brewIndex = HomebrewIndex.build()
         let steamIndex = SteamLibraryIndex.build()
         let toolboxIndex = JetBrainsToolboxIndex.build()
-        let ownBundlePrefix = developerBundlePrefix()
+        let ownBundlePrefix: String? = AppConstants.developerBundlePrefix
         let discovered = discoverApplications()
         let now = Date()
 
@@ -414,13 +414,6 @@ struct AppScanner: Sendable {
         path.hasPrefix("/System/")
             || path.hasPrefix("/Library/Apple/")
             || path.hasPrefix("/System/Cryptexes/")
-    }
-
-    /// 个人应用使用可配置的 Bundle ID 前缀；默认针对 me.whynbnb.*。
-    private static func developerBundlePrefix() -> String? {
-        let raw = UserDefaults.standard.string(forKey: "developerBundlePrefix") ?? "me.whynbnb."
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return trimmed.isEmpty ? nil : trimmed
     }
 
     private static func stringValue(_ value: Any?) -> String? {

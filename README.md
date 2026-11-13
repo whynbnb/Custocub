@@ -19,7 +19,7 @@ Custocub is a native macOS app inventory and snapshot manager built with Swift 6
 - **Fast metadata scan** — usually around one second; app sizes are calculated in the background.
 - **Accurate source detection** — System, App Store, App Store · iOS, Homebrew, Steam, JetBrains Toolbox, and manual installs.
 - **Clear app types** — system vs. third-party, with `arm64` / `x86_64` / universal architecture detection.
-- **Developer apps smart group** — configurable Bundle ID prefix, shown only when more than two apps match.
+- **Developer apps smart group** — fixed `me.whynbnb.` Bundle ID prefix, with a show/hide toggle; shown only when more than two apps match.
 - **Snapshots and comparison** — keep historical inventories, compare changes, export or import snapshots, and generate Markdown reports.
 - **Gallery** — browse installed apps and apps that have been uninstalled but still exist in historical snapshots.
 - **Native macOS experience** — native table virtualization, scrollbars, resizable columns, and system selection behavior.
@@ -58,8 +58,9 @@ Steam and JetBrains Toolbox detection use their own generated metadata/paths rat
 
 ### Developer apps
 
-Set a personal Bundle ID prefix in Settings. The default is `me.whynbnb.`.
+Developer apps are identified by the fixed Bundle ID prefix `me.whynbnb.`.
 
+- A **Show Developer Apps** toggle in Settings controls the category; it is on by default.
 - Matching apps appear in the **Developer Apps** sidebar category.
 - The category is only shown when more than two apps match.
 - It does **not** overwrite the real installation source; source badges and snapshot data stay accurate.

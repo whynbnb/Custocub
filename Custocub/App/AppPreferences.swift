@@ -1,6 +1,12 @@
 import AppKit
 import SwiftUI
 
+/// 固定配置。
+enum AppConstants {
+    /// 开发者的应用使用的 Bundle ID 前缀，固定不可修改。
+    static let developerBundlePrefix = "me.whynbnb."
+}
+
 /// 应用语言。`.system` 跟随 macOS 的语言设置。
 enum AppLanguage: String, CaseIterable, Identifiable {
     case system
