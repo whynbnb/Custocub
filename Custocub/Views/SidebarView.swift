@@ -26,17 +26,6 @@ struct SidebarView: View {
                 )
                 .tag(SidebarSelection.installed)
 
-                if showDeveloperApps && store.ownAppCount > 2 {
-                    SidebarRow(
-                        title: "开发者的应用",
-                        symbol: "chevron.left.forwardslash.chevron.right",
-                        count: store.ownAppCount,
-                        tint: .purple,
-                        isSelected: store.sidebarSelection == .own
-                    )
-                    .tag(SidebarSelection.own)
-                }
-
                 SidebarRow(
                     title: "展示框",
                     symbol: "rectangle.grid.2x2.fill",
@@ -45,6 +34,7 @@ struct SidebarView: View {
                     isSelected: store.sidebarSelection == .gallery
                 )
                 .tag(SidebarSelection.gallery)
+
             }
 
             Section("来源") {
@@ -58,6 +48,18 @@ struct SidebarView: View {
                 .tag(SidebarSelection.source(nil))
 
                 ForEach(Self.sourceOrder, id: \.self) { source in
+                    if source == .system, showDeveloperApps, store.ownAppCount > 2 {
+                        SidebarRow(
+                            title: "开发者的应用",
+                            symbol: "chevron.left.forwardslash.chevron.right",
+                            count: store.ownManualCount,
+                            tint: .purple,
+                            isSelected: store.sidebarSelection == .own
+                        )
+                        .tag(SidebarSelection.own)
+                        .help(Text(L.t("开发者的应用筛选说明")))
+                    }
+
                     if store.sourceCounts[source, default: 0] > 0 {
                         SidebarRow(
                             title: source.title,

@@ -44,6 +44,7 @@ struct SelectedAppContext {
 private struct SidebarCache: Codable {
     var installedCount: Int
     var ownAppCount: Int
+    var ownManualCount: Int?
     var galleryCount: Int
     var uninstalledCount: Int
     var sourceCounts: [String: Int]
@@ -119,6 +120,15 @@ final class CustocubStore: ObservableObject {
         return apps.count { $0.isOwn }
     }
 
+    /// 开发者的应用计入来源统计的数量：只统计仍然属于「手动安装」的项，
+    /// Homebrew、App Store 等真实来源优先，避免重复计数。
+    var ownManualCount: Int {
+        if usesCachedSidebar, let cachedSidebar {
+            return cachedSidebar.ownManualCount ?? cachedSidebar.ownAppCount
+        }
+        return apps.count { $0.isOwn && $0.source == .manual }
+    }
+
     /// 侧边栏「展示框」计数；扫描前使用缓存值。
     var sidebarGalleryCount: Int {
         if usesCachedSidebar, let cachedSidebar { return cachedSidebar.galleryCount }
@@ -146,7 +156,10 @@ final class CustocubStore: ObservableObject {
             }
             return counts
         }
-        return Dictionary(grouping: apps, by: \.source).mapValues(\.count)
+        var counts = Dictionary(grouping: apps, by: \.source).mapValues(\.count)
+        // 开发者的应用从「手动安装」中分离，单独归入「开发者的应用」。
+        counts[.manual] = apps.count { $0.source == .manual && !$0.isOwn }
+        return counts
     }
 
     var totalSize: Int64 {
@@ -270,7 +283,8 @@ final class CustocubStore: ObservableObject {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return input.filter { app in
-            let matchesSource = sourceFilter == nil || app.source == sourceFilter
+            let matchesSource = sourceFilter == nil
+                || (app.source == sourceFilter && !(sourceFilter == .manual && app.isOwn))
             let matchesPlatform = platformFilter == nil || app.platform == platformFilter
             let matchesType = typeFilter.matches(app)
             let matchesOwn = activeSelection != .own || app.isOwn
@@ -289,7 +303,8 @@ final class CustocubStore: ObservableObject {
 
         return input.filter { item in
             let matchesStatus = galleryStatusFilter == nil || item.status == galleryStatusFilter
-            let matchesSource = sourceFilter == nil || item.app.source == sourceFilter
+            let matchesSource = sourceFilter == nil
+                || (item.app.source == sourceFilter && !(sourceFilter == .manual && item.app.isOwn))
             let matchesPlatform = platformFilter == nil || item.app.platform == platformFilter
             let matchesType = typeFilter.matches(item.app)
             let matchesSearch = query.isEmpty
@@ -345,10 +360,11 @@ final class CustocubStore: ObservableObject {
         let cache = SidebarCache(
             installedCount: apps.count,
             ownAppCount: apps.count { $0.isOwn },
+            ownManualCount: apps.count { $0.isOwn && $0.source == .manual },
             galleryCount: gallery.count,
             uninstalledCount: gallery.count { $0.status == .uninstalled },
-            sourceCounts: Dictionary(uniqueKeysWithValues: Dictionary(grouping: apps, by: \.source)
-                .map { ($0.key.rawValue, $0.value.count) }),
+            sourceCounts: Dictionary(uniqueKeysWithValues: sourceCounts
+                .map { ($0.key.rawValue, $0.value) }),
             lastScanAt: lastScanAt
         )
 

@@ -235,3 +235,4 @@
 "重新扫描这台 Mac 上的应用" = "Rescan apps on this Mac";
 "显示开发者的应用" = "Show Developer Apps";
 "Bundle ID 以 me.whynbnb. 开头的应用会归入「开发者的应用」。匹配数量大于 2 时才会在侧边栏显示该分类。" = "Apps whose Bundle ID starts with me.whynbnb. appear under Developer Apps. The category is shown in the sidebar only when more than two apps match.";
+"开发者的应用筛选说明" = "Filters by Bundle ID prefix. Real sources such as Homebrew, the App Store, and Steam take priority in source counts.";

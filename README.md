@@ -61,8 +61,10 @@ Steam and JetBrains Toolbox detection use their own generated metadata/paths rat
 Developer apps are identified by the fixed Bundle ID prefix `me.whynbnb.`.
 
 - A **Show Developer Apps** toggle in Settings controls the category; it is on by default.
-- Matching apps appear in the **Developer Apps** sidebar category.
+- The **Developer Apps** row appears in the Sources section, next to Homebrew, Steam, and the other sources.
 - The category is only shown when more than two apps match.
+- Real sources take priority in the counts: Homebrew, the App Store, Steam, and others keep their apps. Only manually installed developer apps are counted in the Developer Apps row, so source totals are not double-counted.
+- Selecting the Developer Apps filter still shows every app that matches the Bundle ID prefix, including apps from other sources.
 - It does **not** overwrite the real installation source; source badges and snapshot data stay accurate.
 
 ### Architecture and app type

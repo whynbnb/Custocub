@@ -183,7 +183,8 @@ struct ComparisonView: View {
 
         return changes.filter { change in
             let matchesKind = kindFilter == nil || change.kind == kindFilter
-            let matchesSource = sourceFilter == nil || change.app.source == sourceFilter
+            let matchesSource = sourceFilter == nil
+                || (change.app.source == sourceFilter && !(sourceFilter == .manual && change.app.isOwn))
             let searchable = [
                 change.app.name,
                 change.app.bundleIdentifier ?? "",
