@@ -26,6 +26,7 @@ enum BrewSection: String, CaseIterable, Identifiable {
     case packages
     case snapshots
     case cleanup
+    case health
 
     var id: String { rawValue }
 
@@ -34,6 +35,7 @@ enum BrewSection: String, CaseIterable, Identifiable {
         case .packages: L.t("包")
         case .snapshots: L.t("快照")
         case .cleanup: L.t("清理")
+        case .health: L.t("配置与诊断")
         }
     }
 
@@ -42,6 +44,7 @@ enum BrewSection: String, CaseIterable, Identifiable {
         case .packages: "shippingbox"
         case .snapshots: "camera"
         case .cleanup: "trash"
+        case .health: "stethoscope"
         }
     }
 }
@@ -80,6 +83,13 @@ final class BrewStore: ObservableObject {
     @Published private(set) var lastCleanupAnalyzedAt: Date?
     /// 上次清理释放的空间，用于在界面上反馈结果。
     @Published private(set) var lastCleanupFreedBytes: Int64?
+
+    /// `brew config` 的解析结果。
+    @Published private(set) var configInfo: BrewConfigInfo?
+    @Published private(set) var isLoadingConfig = false
+    /// `brew doctor` 的诊断结果。
+    @Published private(set) var doctorReport: BrewDoctorReport?
+    @Published private(set) var isRunningDoctor = false
 
     @Published var searchText = ""
     @Published var kindFilter: BrewPackageKind?
@@ -696,12 +706,52 @@ final class BrewStore: ObservableObject {
         await runCommand(["cleanup", "--prune-prefix"], title: L.t("修复安装前缀链接"), refreshAfter: false)
     }
 
-    func doctor() async {
-        _ = await runCommand(["doctor"], title: L.t("检查 Homebrew 环境"), refreshAfter: false)
+    // MARK: - 配置与诊断
+
+    /// 读取 `brew config`。
+    func loadConfig(force: Bool = false) async {
+        guard isAvailable, !isLoadingConfig else { return }
+        if !force, configInfo != nil { return }
+
+        isLoadingConfig = true
+        defer { isLoadingConfig = false }
+
+        configInfo = await BrewHealthService.loadConfig()
     }
 
-    func showConfig() async {
-        _ = await runCommand(["config"], title: L.t("查看 Homebrew 配置"), refreshAfter: false)
+    /// 运行 `brew doctor` 并把结果结构化展示；同时写入命令日志。
+    func runDoctor(force: Bool = false) async {
+        guard isAvailable, !isRunningDoctor else { return }
+        if !force, doctorReport != nil { return }
+
+        isRunningDoctor = true
+        defer { isRunningDoctor = false }
+
+        logEntries.append(BrewLogEntry(level: .command, text: "$ brew doctor --json"))
+        let started = Date()
+
+        let report = await BrewHealthService.loadDoctor()
+        doctorReport = report
+
+        let duration = Date().timeIntervalSince(started)
+        if let report {
+            if report.isHealthy {
+                logEntries.append(BrewLogEntry(
+                    level: .success,
+                    text: L.t("未发现问题（%.1f 秒）", duration)
+                ))
+            } else {
+                logEntries.append(BrewLogEntry(
+                    level: .failure,
+                    text: L.t("发现 %d 个问题（%.1f 秒）", report.findings.count, duration)
+                ))
+            }
+        } else {
+            logEntries.append(BrewLogEntry(
+                level: .failure,
+                text: L.t("无法读取 brew doctor 输出（%.1f 秒）", duration)
+            ))
+        }
     }
 
     func showOutdated() async {

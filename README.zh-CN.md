@@ -129,6 +129,15 @@ Custocub 执行的每条命令都会实时写入日志：
 - Homebrew 界面底部可折叠的日志面板，以及带历史记录的独立日志窗口
 - 可以停止正在执行的命令：先发送 `SIGINT`，如果 Homebrew 未退出再依次发送 `SIGTERM` / `SIGKILL`
 
+**配置与诊断**
+
+单独的 **配置与诊断** 标签页整合了两项只读检查：
+
+- `brew config` — 按分组解析展示（版本、Tap、路径、工具链、系统、环境变量），支持筛选，并保留原始输出与复制按钮
+- `brew doctor` — 通过 `--json` 获取结构化结果（旧版 Homebrew 自动回退到文本解析）。按错误 / 警告 / 提示分级展示，附受影响的包、修复说明、可复制的修复命令和链接，同样可以查看原始输出
+
+诊断过程不会修改任何内容，只做报告。
+
 **清理**
 
 新增独立的 **清理** 页，先分析再执行 Homebrew 的真实清理命令。分析阶段只用只读命令（`-n` 试运行 + 目录统计），在你点击执行前不会改动任何文件。
@@ -312,6 +321,7 @@ Custocub/
 │  ├─ BrewPackageDetailView.swift # Formula / Cask 详情与命令
 │  ├─ BrewConsoleView.swift      # 实时命令日志与历史
 │  ├─ BrewCleanupView.swift      # 清理分析与操作
+│  ├─ BrewHealthView.swift       # 配置与诊断
 │  ├─ Components.swift
 │  └─ FileActions.swift
 └─ Resources/Assets.xcassets

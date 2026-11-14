@@ -129,6 +129,15 @@ Every command Custocub runs is streamed into a live log:
 - A collapsible panel at the bottom of the Homebrew screen, plus a standalone log window with the recent command history.
 - Running commands can be cancelled: `SIGINT` first, then `SIGTERM`/`SIGKILL` if Homebrew does not exit.
 
+**Configuration & diagnostics**
+
+A single **Configuration & Diagnostics** tab combines two read-only inspections:
+
+- `brew config` — parsed into grouped sections (version, taps, paths, toolchain, system, environment) with a filter box, plus the raw output and a copy button.
+- `brew doctor` — runs with `--json` to get structured findings (falls back to parsing plain text on older Homebrew). Findings are shown by severity (error / warning / note) with affected packages, remediation text, copyable fix commands, and links. A raw-output view is available too.
+
+Diagnostics never modify anything; they only report.
+
 **Cleanup**
 
 A dedicated **Cleanup** tab analyzes and then runs Homebrew's real cleanup commands. Analysis uses read-only commands only (`-n` dry runs plus directory sizing), so nothing is changed until you press Run.
@@ -300,7 +309,8 @@ Custocub/
 │  ├─ SnapshotRepository.swift   # Snapshot persistence
 │  ├─ BrewService.swift          # brew discovery, streaming execution, JSON inventory
 │  ├─ BrewSnapshotRepository.swift # Homebrew snapshot persistence
-│  └─ BrewCleanupService.swift   # Cleanup analysis: cache, old kegs, autoremove
+│  ├─ BrewCleanupService.swift   # Cleanup analysis: cache, old kegs, autoremove
+│  └─ BrewHealthService.swift    # brew config / doctor parsing
 ├─ Views/
 │  ├─ ContentView.swift
 │  ├─ SidebarView.swift
@@ -314,6 +324,7 @@ Custocub/
 │  ├─ BrewPackageDetailView.swift # Formula/cask detail and commands
 │  ├─ BrewConsoleView.swift      # Live command log and history
 │  ├─ BrewCleanupView.swift      # Cleanup analysis and actions
+│  ├─ BrewHealthView.swift       # Configuration & diagnostics
 │  ├─ Components.swift
 │  └─ FileActions.swift
 └─ Resources/Assets.xcassets

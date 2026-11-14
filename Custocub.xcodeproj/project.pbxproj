@@ -21,6 +21,7 @@
 		437FCBFA0EF068A8963F7369 /* AppSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A293578D0B15FED3D90C8AF /* AppSource.swift */; };
 		4C715978C469DC4F64F992A3 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86425FAA55B6F39A88733024 /* SettingsView.swift */; };
 		4F20E55E01B58C48BB7E0B2A /* BrewPackageDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB6F06018DA64177CED1CEF6 /* BrewPackageDetailView.swift */; };
+		4FC9286F65C0499B07339FF2 /* BrewHealthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95D91761B3E4301577B446AE /* BrewHealthService.swift */; };
 		52EEA5C8D0B8C636C61C9132 /* BrewStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 289C498D0E1051A0658A43D6 /* BrewStore.swift */; };
 		5D61423B0768E2F287CEBB77 /* GalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E494F2C5DBAFFD55C067618A /* GalleryView.swift */; };
 		5E80DAE89D2319EFA84A6FAE /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06E5DFFFB21F029F94D43D7D /* AppPreferences.swift */; };
@@ -36,6 +37,7 @@
 		A6AA667D52C030239A97EC90 /* HomebrewIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DD24184BC491E6AB1A21E7D /* HomebrewIndex.swift */; };
 		C7E4BCDAC58B3F81935C7958 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC486FE5333357ECBB841C9 /* SidebarView.swift */; };
 		CCBDA4B579BFE87EDB33FD17 /* SnapshotRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDEDA7C65BB44C967065B4E2 /* SnapshotRepository.swift */; };
+		CCC1CBE0BA1B3DF0D189C23F /* BrewHealthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D87BC7BED3E3834EAA7916D2 /* BrewHealthView.swift */; };
 		CD99E8383F764E297B254051 /* BrewPackage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A233E5DD53CA1AAA8C8921A8 /* BrewPackage.swift */; };
 		CFFA4211D27E5EE2B8515D0B /* CustocubStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3AD33022FDAC6BD741EE6C1 /* CustocubStore.swift */; };
 		D6A18C7D80F1299382D3FE1A /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A2890D4AA064047CFB77010 /* Components.swift */; };
@@ -77,6 +79,7 @@
 		837A3EC35965C200DFD864EA /* BrewComparisonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewComparisonView.swift; sourceTree = "<group>"; };
 		86425FAA55B6F39A88733024 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		90B5B27E6EE91F5B84801601 /* MachOReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachOReader.swift; sourceTree = "<group>"; };
+		95D91761B3E4301577B446AE /* BrewHealthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewHealthService.swift; sourceTree = "<group>"; };
 		98CF12339F198F36326DE013 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		9A2890D4AA064047CFB77010 /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		9AB50555493B4354CE8877CD /* AppSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSnapshot.swift; sourceTree = "<group>"; };
@@ -88,6 +91,7 @@
 		CEF96434F85ECAF7ED80D2B2 /* BrewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewService.swift; sourceTree = "<group>"; };
 		CFF2ABDA02E2B93882C8B1FA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D3AD33022FDAC6BD741EE6C1 /* CustocubStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustocubStore.swift; sourceTree = "<group>"; };
+		D87BC7BED3E3834EAA7916D2 /* BrewHealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewHealthView.swift; sourceTree = "<group>"; };
 		DDEDA7C65BB44C967065B4E2 /* SnapshotRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotRepository.swift; sourceTree = "<group>"; };
 		E494F2C5DBAFFD55C067618A /* GalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryView.swift; sourceTree = "<group>"; };
 		E776D8D8CDDD0D61BC927FC1 /* FileActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileActions.swift; sourceTree = "<group>"; };
@@ -140,6 +144,7 @@
 				7EAE89A7D8689273BD5A94E0 /* BrewCleanupView.swift */,
 				837A3EC35965C200DFD864EA /* BrewComparisonView.swift */,
 				10218A4D8E942BF11055040B /* BrewConsoleView.swift */,
+				D87BC7BED3E3834EAA7916D2 /* BrewHealthView.swift */,
 				FB6F06018DA64177CED1CEF6 /* BrewPackageDetailView.swift */,
 				59CD0745F0340F8405FD11C5 /* BrewSnapshotListView.swift */,
 				32FC1CD964603D78201C400F /* ComparisonView.swift */,
@@ -167,6 +172,7 @@
 			children = (
 				223E84F5782B3A096DB0CD7B /* AppScanner.swift */,
 				4CE2A01D9F54D7FD12BAFF2D /* BrewCleanupService.swift */,
+				95D91761B3E4301577B446AE /* BrewHealthService.swift */,
 				CEF96434F85ECAF7ED80D2B2 /* BrewService.swift */,
 				5E78273918ED54AAEEEF2B05 /* BrewSnapshotRepository.swift */,
 				58FF69E32C98890ED8128E09 /* DirectorySize.swift */,
@@ -285,6 +291,8 @@
 				662C0BF0CF5FE1B8CC79842F /* BrewCleanupView.swift in Sources */,
 				FD74F97E4502B7EAD3D71304 /* BrewComparisonView.swift in Sources */,
 				268093F729E70406AF9CE9B9 /* BrewConsoleView.swift in Sources */,
+				4FC9286F65C0499B07339FF2 /* BrewHealthService.swift in Sources */,
+				CCC1CBE0BA1B3DF0D189C23F /* BrewHealthView.swift in Sources */,
 				CD99E8383F764E297B254051 /* BrewPackage.swift in Sources */,
 				4F20E55E01B58C48BB7E0B2A /* BrewPackageDetailView.swift in Sources */,
 				0F86417C040121F1A6A982E6 /* BrewService.swift in Sources */,

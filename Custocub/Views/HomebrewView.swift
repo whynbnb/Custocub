@@ -29,6 +29,8 @@ struct HomebrewView: View {
                         BrewSnapshotListView(showingComparison: $showingBrewComparison)
                     case .cleanup:
                         BrewCleanupView()
+                    case .health:
+                        BrewHealthView()
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -147,7 +149,7 @@ struct HomebrewView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .controlSize(.small)
-                .frame(width: 186)
+                .frame(width: 258)
                 .layoutPriority(1)
             }
         }
@@ -379,20 +381,12 @@ struct HomebrewView: View {
 
                 Divider()
 
-                Button(L.t("清理缓存与旧版本")) {
-                    Task { await brew.cleanupStandard() }
-                }
-                Button(L.t("移除不再需要的依赖")) {
-                    Task { await brew.autoremove() }
-                }
-
-                Divider()
-
-                Button(L.t("检查 Homebrew 环境")) {
-                    Task { await brew.doctor() }
+                Button(L.t("运行环境诊断")) {
+                    Task { await brew.runDoctor(force: true) }
                 }
                 Button(L.t("查看 Homebrew 配置")) {
-                    Task { await brew.showConfig() }
+                    brew.section = .health
+                    Task { await brew.loadConfig(force: true) }
                 }
                 Button(L.t("查看可更新的包")) {
                     Task { await brew.showOutdated() }

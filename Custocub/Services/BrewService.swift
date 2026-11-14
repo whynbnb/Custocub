@@ -118,13 +118,22 @@ enum BrewService {
             processEnvironment["HOMEBREW_NO_ANALYTICS"] = "1"
             processEnvironment["NONINTERACTIVE"] = "1"
             processEnvironment["HOMEBREW_NO_COLOR"] = "1"
+
+            // 与 `brew shellenv` 保持一致：同时补上 prefix/bin 和 prefix/sbin。
+            // 只补 bin 会让 `brew doctor` 报告 sbin 缺失，
+            // 也会让依赖 sbin 中工具的命令找不到可执行文件。
             if let prefix = installedPrefix(fallbackExecutable: executable) {
-                let bin = prefix + "/bin"
                 let currentPath = processEnvironment["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
-                if !currentPath.split(separator: ":").map(String.init).contains(bin) {
-                    processEnvironment["PATH"] = bin + ":" + currentPath
+                let components = currentPath.split(separator: ":").map(String.init)
+
+                var prepend: [String] = []
+                for directory in [prefix + "/bin", prefix + "/sbin"] where !components.contains(directory) {
+                    prepend.append(directory)
                 }
+
+                processEnvironment["PATH"] = (prepend + components).joined(separator: ":")
             }
+
             for (key, value) in environment {
                 processEnvironment[key] = value
             }

@@ -348,7 +348,6 @@
 "更新索引" = "Update index";
 "查看 Homebrew 配置" = "Show the Homebrew configuration";
 "查看可更新的包" = "Show outdated packages";
-"检查 Homebrew 环境" = "Check the Homebrew environment";
 "清理缓存与旧版本" = "Clean cache and old versions";
 "移除不再需要的依赖" = "Remove unneeded dependencies";
 
@@ -489,3 +488,42 @@
 "预览无用依赖" = "Preview unneeded dependencies";
 "预览清理" = "Preview cleanup";
 "预览清理内容" = "Preview cleanup contents";
+
+"%d 个警告" = "%d warnings";
+"%d 个问题" = "%d issues";
+"Homebrew 配置" = "Homebrew Configuration";
+"Homebrew 配置与诊断" = "Homebrew Configuration & Diagnostics";
+"Tap" = "Tap";
+"brew doctor 没有报告任何警告或错误。" = "brew doctor reported no warnings or errors.";
+"健康" = "Healthy";
+"原始输出" = "Raw output";
+"发现 %d 个问题（%.1f 秒）" = "Found %d issues (%.1f s)";
+"复制原始输出" = "Copy raw output";
+"复制配置" = "Copy configuration";
+"工具链" = "Toolchain";
+"开启 Homebrew 功能后才能查看配置与诊断。" = "Turn on Homebrew to view configuration and diagnostics.";
+"提示" = "Note";
+"无法读取 Homebrew 配置。" = "Could not read the Homebrew configuration.";
+"无法读取 brew doctor 输出（%.1f 秒）" = "Could not read brew doctor output (%.1f s)";
+"未发现问题" = "No issues found";
+"未发现问题（%.1f 秒）" = "No issues found (%.1f s)";
+"检查于 %@" = "Checked at %@";
+"正在检查…" = "Checking…";
+"正在读取 brew config…" = "Reading brew config…";
+"正在运行 brew doctor…" = "Running brew doctor…";
+"环境变量" = "Environment";
+"环境诊断" = "Environment diagnostics";
+"警告" = "Warning";
+"读取 brew config 的环境信息，并用 brew doctor 检查潜在问题。" = "Reads environment details from brew config and checks for potential problems with brew doctor.";
+"路径" = "Paths";
+"运行环境诊断" = "Run environment diagnostics";
+"运行诊断" = "Run diagnostics";
+"还没有诊断结果。" = "No diagnostics yet.";
+"配置与诊断" = "Configuration & Diagnostics";
+"配置与诊断说明" = "About configuration and diagnostics";
+"重新读取配置" = "Reload configuration";
+"错误" = "Error";
+"隐藏原始输出" = "Hide raw output";
+
+"筛选配置项" = "Filter configuration";
+"没有匹配的配置项" = "No matching configuration entries";
