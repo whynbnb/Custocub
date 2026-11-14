@@ -80,6 +80,15 @@ Steam 客户端和 JetBrains Toolbox 客户端会作为管理工具加入各自�
 
 侧边栏提供独立的 **Homebrew** 界面，与应用清单分开。
 
+**版本要求**
+
+Custocub 的 Homebrew 功能需要 **Homebrew 7.0 或更高版本**。
+
+- 启动时用 `brew --version` 读取一次版本，界面立即知道功能是否可用
+- 版本过低时，Homebrew 界面会显示专门的「Homebrew 版本过低」状态，包含当前版本、所需版本、可复制的 `brew update && brew upgrade` 命令，以及「重新检测版本」按钮
+- 与 Homebrew 无关的功能（应用扫描、来源、快照、展示框）完全不受影响
+- 升级 Homebrew 后，`brew update` 会自动重新检测版本并解除限制，不需要重启
+
 **整体开关**
 
 - Homebrew 支持**默认开启**，只有检测到本机存在 `brew` 可执行文件时才会真正生效
@@ -322,6 +331,7 @@ Custocub/
 │  ├─ AppChange.swift            # 快照对比与 Markdown 报告
 │  ├─ GalleryItem.swift          # 展示框条目
 │  ├─ BrewPackage.swift          # Homebrew 包记录与 Cask 快照条目
+│  ├─ BrewVersion.swift          # 版本号解析与最低版本限制
 │  └─ BrewSnapshot.swift         # Homebrew 快照模型与 Brewfile 生成
 ├─ Services/
 │  ├─ AppScanner.swift           # 目录发现、Info.plist、来源识别

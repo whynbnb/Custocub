@@ -155,7 +155,7 @@ private struct HomebrewSettingsTab: View {
                         .textSelection(.enabled)
                 }
 
-                LabeledContent("版本", value: brew.hasLoaded ? brew.brewVersion : L.t("尚未读取"))
+                LabeledContent("版本", value: brew.detectedVersion?.description ?? L.t("尚未读取"))
 
                 LabeledContent("安装前缀") {
                     Text(brew.prefix)

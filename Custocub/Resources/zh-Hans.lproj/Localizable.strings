@@ -602,3 +602,17 @@
 "重启服务 %@" = "重启服务 %@";
 "重新读取" = "重新读取";
 "错误日志" = "错误日志";
+
+"Custocub 的 Homebrew 功能需要 %@ 或更高版本。升级 Homebrew 后即可使用。" = "Custocub 的 Homebrew 功能需要 %@ 或更高版本。升级 Homebrew 后即可使用。";
+"Homebrew 版本过低" = "Homebrew 版本过低";
+"升级命令：brew update && brew upgrade" = "升级命令：brew update && brew upgrade";
+"当前版本：%@" = "当前版本：%@";
+"检查更新并升级" = "检查更新并升级";
+"重新检测版本" = "重新检测版本";
+"需要 Homebrew %@ 或更高版本" = "需要 Homebrew %@ 或更高版本";
+"升级全部" = "升级全部";
+"安装 Homebrew 包" = "安装 Homebrew 包";
+"安装包" = "安装包";
+"导出 Brewfile" = "导出 Brewfile";
+"最新" = "最新";
+"维护" = "维护";

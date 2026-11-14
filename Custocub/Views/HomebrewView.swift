@@ -36,6 +36,8 @@ struct HomebrewView: View {
                 disabledView
             case .missing:
                 unavailableView
+            case .unsupportedVersion:
+                unsupportedVersionView
             case .ready:
                 Group {
                     switch brew.section {
@@ -114,7 +116,7 @@ struct HomebrewView: View {
                 Text("Homebrew")
                     .font(.title2.weight(.semibold))
 
-                if brew.hasLoaded {
+                if brew.detectedVersion != nil {
                     BrewVersionPill(version: brew.brewVersion)
                 }
 
@@ -199,6 +201,63 @@ struct HomebrewView: View {
         .background(.bar)
     }
 
+    /// 已安装但版本低于最低要求时的说明。
+    private var unsupportedVersionView: some View {
+        ContentUnavailableView {
+            Label(L.t("Homebrew 版本过低"), systemImage: "exclamationmark.triangle")
+        } description: {
+            VStack(spacing: 6) {
+                Text(L.t("当前版本：%@", brew.detectedVersion?.description ?? L.t("未知")))
+                    .font(.callout)
+                Text(L.t("Custocub 的 Homebrew 功能需要 %@ 或更高版本。升级 Homebrew 后即可使用。",
+                         BrewVersion.minimumSupported.description))
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+        } actions: {
+            HStack(spacing: 8) {
+                Button(L.t("检查更新并升级")) {
+                    Task { await brew.updateIndex() }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(brew.isRunningCommand)
+
+                Button(L.t("重新检测版本")) {
+                    Task { await brew.refreshVersion() }
+                }
+                .buttonStyle(.bordered)
+
+                Link(L.t("打开 Homebrew 官网"), destination: URL(string: "https://brew.sh")!)
+                    .buttonStyle(.bordered)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom) {
+            unsupportedHint
+        }
+    }
+
+    private var unsupportedHint: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "info.circle")
+                .foregroundStyle(.secondary)
+            Text(L.t("升级命令：brew update && brew upgrade"))
+                .font(.caption.monospaced())
+                .foregroundStyle(.secondary)
+                .textSelection(.enabled)
+
+            Spacer()
+
+            Button(L.t("复制命令")) {
+                BrewExport.copy("brew update && brew upgrade")
+            }
+            .controlSize(.small)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.bar)
+    }
+
     /// 用户主动关闭 Homebrew 功能时的说明（入口已隐藏，作为过渡状态兜底）。
     private var disabledView: some View {
         ContentUnavailableView {
@@ -219,16 +278,18 @@ struct HomebrewView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// 三种界面状态，避免各处重复判断。
+    /// 四种界面状态，避免各处重复判断。
     private enum BrewUIState {
         case disabled
         case missing
+        case unsupportedVersion
         case ready
     }
 
     private var brewState: BrewUIState {
         if brew.isDisabledByUser { return .disabled }
         if brew.isMissingInstallation { return .missing }
+        if brew.isVersionUnsupported { return .unsupportedVersion }
         return .ready
     }
 

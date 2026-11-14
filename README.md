@@ -80,6 +80,15 @@ The Steam client and the JetBrains Toolbox client are added to their own source 
 
 Custocub has a dedicated **Homebrew** screen in the sidebar, separate from the app inventory.
 
+**Version requirement**
+
+Custocub's Homebrew features require **Homebrew 7.0 or later**.
+
+- The version is read once at launch with `brew --version`, so the UI knows immediately whether the features are usable.
+- On an older Homebrew the Homebrew screen shows a dedicated **Homebrew Version Too Old** state with the current version, the required version, a copyable `brew update && brew upgrade` command, and a **Check version again** button.
+- Everything unrelated to Homebrew (app scanning, sources, snapshots, gallery) keeps working normally.
+- After upgrading Homebrew, `brew update` re-detects the version automatically and unlocks the features without a restart.
+
 **Master switch**
 
 - Homebrew support is **on by default** and only activates when a `brew` executable is detected on the machine.
@@ -323,6 +332,7 @@ Custocub/
 │  ├─ AppChange.swift            # Snapshot comparison and Markdown report
 │  ├─ GalleryItem.swift          # Gallery item model
 │  ├─ BrewPackage.swift          # Homebrew formula/cask record and cask snapshot entry
+│  ├─ BrewVersion.swift          # Version parsing and minimum-version check
 │  └─ BrewSnapshot.swift         # Homebrew snapshot model and Brewfile builder
 ├─ Services/
 │  ├─ AppScanner.swift           # Directory discovery, Info.plist, source detection

@@ -152,6 +152,10 @@ final class BrewStore: ObservableObject {
     init() {
         isEnabled = Self.isEnabledPreference
         loadSnapshots()
+
+        // 版本检测很轻量（`brew --version` 约 20ms），在 init 中同步完成，
+        // 这样首帧就能给出准确的可用性判断，避免先放行再拦截的闪烁。
+        detectedVersion = Self.detectVersion()
     }
 
     // MARK: - 状态
@@ -159,14 +163,32 @@ final class BrewStore: ObservableObject {
     /// 是否检测到 Homebrew 可执行文件。
     var isInstalled: Bool { executableURL != nil }
 
-    /// 功能是否可用：用户开启且本机确实安装了 Homebrew。
-    var isAvailable: Bool { isEnabled && isInstalled }
+    /// 检测到的 Homebrew 版本。尚未检测时为 nil。
+    @Published private(set) var detectedVersion: BrewVersion?
+
+    /// 功能是否可用：开关开启、已安装、且版本满足最低要求。
+    var isAvailable: Bool { isEnabled && isInstalled && isVersionSupported }
 
     /// 用户主动关闭时为 true。
     var isDisabledByUser: Bool { !isEnabled }
 
     /// 开启开关但本机未安装 Homebrew。
     var isMissingInstallation: Bool { isEnabled && !isInstalled }
+
+    /// 已安装但版本低于最低要求。
+    var isVersionUnsupported: Bool {
+        isEnabled && isInstalled && detectedVersion != nil && !isVersionSupported
+    }
+
+    /// 版本是否满足最低要求。尚未检测完成时先按可用处理，避免闪烁。
+    var isVersionSupported: Bool {
+        detectedVersion?.isSupported ?? true
+    }
+
+    /// 展示用的版本字符串。
+    var versionText: String {
+        detectedVersion?.description ?? inventory?.brewVersion ?? L.t("未知")
+    }
 
     var executablePath: String {
         executableURL?.path ?? L.t("未找到 Homebrew")
@@ -183,7 +205,7 @@ final class BrewStore: ObservableObject {
     var pinnedCount: Int { inventory?.pinnedCount ?? 0 }
 
     var brewVersion: String {
-        inventory?.brewVersion ?? L.t("未知")
+        detectedVersion?.description ?? inventory?.brewVersion ?? L.t("未知")
     }
 
     var prefix: String {
@@ -192,6 +214,56 @@ final class BrewStore: ObservableObject {
 
     var dependencyCount: Int {
         formulae.count(where: \.isDependency)
+    }
+
+    // MARK: - 版本检测
+
+    /// 启动时同步执行 `brew --version` 并解析版本号。
+    ///
+    /// 该命令约 20ms，直接阻塞主线程可以保证首帧就有准确的可用性判断，
+    /// 避免界面先放行再拦截的闪烁。
+    private static func detectVersion() -> BrewVersion? {
+        detectVersionSynchronously()
+    }
+
+    static func detectVersionSynchronously() -> BrewVersion? {
+        guard let executable = BrewService.locateExecutable() else { return nil }
+
+        let process = Process()
+        process.executableURL = executable
+        process.arguments = ["--version"]
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+
+        var environment = ProcessInfo.processInfo.environment
+        environment["HOMEBREW_NO_ENV_HINTS"] = "1"
+        environment["HOMEBREW_NO_ANALYTICS"] = "1"
+        environment["NONINTERACTIVE"] = "1"
+        process.environment = environment
+
+        do {
+            try process.run()
+        } catch {
+            return nil
+        }
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { return nil }
+
+        return BrewVersion(output: String(decoding: data, as: UTF8.self))
+    }
+
+    /// 重新检测版本，用于用户升级 Homebrew 后手动刷新。
+    func refreshVersion() async {
+        let output = await BrewService.runQuiet(arguments: ["--version"]).output
+        detectedVersion = BrewVersion(output: output)
+
+        if isVersionSupported, isAvailable {
+            await load(force: true)
+        }
     }
 
     var filteredPackages: [BrewPackage] {
@@ -266,6 +338,9 @@ final class BrewStore: ObservableObject {
     // MARK: - 命令执行
 
     /// 执行一条 brew 命令，并把输出实时写入日志。
+    ///
+    /// 注意：这里只校验「开关开启 + 已安装」，不校验版本。
+    /// 版本过低时仍需要允许执行 `brew update && brew upgrade` 来完成升级。
     @discardableResult
     func runCommand(
         _ arguments: [String],
@@ -377,9 +452,10 @@ final class BrewStore: ObservableObject {
         appendLog(.info, L.t("Homebrew 功能已关闭，不再执行任何 brew 命令。"))
     }
 
-    /// 重新检测本机是否安装了 Homebrew。
+    /// 重新检测本机是否安装了 Homebrew，并刷新版本。
     func rediscover() {
         executableURL = BrewService.locateExecutable()
+        detectedVersion = Self.detectVersionSynchronously()
     }
 
     func clearLog() {
@@ -640,9 +716,19 @@ final class BrewStore: ObservableObject {
 
     // MARK: - 维护命令
 
-    /// 常用维护命令：更新索引、清理、检查、自动移除无用依赖。
+    /// 更新 Homebrew 索引。升级完成后会重新检测版本，
+    /// 以便版本过低时界面能自动解除限制。
     func updateIndex() async {
-        _ = await runCommand(["update"], title: L.t("更新 Homebrew 索引"))
+        await runCommand(["update"], title: L.t("更新 Homebrew 索引"))
+
+        // 升级可能已把 Homebrew 更新到受支持的版本。
+        let output = await BrewService.runQuiet(arguments: ["--version"]).output
+        if let latest = BrewVersion(output: output) {
+            detectedVersion = latest
+            if latest.isSupported && isAvailable {
+                await load(force: true)
+            }
+        }
     }
 
     // MARK: - 清理

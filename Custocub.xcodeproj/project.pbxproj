@@ -38,6 +38,7 @@
 		9FE995377D530554C954C8AF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CFF2ABDA02E2B93882C8B1FA /* Assets.xcassets */; };
 		A6AA667D52C030239A97EC90 /* HomebrewIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DD24184BC491E6AB1A21E7D /* HomebrewIndex.swift */; };
 		C7E4BCDAC58B3F81935C7958 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC486FE5333357ECBB841C9 /* SidebarView.swift */; };
+		C927DCF61DE6D925DFD25A6F /* BrewVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = C02A3B679698FCFEC104893A /* BrewVersion.swift */; };
 		CCBDA4B579BFE87EDB33FD17 /* SnapshotRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDEDA7C65BB44C967065B4E2 /* SnapshotRepository.swift */; };
 		CCC1CBE0BA1B3DF0D189C23F /* BrewHealthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D87BC7BED3E3834EAA7916D2 /* BrewHealthView.swift */; };
 		CD99E8383F764E297B254051 /* BrewPackage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A233E5DD53CA1AAA8C8921A8 /* BrewPackage.swift */; };
@@ -91,6 +92,7 @@
 		B39C399A3D9459CD90509E43 /* BrewServicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewServicesView.swift; sourceTree = "<group>"; };
 		B844A82A4A7559A059AEE0E3 /* AppDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDetailView.swift; sourceTree = "<group>"; };
 		BD2333F60586494596629257 /* GalleryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryItem.swift; sourceTree = "<group>"; };
+		C02A3B679698FCFEC104893A /* BrewVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewVersion.swift; sourceTree = "<group>"; };
 		CB29DD222217857737C23E7C /* JetBrainsToolboxIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JetBrainsToolboxIndex.swift; sourceTree = "<group>"; };
 		CEF96434F85ECAF7ED80D2B2 /* BrewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewService.swift; sourceTree = "<group>"; };
 		CFF2ABDA02E2B93882C8B1FA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -126,6 +128,7 @@
 				5A293578D0B15FED3D90C8AF /* AppSource.swift */,
 				A233E5DD53CA1AAA8C8921A8 /* BrewPackage.swift */,
 				30C7D9CF9EE5A8A26DFDA8B7 /* BrewSnapshot.swift */,
+				C02A3B679698FCFEC104893A /* BrewVersion.swift */,
 				BD2333F60586494596629257 /* GalleryItem.swift */,
 			);
 			path = Models;
@@ -308,6 +311,7 @@
 				943795B1ABBBD85BE00057F9 /* BrewSnapshotListView.swift in Sources */,
 				8F5BBB6B200952B6A0804B59 /* BrewSnapshotRepository.swift in Sources */,
 				52EEA5C8D0B8C636C61C9132 /* BrewStore.swift in Sources */,
+				C927DCF61DE6D925DFD25A6F /* BrewVersion.swift in Sources */,
 				D9E0945BB07BDA33E8E9758C /* ComparisonView.swift in Sources */,
 				D6A18C7D80F1299382D3FE1A /* Components.swift in Sources */,
 				DC7B02217750489EB802C9F8 /* ContentView.swift in Sources */,
