@@ -529,3 +529,5 @@
 "诊断输出不完整（%.1f 秒）" = "Diagnostics output was incomplete (%.1f s)";
 "这次检查没有拿到完整的输出，结果不可信。请重新运行诊断。" = "This run did not receive complete output, so the result is unreliable. Run diagnostics again.";
 "重新运行" = "Run again";
+
+"显示只作为依赖安装的 Formula。取消勾选后只看主动安装的包。" = "Show formulae installed only as dependencies. Uncheck to see only packages you installed yourself.";

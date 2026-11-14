@@ -97,6 +97,8 @@ final class BrewStore: ObservableObject {
     @Published var kindFilter: BrewPackageKind?
     @Published var showsOutdatedOnly = false
     @Published var showsPinnedOnly = false
+    /// 是否显示「只作为依赖安装」的 formula。默认显示，取消勾选后只看主动安装的包。
+    @Published var showsDependencyPackages = true
 
     @Published var section: BrewSection = .packages
     @Published var selection: Set<String> = [] {
@@ -190,13 +192,14 @@ final class BrewStore: ObservableObject {
             let matchesKind = kindFilter == nil || package.kind == kindFilter
             let matchesOutdated = !showsOutdatedOnly || package.isOutdated
             let matchesPinned = !showsPinnedOnly || package.isPinned
+            let matchesDependency = showsDependencyPackages || !package.isDependency
             let matchesSearch = query.isEmpty
                 || package.name.localizedCaseInsensitiveContains(query)
                 || package.title.localizedCaseInsensitiveContains(query)
                 || (package.summary?.localizedCaseInsensitiveContains(query) == true)
                 || (package.tap?.localizedCaseInsensitiveContains(query) == true)
                 || (package.installedVersion?.localizedCaseInsensitiveContains(query) == true)
-            return matchesKind && matchesOutdated && matchesPinned && matchesSearch
+            return matchesKind && matchesOutdated && matchesPinned && matchesDependency && matchesSearch
         }
     }
 
@@ -209,11 +212,21 @@ final class BrewStore: ObservableObject {
         package(id: selectedPackageID)
     }
 
+    /// 当前是否有任何筛选条件处于非默认状态。
+    var hasActivePackageFilter: Bool {
+        kindFilter != nil
+            || showsOutdatedOnly
+            || showsPinnedOnly
+            || !showsDependencyPackages
+            || !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     func resetFilters() {
         searchText = ""
         kindFilter = nil
         showsOutdatedOnly = false
         showsPinnedOnly = false
+        showsDependencyPackages = true
     }
 
     // MARK: - 加载

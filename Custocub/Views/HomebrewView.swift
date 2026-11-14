@@ -268,6 +268,7 @@ struct HomebrewView: View {
 
             TextField(L.t("搜索包名、描述或版本"), text: $brew.searchText)
                 .textFieldStyle(.plain)
+                .layoutPriority(1)
 
             if !brew.searchText.isEmpty {
                 Button {
@@ -294,12 +295,20 @@ struct HomebrewView: View {
             Toggle(L.t("可更新"), isOn: $brew.showsOutdatedOnly)
                 .toggleStyle(.button)
                 .controlSize(.small)
+                .fixedSize()
 
             Toggle(L.t("已固定"), isOn: $brew.showsPinnedOnly)
                 .toggleStyle(.button)
                 .controlSize(.small)
+                .fixedSize()
 
-            if brew.kindFilter != nil || brew.showsOutdatedOnly || brew.showsPinnedOnly || !brew.searchText.isEmpty {
+            Toggle(L.t("依赖"), isOn: $brew.showsDependencyPackages)
+                .toggleStyle(.checkbox)
+                .controlSize(.small)
+                .help(Text(L.t("显示只作为依赖安装的 Formula。取消勾选后只看主动安装的包。")))
+                .fixedSize()
+
+            if brew.hasActivePackageFilter {
                 Button {
                     brew.resetFilters()
                 } label: {
@@ -316,6 +325,7 @@ struct HomebrewView: View {
                 Text(L.t("已选择 %d 个", brew.selection.count))
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .fixedSize()
 
                 Button(L.t("卸载"), role: .destructive) {
                     confirmUninstall = brew.filteredPackages.filter { brew.selection.contains($0.id) }
