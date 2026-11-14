@@ -1,5 +1,21 @@
 import SwiftUI
 
+/// 标题旁的版本号胶囊。
+struct BrewVersionPill: View {
+    let version: String
+
+    var body: some View {
+        Text(version)
+            .font(.caption.weight(.medium).monospacedDigit())
+            .foregroundStyle(AppSource.homebrew.color)
+            .padding(.horizontal, 7)
+            .frame(height: 19)
+            .background(AppSource.homebrew.color.opacity(0.12), in: Capsule())
+            .fixedSize()
+            .help(Text(L.t("Homebrew %@", version)))
+    }
+}
+
 /// Homebrew 独立管理界面：包列表、快照与命令。
 struct HomebrewView: View {
     @EnvironmentObject private var brew: BrewStore
@@ -92,25 +108,24 @@ struct HomebrewView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-                HStack(spacing: 7) {
-                    Text("Homebrew")
-                        .font(.title2.weight(.semibold))
-                    Image(systemName: "info.circle")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .help(Text(L.t("在这里集中管理 Formula 和 Cask，并保存独立的 Homebrew 快照。")))
-                        .accessibilityLabel("Homebrew 说明")
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("Homebrew")
+                    .font(.title2.weight(.semibold))
+
+                if brew.hasLoaded {
+                    BrewVersionPill(version: brew.brewVersion)
                 }
+
+                Image(systemName: "info.circle")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .help(Text(L.t("在这里集中管理 Formula 和 Cask，并保存独立的 Homebrew 快照。")))
+                    .accessibilityLabel("Homebrew 说明")
 
                 Spacer()
 
                 if brew.isLoading {
                     ProgressView().controlSize(.small)
-                } else if let lastLoadedAt = brew.lastLoadedAt {
-                    Text(lastLoadedAt, format: .dateTime.year().month().day().hour().minute())
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -129,29 +144,17 @@ struct HomebrewView: View {
                 }
             }
 
-            HStack(spacing: 14) {
-                HStack(spacing: 14) {
-                    Label(L.t("Homebrew %@", brew.brewVersion), systemImage: "mug")
-                    Label(brew.prefix, systemImage: "folder")
-                        .lineLimit(1)
-                        .truncationMode(.middle)
+            // 分区切换器固定在左侧，切换时位置不变。
+            // 不用固定宽度：中文标签较长时会被裁切，交给 Picker 自己算宽度。
+            Picker("视图", selection: $brew.section) {
+                ForEach(BrewSection.allCases) { section in
+                    Text(section.title).tag(section)
                 }
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-                Spacer(minLength: 8)
-
-                Picker("视图", selection: $brew.section) {
-                    ForEach(BrewSection.allCases) { section in
-                        Text(section.title).tag(section)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .controlSize(.small)
-                .frame(width: 258)
-                .layoutPriority(1)
             }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .controlSize(.small)
+            .fixedSize()
         }
         .padding(16)
         .background(.background)

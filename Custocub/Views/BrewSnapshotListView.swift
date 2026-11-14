@@ -244,13 +244,10 @@ private struct BrewSnapshotDetailView: View {
                 }
             }
 
-            HStack(spacing: 14) {
+            HStack(spacing: 8) {
                 Label(snapshot.hostName, systemImage: "desktopcomputer")
                 if let brewVersion = snapshot.brewVersion {
-                    Label(L.t("Homebrew %@", brewVersion), systemImage: "mug")
-                }
-                if let prefix = snapshot.prefix {
-                    Label(prefix, systemImage: "folder")
+                    BrewVersionPill(version: brewVersion)
                 }
                 Spacer()
             }

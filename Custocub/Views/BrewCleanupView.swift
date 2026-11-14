@@ -109,68 +109,50 @@ struct BrewCleanupView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                HStack(spacing: 7) {
-                    Text("Homebrew 清理")
-                        .font(.title2.weight(.semibold))
-                    Image(systemName: "info.circle")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .help(Text(L.t("分析缓存、旧版本和无用依赖，并执行对应的清理命令。")))
-                        .accessibilityLabel("Homebrew 清理说明")
-                }
-
-                Spacer()
-
-                if brew.isAnalyzingCleanup {
-                    ProgressView().controlSize(.small)
-                    Text(L.t("正在分析…"))
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                } else if let analyzedAt = brew.lastCleanupAnalyzedAt {
-                    Text(analyzedAt, format: .dateTime.hour().minute().second())
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
+        HStack(spacing: 8) {
+            if brew.isAnalyzingCleanup {
+                ProgressView().controlSize(.small)
+                Text(L.t("正在分析…"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
-            HStack(spacing: 8) {
-                Button {
-                    Task { await brew.analyzeCleanup(force: true) }
-                } label: {
-                    Label(L.t("重新分析"), systemImage: "arrow.clockwise")
-                }
-                .controlSize(.small)
-                .disabled(brew.isAnalyzingCleanup || brew.isRunningCommand)
+            Button {
+                Task { await brew.analyzeCleanup(force: true) }
+            } label: {
+                Label(L.t("重新分析"), systemImage: "arrow.clockwise")
+            }
+            .controlSize(.small)
+            .disabled(brew.isAnalyzingCleanup || brew.isRunningCommand)
 
-                Button {
-                    Task { await brew.cleanupDryRun() }
-                } label: {
-                    Label(L.t("预览清理"), systemImage: "eye")
-                }
-                .controlSize(.small)
-                .disabled(brew.isRunningCommand)
+            Button {
+                Task { await brew.cleanupDryRun() }
+            } label: {
+                Label(L.t("预览清理"), systemImage: "eye")
+            }
+            .controlSize(.small)
+            .disabled(brew.isRunningCommand)
 
-                Button {
-                    showsTerminal = true
-                } label: {
-                    Label(L.t("命令日志"), systemImage: "terminal")
-                }
-                .controlSize(.small)
+            Button {
+                showsTerminal = true
+            } label: {
+                Label(L.t("命令日志"), systemImage: "terminal")
+            }
+            .controlSize(.small)
 
-                Spacer()
+            Spacer()
 
-                if let freed = brew.lastCleanupFreedBytes, freed > 0 {
-                    Label(L.t("上次释放约 %@", freed.formatted(.byteCount(style: .file))), systemImage: "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                        .lineLimit(1)
-                }
+            if let freed = brew.lastCleanupFreedBytes, freed > 0 {
+                Label(L.t("上次释放约 %@", freed.formatted(.byteCount(style: .file))), systemImage: "checkmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.green)
+                    .lineLimit(1)
             }
         }
-        .padding(16)
-        .background(.background)
+        // 固定高度，切换分区时不影响下方布局。
+        .frame(height: 40)
+        .padding(.horizontal, 16)
+        .background(.bar)
         .sheet(isPresented: $showsTerminal) {
             BrewConsoleView()
                 .environmentObject(brew)

@@ -45,61 +45,47 @@ struct BrewHealthView: View {
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                HStack(spacing: 7) {
-                    Text("配置与诊断")
-                        .font(.title2.weight(.semibold))
-                    Image(systemName: "info.circle")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .help(Text(L.t("读取 brew config 的环境信息，并用 brew doctor 检查潜在问题。")))
-                        .accessibilityLabel("配置与诊断说明")
-                }
-
-                Spacer()
-
-                if brew.isRunningDoctor || brew.isLoadingConfig {
-                    ProgressView().controlSize(.small)
-                    Text(L.t("正在检查…"))
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
+        HStack(spacing: 8) {
+            if brew.isRunningDoctor || brew.isLoadingConfig {
+                ProgressView().controlSize(.small)
+                Text(L.t("正在检查…"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
-            HStack(spacing: 8) {
-                Button {
-                    Task { await brew.runDoctor(force: true) }
-                } label: {
-                    Label(L.t("运行诊断"), systemImage: "stethoscope")
-                }
-                .controlSize(.small)
-                .disabled(brew.isRunningDoctor || brew.isRunningCommand)
+            Button {
+                Task { await brew.runDoctor(force: true) }
+            } label: {
+                Label(L.t("运行诊断"), systemImage: "stethoscope")
+            }
+            .controlSize(.small)
+            .disabled(brew.isRunningDoctor || brew.isRunningCommand)
 
-                Button {
-                    Task { await brew.loadConfig(force: true) }
-                } label: {
-                    Label(L.t("重新读取配置"), systemImage: "arrow.clockwise")
-                }
-                .controlSize(.small)
-                .disabled(brew.isLoadingConfig || brew.isRunningCommand)
+            Button {
+                Task { await brew.loadConfig(force: true) }
+            } label: {
+                Label(L.t("重新读取配置"), systemImage: "arrow.clockwise")
+            }
+            .controlSize(.small)
+            .disabled(brew.isLoadingConfig || brew.isRunningCommand)
 
-                Button {
-                    showsTerminal = true
-                } label: {
-                    Label(L.t("命令日志"), systemImage: "terminal")
-                }
-                .controlSize(.small)
+            Button {
+                showsTerminal = true
+            } label: {
+                Label(L.t("命令日志"), systemImage: "terminal")
+            }
+            .controlSize(.small)
 
-                Spacer()
+            Spacer()
 
-                if let report = brew.doctorReport {
-                    DoctorStatusBadge(report: report)
-                }
+            if let report = brew.doctorReport {
+                DoctorStatusBadge(report: report)
             }
         }
-        .padding(16)
-        .background(.background)
+        // 固定高度，切换分区时不影响下方布局。
+        .frame(height: 40)
+        .padding(.horizontal, 16)
+        .background(.bar)
     }
 
     // MARK: - Doctor
