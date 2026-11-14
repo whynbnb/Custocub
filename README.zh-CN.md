@@ -21,6 +21,7 @@ Custocub 是一个用 Swift 6 / SwiftUI 编写的原生 macOS 应用清单与快
 - **平台与类型**：系统 / 第三方，以及 `arm64` / `x86_64` / 通用二进制检测。
 - **开发者的应用**：使用固定前缀 `me.whynbnb.` 自动归类，可开关显示，匹配数量大于 2 时出现。
 - **快照与对比**：保存历史清单、比较变化、导入导出、生成 Markdown 报告。
+- **Homebrew 深度支持**：独立的 Homebrew 管理界面、Formula / Cask 列表、独立 Homebrew 快照、Brewfile 导出和实时命令日志。
 - **展示框**：浏览已安装应用，也展示历史快照中已经卸载的应用。
 - **原生体验**：系统表格虚拟化、原生滚动条、可拖拽列宽和系统选择行为。
 - **中英文界面**：默认跟随系统语言，也可以在设置中手动切换（需重新启动）。
@@ -74,6 +75,57 @@ Steam 客户端和 JetBrains Toolbox 客户端会作为管理工具加入各自�
 - Steam 应用出现在 **Steam** 分类中，JetBrains Toolbox 应用出现在 **JetBrains Toolbox** 分类中
 - 它们带有「管理工具」标记，且不会在该分类中重复计数
 - 它们仍按真实来源（如手动安装、Homebrew）计数，因此来源总数不变，并且仍然相加相等
+
+### Homebrew 支持
+
+侧边栏提供独立的 **Homebrew** 界面，与应用清单分开。
+
+**包列表**
+
+- 通过一次 `brew info --json=v2 --installed` 读取全部已安装包
+- 区分 **Formula**（命令行包）与 **Cask**（图形界面包）
+- 显示已安装版本、最新版本、Tap、安装时间、运行时依赖，以及 `outdated`、`pinned`、`auto_updates` 状态
+- 支持按类型、可更新、已固定筛选，也可以搜索包名、描述和版本
+
+**两种不同性质的快照**
+
+| 快照 | 记录内容 | 用途 |
+| --- | --- | --- |
+| 应用快照 | GUI 应用 + 当时的 Homebrew **Cask** 列表 | 重建 GUI 应用集合；Cask 页可以导出后直接安装 |
+| Homebrew 快照 | Homebrew **Formula + Cask** 列表 | 完整的包管理器备份，与应用清单互相独立 |
+
+应用快照现在会额外保存 `casks` 数组。快照界面中新增 **Homebrew Cask** 页，可以复制安装命令、复制 Brewfile，或导出 Brewfile / 安装脚本。旧快照没有该字段时仍然可以正常读取，只是 Cask 列表为空。
+
+Homebrew 快照单独存放：
+
+```text
+~/Library/Application Support/Custocub/BrewSnapshots/<UUID>.json
+```
+
+**日常命令**
+
+安装、卸载、升级、全部升级、重新安装、固定和取消固定都可以从工具栏、表格右键菜单和包详情面板执行。
+
+「维护」菜单还提供更新索引、清理缓存与旧版本、移除不再需要的依赖、检查环境、查看配置和查看可更新的包。
+
+**命令日志**
+
+Custocub 执行的每条命令都会实时写入日志：
+
+- 以 `$` 开头的完整命令行
+- 按行聚合的 stdout / stderr 实时输出
+- 成功或失败的结果，附带退出码和耗时
+- Homebrew 界面底部可折叠的日志面板，以及带历史记录的独立日志窗口
+- 可以停止正在执行的命令：先发送 `SIGINT`，如果 Homebrew 未退出再依次发送 `SIGTERM` / `SIGKILL`
+
+**导出**
+
+- 把当前已安装包导出为 `Brewfile`，可直接交给 `brew bundle`
+- 可以只导出 Formula 或只导出 Cask，分别备份两部分
+- 把任意 Homebrew 快照导出为 `Brewfile`、仅 Formula / 仅 Cask 的 `Brewfile`，或可直接执行的安装脚本
+- 复制单个包的 `brew install …` 命令
+
+Custocub 始终使用真实的 `brew` 可执行文件，因此会沿用你的安装前缀、Tap 和 Homebrew 配置。
 
 ### 平台与类型
 
@@ -168,6 +220,12 @@ swift Tools/GenerateAppIcon.swift
 ~/Library/Application Support/Custocub/Snapshots/<UUID>.json
 ```
 
+Homebrew 快照：
+
+```text
+~/Library/Application Support/Custocub/BrewSnapshots/<UUID>.json
+```
+
 体积缓存：
 
 ```text
@@ -184,6 +242,8 @@ Custocub 未启用 App Sandbox，只读取应用目录并写入自己的 Applica
 | `⌘S` | 保存当前快照 |
 | `⇧⌘O` | 导入快照 |
 | `⇧⌘E` | 导出当前快照 |
+| `⇧⌘B` | 打开 Homebrew 界面 |
+| `⇧⌘S` | 保存 Homebrew 快照 |
 | `⌘,` | 打开设置 |
 
 ## 工程结构
@@ -192,13 +252,16 @@ Custocub 未启用 App Sandbox，只读取应用目录并写入自己的 Applica
 Custocub/
 ├─ App/
 │  ├─ CustocubApp.swift          # App 入口与菜单命令
-│  └─ CustocubStore.swift        # 扫描、快照、展示框和选择状态
+│  ├─ CustocubStore.swift        # 扫描、快照、展示框和选择状态
+│  └─ BrewStore.swift            # Homebrew 清单、快照与命令日志
 ├─ Models/
 │  ├─ AppSource.swift            # 来源与平台枚举
 │  ├─ AppRecord.swift            # 应用记录
 │  ├─ AppSnapshot.swift          # 快照模型
 │  ├─ AppChange.swift            # 快照对比与 Markdown 报告
-│  └─ GalleryItem.swift          # 展示框条目
+│  ├─ GalleryItem.swift          # 展示框条目
+│  ├─ BrewPackage.swift          # Homebrew 包记录与 Cask 快照条目
+│  └─ BrewSnapshot.swift         # Homebrew 快照模型与 Brewfile 生成
 ├─ Services/
 │  ├─ AppScanner.swift           # 目录发现、Info.plist、来源识别
 │  ├─ HomebrewIndex.swift        # Caskroom 索引
@@ -208,7 +271,9 @@ Custocub/
 │  ├─ DirectorySize.swift        # 应用体积
 │  ├─ SizeCache.swift            # 持久化体积缓存
 │  ├─ IconProvider.swift         # 图标加载、预取与快照 PNG
-│  └─ SnapshotRepository.swift   # 快照持久化
+│  ├─ SnapshotRepository.swift   # 快照持久化
+│  ├─ BrewService.swift          # brew 定位、流式执行与 JSON 清单
+│  └─ BrewSnapshotRepository.swift # Homebrew 快照持久化
 ├─ Views/
 │  ├─ ContentView.swift
 │  ├─ SidebarView.swift
@@ -217,6 +282,10 @@ Custocub/
 │  ├─ AppDetailView.swift
 │  ├─ ComparisonView.swift
 │  ├─ SettingsView.swift
+│  ├─ HomebrewView.swift         # Homebrew 包列表、筛选与安装
+│  ├─ BrewSnapshotListView.swift # Homebrew 快照与 Brewfile 导出
+│  ├─ BrewPackageDetailView.swift # Formula / Cask 详情与命令
+│  ├─ BrewConsoleView.swift      # 实时命令日志与历史
 │  ├─ Components.swift
 │  └─ FileActions.swift
 └─ Resources/Assets.xcassets

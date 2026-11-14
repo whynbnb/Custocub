@@ -5,6 +5,7 @@ enum SidebarSelection: Hashable {
     case installed
     case own
     case gallery
+    case brew
     case source(AppSource?)
     case snapshot(UUID)
 }
@@ -208,6 +209,9 @@ final class CustocubStore: ObservableObject {
         case .installed, .own, .source:
             guard let app = apps.first(where: { $0.id == selectedAppID }) else { return nil }
             return SelectedAppContext(app: app, galleryItem: nil, snapshot: nil)
+
+        case .brew:
+            return nil
 
         case .gallery:
             if let item = galleryItems.first(where: { $0.app.id == selectedAppID }) {
@@ -582,6 +586,9 @@ final class CustocubStore: ObservableObject {
         }
 
         let preparedApps = await prepareSnapshotApps()
+        // 应用快照同时记录 Homebrew Cask 列表，方便导出后直接重装。
+        // 只读取一次清单，避免重复执行 brew。
+        let inventory = await BrewService.loadInventory()
         let now = Date()
         let formatter = DateFormatter()
         formatter.locale = Locale.current
@@ -590,7 +597,9 @@ final class CustocubStore: ObservableObject {
         let snapshot = AppSnapshot(
             name: formatter.string(from: now),
             createdAt: now,
-            apps: preparedApps
+            apps: preparedApps,
+            casks: inventory?.casks.map(BrewCaskRecord.init(from:)) ?? [],
+            brewVersion: inventory?.brewVersion
         )
 
         snapshots.insert(snapshot, at: 0)

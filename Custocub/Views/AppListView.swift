@@ -30,15 +30,129 @@ struct SnapshotAppsView: View {
     @EnvironmentObject private var store: CustocubStore
     let snapshot: AppSnapshot
 
+    @State private var showsCasks = false
+
     var body: some View {
         VStack(spacing: 0) {
-            SnapshotHeaderView(snapshot: snapshot)
+            SnapshotHeaderView(snapshot: snapshot, showsCasks: $showsCasks)
             Divider()
-            FilterBar()
-            Divider()
-            AppTable(apps: snapshot.apps, emptyMessage: L.t("这个快照中没有符合条件的应用"))
+
+            if showsCasks {
+                SnapshotCaskListView(snapshot: snapshot)
+            } else {
+                FilterBar()
+                Divider()
+                AppTable(apps: snapshot.apps, emptyMessage: L.t("这个快照中没有符合条件的应用"))
+            }
         }
         .navigationTitle(snapshot.name)
+    }
+}
+
+/// 应用快照中记录的 Homebrew Cask 列表，可直接导出安装命令。
+struct SnapshotCaskListView: View {
+    @EnvironmentObject private var brewStore: BrewStore
+    let snapshot: AppSnapshot
+    @State private var selection: Set<String> = []
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                Image(systemName: "mug.fill")
+                    .foregroundStyle(AppSource.homebrew.color)
+                Text(L.t("这个快照记录了 %d 个 Homebrew Cask", snapshot.caskCount))
+                    .font(.callout)
+                if brewStore.isRunningCommand {
+                    ProgressView().controlSize(.small)
+                    Text(L.t("正在执行…"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+
+                Button(L.t("复制安装命令")) {
+                    BrewExport.copy(snapshot.caskInstallCommand)
+                }
+                .controlSize(.small)
+
+                Button(L.t("复制 Brewfile")) {
+                    BrewExport.copy(snapshot.brewfileText)
+                }
+                .controlSize(.small)
+
+                Menu {
+                    Button(L.t("导出 Brewfile…")) {
+                        BrewExport.save(
+                            text: snapshot.brewfileText,
+                            suggestedName: "Brewfile-Cask-\(snapshot.name)",
+                            contentType: .brewfile
+                        )
+                    }
+                    Divider()
+                    Button(L.t("导出安装脚本…")) {
+                        BrewExport.save(
+                            text: "#!/bin/bash\n" + snapshot.caskInstallCommand + "\n",
+                            suggestedName: "install-casks-\(snapshot.name).sh",
+                            contentType: .shellScript
+                        )
+                    }
+                } label: {
+                    Label(L.t("导出"), systemImage: "square.and.arrow.up")
+                }
+                .controlSize(.small)
+            }
+            .padding(.horizontal, 14)
+            .frame(height: 44)
+            .background(.bar)
+
+            Divider()
+
+            Table(snapshot.casks, selection: $selection) {
+                TableColumn("Cask") { cask in
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(cask.name ?? cask.token)
+                            .lineLimit(1)
+                        Text(cask.token)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    .padding(.vertical, 3)
+                }
+                .width(min: 220, ideal: 300, max: 400)
+
+                TableColumn("版本") { cask in
+                    Text(cask.version ?? L.t("未知"))
+                        .monospacedDigit()
+                        .lineLimit(1)
+                }
+                .width(min: 80, ideal: 110, max: 160)
+
+                TableColumn("Tap") { cask in
+                    Text(cask.tap ?? "—")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                .width(min: 90, ideal: 120, max: 170)
+            }
+            .contextMenu(forSelectionType: String.self) { ids in
+                let tokens = snapshot.casks.filter { ids.contains($0.id) }.map(\.token)
+                let targets = tokens.isEmpty ? snapshot.caskTokens : tokens
+                if !targets.isEmpty {
+                    Button(L.t("复制安装命令")) {
+                        BrewExport.copy(BrewPackage.command("install", kind: .cask, names: targets))
+                    }
+                    Button(L.t("复制包名")) {
+                        BrewExport.copy(BrewfileBuilder.plainList(targets))
+                    }
+                    Divider()
+                    Button(L.t("安装选中的 Cask")) {
+                        Task { await brewStore.install(targets, kind: .cask) }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -133,6 +247,7 @@ private struct OwnAppsHeader: View {
 private struct SnapshotHeaderView: View {
     @EnvironmentObject private var store: CustocubStore
     let snapshot: AppSnapshot
+    @Binding var showsCasks: Bool
 
     @State private var isEditingName = false
     @State private var nameDraft = ""
@@ -180,9 +295,21 @@ private struct SnapshotHeaderView: View {
 
                 Spacer()
 
+                HStack(spacing: 6) {
+                    Label(snapshot.hostName, systemImage: "desktopcomputer")
+                    Text("·")
+                    Text(snapshot.osVersion)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .layoutPriority(-1)
+
                 Text(snapshot.createdAt, format: .dateTime.year().month().day().hour().minute())
                     .font(.callout)
                     .foregroundStyle(.secondary)
+                    .fixedSize()
             }
 
             MetricChipRow {
@@ -191,6 +318,9 @@ private struct SnapshotHeaderView: View {
                 MetricChip(title: "第三方", value: "\(snapshot.thirdPartyCount)", symbol: "shippingbox", color: .green)
                 MetricChip(title: "App Store", value: "\(snapshot.appStoreCount)", symbol: "bag", color: .blue)
                 MetricChip(title: "Homebrew", value: "\(snapshot.homebrewCount)", symbol: "mug", color: .orange)
+                if snapshot.caskCount > 0 {
+                    MetricChip(title: "Cask", value: "\(snapshot.caskCount)", symbol: "shippingbox", color: .orange)
+                }
                 if snapshot.sourceCounts[.steam, default: 0] > 0 {
                     MetricChip(title: "Steam", value: "\(snapshot.sourceCounts[.steam, default: 0])", symbol: "gamecontroller", color: AppSource.steam.color)
                 }
@@ -200,14 +330,6 @@ private struct SnapshotHeaderView: View {
                 MetricChip(title: "占用", value: snapshot.totalSizeText, symbol: "internaldrive", color: .purple)
             }
 
-            HStack(spacing: 14) {
-                Label(snapshot.hostName, systemImage: "desktopcomputer")
-                Label(snapshot.osVersion, systemImage: "apple.logo")
-                Spacer()
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
-
             HStack(spacing: 8) {
                 Image(systemName: "note.text")
                     .foregroundStyle(.secondary)
@@ -215,10 +337,25 @@ private struct SnapshotHeaderView: View {
                     .textFieldStyle(.plain)
                     .focused($noteFocused)
                     .onSubmit(commitNote)
+                    .layoutPriority(0)
+
                 if noteFocused {
                     Button("保存备注", action: commitNote)
                         .buttonStyle(.bordered)
                         .controlSize(.small)
+                }
+
+                Spacer(minLength: 8)
+
+                if !snapshot.casks.isEmpty {
+                    Picker("内容", selection: $showsCasks) {
+                        Text(L.t("应用")).tag(false)
+                        Text(L.t("Cask (%d)", snapshot.caskCount)).tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .frame(width: 200)
+                    .layoutPriority(1)
                 }
             }
             .font(.callout)

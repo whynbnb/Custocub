@@ -5,27 +5,31 @@ import SwiftUI
 struct CustocubApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var store = CustocubStore()
+    @StateObject private var brew = BrewStore()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(store)
+                .environmentObject(brew)
                 .frame(minWidth: 1200, minHeight: 700)
         }
         .defaultSize(width: 1400, height: 860)
         .commands {
-            CustocubCommands(store: store)
+            CustocubCommands(store: store, brew: brew)
         }
 
         Settings {
             SettingsView()
                 .environmentObject(store)
+                .environmentObject(brew)
         }
     }
 }
 
 struct CustocubCommands: Commands {
     @ObservedObject var store: CustocubStore
+    @ObservedObject var brew: BrewStore
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
@@ -40,6 +44,19 @@ struct CustocubCommands: Commands {
             }
             .keyboardShortcut("s", modifiers: [.command])
             .disabled(store.isScanning || store.isSavingSnapshot || !store.hasScanned || store.apps.isEmpty)
+
+            Button("打开 Homebrew") {
+                store.sidebarSelection = .brew
+                Task { await brew.load() }
+            }
+            .keyboardShortcut("b", modifiers: [.command, .shift])
+            .disabled(!brew.isAvailable)
+
+            Button("保存 Homebrew 快照") {
+                Task { await brew.saveSnapshot() }
+            }
+            .keyboardShortcut("s", modifiers: [.command, .shift])
+            .disabled(brew.isSavingSnapshot || brew.isRunningCommand || !brew.hasLoaded)
         }
 
         CommandGroup(replacing: .appInfo) {
@@ -128,6 +145,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApplication.shared.activate(ignoringOtherApps: true)
+
 
         DispatchQueue.main.async {
             NSApplication.shared.windows.first?.makeKeyAndOrderFront(nil)

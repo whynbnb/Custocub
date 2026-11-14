@@ -21,6 +21,7 @@ Custocub is a native macOS app inventory and snapshot manager built with Swift 6
 - **Clear app types** — system vs. third-party, with `arm64` / `x86_64` / universal architecture detection.
 - **Developer apps smart group** — fixed `me.whynbnb.` Bundle ID prefix, with a show/hide toggle; shown only when more than two apps match.
 - **Snapshots and comparison** — keep historical inventories, compare changes, export or import snapshots, and generate Markdown reports.
+- **Deep Homebrew support** — a dedicated Homebrew screen for formulae and casks, standalone Homebrew snapshots, Brewfile export, and a live command log.
 - **Gallery** — browse installed apps and apps that have been uninstalled but still exist in historical snapshots.
 - **Native macOS experience** — native table virtualization, scrollbars, resizable columns, and system selection behavior.
 - **English and Chinese** — follows the system language by default, with a manual switch (restart required).
@@ -75,6 +76,57 @@ The Steam client and the JetBrains Toolbox client are added to their own source 
 - They are marked with a **Manager** badge and are not counted again in that category.
 - They remain counted under their real source, such as Manual Install or Homebrew, so source totals do not change and still add up.
 
+### Homebrew integration
+
+Custocub has a dedicated **Homebrew** screen in the sidebar, separate from the app inventory.
+
+**Package list**
+
+- Reads the installed inventory with a single `brew info --json=v2 --installed` call.
+- Separates **Formula** (command-line packages) from **Cask** (GUI app packages).
+- Shows installed and latest versions, tap, install time, dependencies, `outdated`, `pinned`, and `auto_updates` state.
+- Filter by kind, outdated, or pinned; search by name, description, or version.
+
+**Two different kinds of snapshots**
+
+| Snapshot | Records | Purpose |
+| --- | --- | --- |
+| App snapshot | GUI apps + the Homebrew **cask** list at that moment | Rebuild the GUI app set; the cask tab can be exported and installed directly |
+| Homebrew snapshot | Homebrew **formula + cask** list | Full package-manager backup, independent of the GUI inventory |
+
+An app snapshot now carries a `casks` array. The snapshot screen has an extra **Homebrew Cask** tab where you can copy the install command, copy the Brewfile, or export a Brewfile or install script. Older snapshots without the field still load; the cask list is simply empty.
+
+Homebrew snapshots are stored separately:
+
+```text
+~/Library/Application Support/Custocub/BrewSnapshots/<UUID>.json
+```
+
+**Everyday commands**
+
+Install, uninstall, upgrade, upgrade all, reinstall, pin, and unpin are available from the toolbar, the table context menu, and the package detail panel.
+
+The **Maintenance** menu also offers index update, cache/old-version cleanup, autoremove, environment check, config, and outdated listing.
+
+**Command log**
+
+Every command Custocub runs is streamed into a live log:
+
+- The command line itself, prefixed with `$`.
+- Real-time stdout/stderr output, aggregated by line.
+- A success or failure footer with the exit code and duration.
+- A collapsible panel at the bottom of the Homebrew screen, plus a standalone log window with the recent command history.
+- Running commands can be cancelled: `SIGINT` first, then `SIGTERM`/`SIGKILL` if Homebrew does not exit.
+
+**Exports**
+
+- Export the current inventory as a `Brewfile` for `brew bundle`.
+- Export formulae only or casks only when you want to back up each half separately.
+- Export any Homebrew snapshot as a `Brewfile`, a formula-only or cask-only `Brewfile`, or a ready-to-run install script.
+- Copy a single package's `brew install …` command.
+
+Custocub always uses the real `brew` binary, so it respects your installed prefix, taps, and Homebrew configuration.
+
 ### Architecture and app type
 
 Custocub reads the main executable's Mach-O header directly, without calling `lipo`:
@@ -94,6 +146,7 @@ Each record also includes Bundle ID, version, build number, minimum macOS versio
 - Each snapshot is stored as its own JSON file; renaming or editing a note does not rewrite every snapshot.
 - Import or export individual snapshots or a collection of snapshots.
 - Compare two snapshots to see added, removed, and updated apps with field-level changes.
+- When app snapshots contain Homebrew casks, the comparison view also has a **Homebrew Cask** tab for cask additions, removals, and version changes.
 - Compare against the **Current State** without saving it first.
 - Export a Markdown comparison report.
 
@@ -168,6 +221,12 @@ Snapshots:
 ~/Library/Application Support/Custocub/Snapshots/<UUID>.json
 ```
 
+Homebrew snapshots:
+
+```text
+~/Library/Application Support/Custocub/BrewSnapshots/<UUID>.json
+```
+
 Size cache:
 
 ```text
@@ -184,6 +243,8 @@ Custocub is not sandboxed. It only reads application directories and writes its 
 | `⌘S` | Save the current snapshot |
 | `⇧⌘O` | Import snapshots |
 | `⇧⌘E` | Export the selected snapshot |
+| `⇧⌘B` | Open the Homebrew screen |
+| `⇧⌘S` | Save a Homebrew snapshot |
 | `⌘,` | Open Settings |
 
 ## Project structure
@@ -192,13 +253,16 @@ Custocub is not sandboxed. It only reads application directories and writes its 
 Custocub/
 ├─ App/
 │  ├─ CustocubApp.swift          # App entry point and menu commands
-│  └─ CustocubStore.swift        # Scan, snapshot, gallery, and selection state
+│  ├─ CustocubStore.swift        # Scan, snapshot, gallery, and selection state
+│  └─ BrewStore.swift            # Homebrew inventory, snapshots, and command log
 ├─ Models/
 │  ├─ AppSource.swift            # Source and platform enums
 │  ├─ AppRecord.swift            # App record
 │  ├─ AppSnapshot.swift          # Snapshot model
 │  ├─ AppChange.swift            # Snapshot comparison and Markdown report
-│  └─ GalleryItem.swift          # Gallery item model
+│  ├─ GalleryItem.swift          # Gallery item model
+│  ├─ BrewPackage.swift          # Homebrew formula/cask record and cask snapshot entry
+│  └─ BrewSnapshot.swift         # Homebrew snapshot model and Brewfile builder
 ├─ Services/
 │  ├─ AppScanner.swift           # Directory discovery, Info.plist, source detection
 │  ├─ HomebrewIndex.swift        # Caskroom index
@@ -208,7 +272,9 @@ Custocub/
 │  ├─ DirectorySize.swift        # App size measurement
 │  ├─ SizeCache.swift            # Persistent size cache
 │  ├─ IconProvider.swift         # Icon loading, prefetching, snapshot PNGs
-│  └─ SnapshotRepository.swift   # Snapshot persistence
+│  ├─ SnapshotRepository.swift   # Snapshot persistence
+│  ├─ BrewService.swift          # brew discovery, streaming execution, JSON inventory
+│  └─ BrewSnapshotRepository.swift # Homebrew snapshot persistence
 ├─ Views/
 │  ├─ ContentView.swift
 │  ├─ SidebarView.swift
@@ -217,6 +283,10 @@ Custocub/
 │  ├─ AppDetailView.swift
 │  ├─ ComparisonView.swift
 │  ├─ SettingsView.swift
+│  ├─ HomebrewView.swift         # Homebrew package list, filters, install sheet
+│  ├─ BrewSnapshotListView.swift # Homebrew snapshots and Brewfile export
+│  ├─ BrewPackageDetailView.swift # Formula/cask detail and commands
+│  ├─ BrewConsoleView.swift      # Live command log and history
 │  ├─ Components.swift
 │  └─ FileActions.swift
 └─ Resources/Assets.xcassets

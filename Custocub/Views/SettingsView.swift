@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var store: CustocubStore
+    @EnvironmentObject private var brew: BrewStore
 
     @AppStorage("autoScanOnLaunch") private var autoScanOnLaunch = true
     @AppStorage("refreshOnActivate") private var refreshOnActivate = true
@@ -72,6 +73,39 @@ struct SettingsView: View {
             }
             .font(.caption.monospaced())
 
+            Section("Homebrew") {
+                LabeledContent("可执行文件") {
+                    Text(brew.executablePath)
+                        .font(.caption.monospaced())
+                        .textSelection(.enabled)
+                }
+
+                LabeledContent("已安装", value: brew.hasLoaded
+                    ? L.t("%d 个包（Formula %d · Cask %d）", brew.packageCount, brew.formulaCount, brew.caskCount)
+                    : L.t("尚未读取"))
+
+                LabeledContent("快照", value: L.t("%d 个", brew.snapshots.count))
+
+                HStack {
+                    Button("重新读取 Homebrew 包列表") {
+                        Task { await brew.load(force: true) }
+                    }
+                    .disabled(!brew.isAvailable || brew.isLoading || brew.isRunningCommand)
+
+                    Button("打开 Homebrew 界面") {
+                        store.sidebarSelection = .brew
+                        Task { await brew.load() }
+                    }
+                    .disabled(!brew.isAvailable)
+
+                    Spacer()
+                }
+
+                Text("应用快照会额外记录当时安装的 Homebrew Cask；Homebrew 快照则记录 Formula 与 Cask，两者互相独立。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("数据") {
                 HStack {
                     Button("重新扫描") {
@@ -117,7 +151,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 540, height: 640)
+        .frame(width: 560, height: 700)
         .navigationTitle("Custocub 设置")
         .alert("语言已更改", isPresented: $showingRestartAlert) {
             Button("立即重启") {

@@ -11,6 +11,17 @@ struct ComparisonView: View {
     @State private var kindFilter: AppChange.Kind?
     @State private var sourceFilter: AppSource?
     @State private var searchText = ""
+    @State private var showsCasks = false
+
+    private var caskChanges: [BrewCaskChange] {
+        guard let olderSnapshot, let newerSnapshot else { return [] }
+        return BrewCaskChange.compare(olderSnapshot, newerSnapshot)
+    }
+
+    private var canCompareCasks: Bool {
+        guard let olderSnapshot, let newerSnapshot else { return false }
+        return !olderSnapshot.casks.isEmpty || !newerSnapshot.casks.isEmpty
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -18,11 +29,19 @@ struct ComparisonView: View {
             Divider()
             snapshotSelectors
             Divider()
-            summary
+            if showsCasks {
+                caskSummary
+            } else {
+                summary
+            }
             Divider()
-            filterBar
-            Divider()
-            results
+            if showsCasks {
+                caskResults
+            } else {
+                filterBar
+                Divider()
+                results
+            }
         }
         .frame(minWidth: 900, minHeight: 650)
         .onAppear(perform: configureInitialSelection)
@@ -60,8 +79,92 @@ struct ComparisonView: View {
             .buttonStyle(.bordered)
             .help("交换比较方向")
             SnapshotPicker(title: "较晚快照", selection: $newerID, snapshots: newerOptions)
+
+            if canCompareCasks {
+                Picker("比较内容", selection: $showsCasks) {
+                    Text(L.t("应用")).tag(false)
+                    Text(L.t("Homebrew Cask")).tag(true)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 200)
+            }
         }
         .padding(16)
+    }
+
+    private var caskSummary: some View {
+        let added = caskChanges.count { $0.kind == .added }
+        let removed = caskChanges.count { $0.kind == .removed }
+        let updated = caskChanges.count { $0.kind == .updated }
+
+        return HStack(spacing: 0) {
+            SummaryMetric(
+                title: "全部变更",
+                value: caskChanges.count,
+                symbol: "list.bullet",
+                color: .primary,
+                selected: false,
+                action: nil
+            )
+            SummaryMetric(title: "新增", value: added, symbol: "plus.circle.fill", color: .green, selected: false, action: nil)
+            SummaryMetric(title: "移除", value: removed, symbol: "minus.circle.fill", color: .red, selected: false, action: nil)
+            SummaryMetric(title: "更新", value: updated, symbol: "arrow.triangle.2.circlepath.circle.fill", color: .orange, selected: false, action: nil)
+        }
+        .frame(height: 74)
+    }
+
+    @ViewBuilder
+    private var caskResults: some View {
+        if caskChanges.isEmpty {
+            ContentUnavailableView(
+                L.t("两个快照的 Homebrew Cask 列表相同"),
+                systemImage: "checkmark.circle",
+                description: Text(L.t("Cask 名称和版本都没有变化。"))
+            )
+        } else {
+            List(caskChanges) { change in
+                HStack(spacing: 12) {
+                    Image(systemName: change.kind.symbol)
+                        .foregroundStyle(change.kind == .added ? .green : (change.kind == .removed ? .red : .orange))
+                        .frame(width: 22)
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(change.displayName)
+                            .fontWeight(.medium)
+                        Text(change.token)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    Group {
+                        switch change.kind {
+                        case .added:
+                            Text(L.t("版本 %@", change.afterVersion ?? L.t("未知")))
+                                .foregroundStyle(.green)
+                        case .removed:
+                            Text(L.t("版本 %@", change.beforeVersion ?? L.t("未知")))
+                                .foregroundStyle(.red)
+                        case .updated:
+                            Text(L.t("%@ → %@", change.beforeVersion ?? L.t("未知"), change.afterVersion ?? L.t("未知")))
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                    .font(.callout.monospacedDigit())
+
+                    SourceBadge(source: .homebrew, compact: true)
+                }
+                .padding(.vertical, 5)
+                .contextMenu {
+                    Button(L.t("复制安装命令")) {
+                        BrewExport.copy(BrewPackage.command("install", kind: .cask, names: [change.token]))
+                    }
+                }
+            }
+            .listStyle(.inset)
+        }
     }
 
     private var summary: some View {
@@ -254,7 +357,7 @@ private struct SnapshotPicker: View {
     }
 }
 
-private struct SummaryMetric: View {
+struct SummaryMetric: View {
     let title: String
     let value: Int
     let symbol: String

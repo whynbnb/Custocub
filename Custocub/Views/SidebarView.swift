@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SidebarView: View {
     @EnvironmentObject private var store: CustocubStore
+    @EnvironmentObject private var brew: BrewStore
     @AppStorage("showDeveloperApps") private var showDeveloperApps = true
 
     private static let sourceOrder: [AppSource] = [
@@ -35,6 +36,18 @@ struct SidebarView: View {
                 )
                 .tag(SidebarSelection.gallery)
 
+            }
+
+            Section("Homebrew") {
+                SidebarRow(
+                    title: "Homebrew 包",
+                    symbol: "mug.fill",
+                    count: brew.packageCount,
+                    tint: AppSource.homebrew.color,
+                    isSelected: store.sidebarSelection == .brew
+                )
+                .tag(SidebarSelection.brew)
+                .help(Text(L.t("独立管理 Formula、Cask 和 Homebrew 快照。")))
             }
 
             Section("来源") {

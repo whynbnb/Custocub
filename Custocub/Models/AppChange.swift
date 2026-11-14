@@ -156,6 +156,93 @@ struct AppChange: Identifiable, Hashable, Sendable {
     }
 }
 
+/// 应用快照中 Homebrew Cask 列表的变化。
+struct BrewCaskChange: Identifiable, Hashable, Sendable {
+    enum Kind: String, CaseIterable, Identifiable, Sendable {
+        case added
+        case removed
+        case updated
+
+        var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .added: L.t("新增")
+            case .removed: L.t("移除")
+            case .updated: L.t("更新")
+            }
+        }
+
+        var symbol: String {
+            switch self {
+            case .added: "plus.circle.fill"
+            case .removed: "minus.circle.fill"
+            case .updated: "arrow.triangle.2.circlepath.circle.fill"
+            }
+        }
+    }
+
+    let id: String
+    var kind: Kind
+    var token: String
+    var name: String?
+    var beforeVersion: String?
+    var afterVersion: String?
+
+    var displayName: String {
+        if let name, !name.isEmpty { return name }
+        return token
+    }
+
+    static func compare(_ older: AppSnapshot, _ newer: AppSnapshot) -> [BrewCaskChange] {
+        let oldCasks = Dictionary(older.casks.map { ($0.token.lowercased(), $0) }, uniquingKeysWith: { first, _ in first })
+        let newCasks = Dictionary(newer.casks.map { ($0.token.lowercased(), $0) }, uniquingKeysWith: { first, _ in first })
+
+        var changes: [BrewCaskChange] = []
+
+        for key in Set(oldCasks.keys).intersection(newCasks.keys) {
+            guard let before = oldCasks[key], let after = newCasks[key] else { continue }
+            guard before.version != after.version else { continue }
+            changes.append(BrewCaskChange(
+                id: key,
+                kind: .updated,
+                token: after.token,
+                name: after.name,
+                beforeVersion: before.version,
+                afterVersion: after.version
+            ))
+        }
+
+        for key in Set(oldCasks.keys).subtracting(newCasks.keys) {
+            guard let before = oldCasks[key] else { continue }
+            changes.append(BrewCaskChange(
+                id: key,
+                kind: .removed,
+                token: before.token,
+                name: before.name,
+                beforeVersion: before.version,
+                afterVersion: nil
+            ))
+        }
+
+        for key in Set(newCasks.keys).subtracting(oldCasks.keys) {
+            guard let after = newCasks[key] else { continue }
+            changes.append(BrewCaskChange(
+                id: key,
+                kind: .added,
+                token: after.token,
+                name: after.name,
+                beforeVersion: nil,
+                afterVersion: after.version
+            ))
+        }
+
+        return changes.sorted {
+            $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending
+        }
+    }
+}
+
 enum ComparisonReport {
     static func markdown(older: AppSnapshot, newer: AppSnapshot, changes: [AppChange]) -> String {
         let added = changes.count { $0.kind == .added }
@@ -203,5 +290,52 @@ enum ComparisonReport {
         }
 
         return lines.joined(separator: "\n")
+    }
+}
+
+/// Homebrew 快照之间的对比。
+enum BrewComparisonReport {
+    static func changes(older: BrewSnapshot, newer: BrewSnapshot) -> [BrewCaskChange] {
+        let oldPackages = Dictionary(older.packages.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let newPackages = Dictionary(newer.packages.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+
+        var changes: [BrewCaskChange] = []
+        for key in Set(oldPackages.keys).intersection(newPackages.keys) {
+            guard let before = oldPackages[key], let after = newPackages[key] else { continue }
+            guard before.installedVersion != after.installedVersion else { continue }
+            changes.append(BrewCaskChange(
+                id: key,
+                kind: .updated,
+                token: after.name,
+                name: after.kind == .cask ? after.displayName : after.name,
+                beforeVersion: before.installedVersion,
+                afterVersion: after.installedVersion
+            ))
+        }
+        for key in Set(oldPackages.keys).subtracting(newPackages.keys) {
+            guard let before = oldPackages[key] else { continue }
+            changes.append(BrewCaskChange(
+                id: key,
+                kind: .removed,
+                token: before.name,
+                name: before.kind == .cask ? before.displayName : before.name,
+                beforeVersion: before.installedVersion,
+                afterVersion: nil
+            ))
+        }
+        for key in Set(newPackages.keys).subtracting(oldPackages.keys) {
+            guard let after = newPackages[key] else { continue }
+            changes.append(BrewCaskChange(
+                id: key,
+                kind: .added,
+                token: after.name,
+                name: after.kind == .cask ? after.displayName : after.name,
+                beforeVersion: nil,
+                afterVersion: after.installedVersion
+            ))
+        }
+        return changes.sorted {
+            $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending
+        }
     }
 }
