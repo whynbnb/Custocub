@@ -17,12 +17,15 @@ struct HomebrewView: View {
             if !brew.isAvailable {
                 unavailableView
             } else {
-                switch brew.section {
-                case .packages:
-                    packagesSection
-                case .snapshots:
-                    BrewSnapshotListView(showingComparison: $showingBrewComparison)
+                Group {
+                    switch brew.section {
+                    case .packages:
+                        packagesSection
+                    case .snapshots:
+                        BrewSnapshotListView(showingComparison: $showingBrewComparison)
+                    }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
 
             Divider()
@@ -163,18 +166,27 @@ struct HomebrewView: View {
             Divider()
 
             if brew.hasLoaded && brew.filteredPackages.isEmpty {
-                ContentUnavailableView(
-                    L.t("没有符合条件的包"),
-                    systemImage: "shippingbox",
-                    description: Text(L.t("请调整搜索内容或筛选条件。"))
-                )
+                emptyState
             } else {
                 BrewPackageTable(
                     packages: brew.filteredPackages,
                     selection: $brew.selection
                 )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    /// 空状态需要自己占满剩余空间，否则 VStack 会把头部一起居中，
+    /// 导致筛选后顶部出现大片空白。
+    private var emptyState: some View {
+        ContentUnavailableView(
+            L.t("没有符合条件的包"),
+            systemImage: "shippingbox",
+            description: Text(L.t("请调整搜索内容或筛选条件。"))
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var packageFilterBar: some View {
