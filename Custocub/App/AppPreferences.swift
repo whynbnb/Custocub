@@ -44,14 +44,53 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         AppLanguage(rawValue: UserDefaults.standard.string(forKey: "appLanguage") ?? "") ?? .system
     }
 
-    /// 在启动时把手动选择的语言同步到 AppleLanguages。
-    /// 选择「跟随系统」时不写入/删除，避免覆盖系统的按应用语言设置。
-    static func applyStoredPreference() {
-        guard let code = current.languageCode else { return }
-        UserDefaults.standard.set([code], forKey: "AppleLanguages")
+    /// 实际生效的语言代码。跟随系统时取系统首选语言。
+    var effectiveLanguageCode: String {
+        if let code = languageCode { return code }
+        return AppLanguage.systemLanguageCode
     }
 
-    /// 立即写入偏好；语言本身需要重启后才会生效。
+    /// 系统首选语言里是否包含中文。
+    ///
+    /// 在应用启动时解析一次并缓存，因为之后切换语言会改写 `AppleLanguages`，
+    /// 再查询就得不到真正的「系统」语言了。
+    private final class SystemLanguageCache: @unchecked Sendable {
+        let lock = NSLock()
+        var code: String?
+    }
+
+    private static let systemLanguageCache = SystemLanguageCache()
+
+    static var systemLanguageCode: String {
+        systemLanguageCache.lock.lock()
+        defer { systemLanguageCache.lock.unlock() }
+        if let code = systemLanguageCache.code { return code }
+        let resolved = resolveSystemLanguageCode()
+        systemLanguageCache.code = resolved
+        return resolved
+    }
+
+    /// 从系统首选语言中解析出 `en` 或 `zh-Hans`。
+    private static func resolveSystemLanguageCode() -> String {
+        let preferred = Locale.preferredLanguages.first?.lowercased() ?? "en"
+        return preferred.hasPrefix("zh") ? "zh-Hans" : "en"
+    }
+
+    /// 在启动时记录真正的系统语言，供「跟随系统」使用。
+    static func cacheSystemLanguage() {
+        _ = systemLanguageCode
+    }
+
+    /// 启动时把偏好同步给运行时语言覆盖，界面从第一次绘制就是正确语言。
+    @MainActor
+    static func applyStoredPreference() {
+        cacheSystemLanguage()
+        LocalizationBundle.install()
+        LocalizationBundle.activeLanguage = current.languageCode
+    }
+
+    /// 立即切换语言：写入偏好并刷新界面，无需重启。
+    @MainActor
     static func set(_ language: AppLanguage) {
         UserDefaults.standard.set(language.rawValue, forKey: "appLanguage")
         if let code = language.languageCode {
@@ -59,6 +98,7 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         } else {
             UserDefaults.standard.removeObject(forKey: "AppleLanguages")
         }
+        LocalizationManager.shared.apply(language)
     }
 }
 
@@ -99,22 +139,6 @@ enum AppAppearance: String, CaseIterable, Identifiable {
     static func set(_ appearance: AppAppearance) {
         UserDefaults.standard.set(appearance.rawValue, forKey: "appearanceMode")
         NSApplication.shared.appearance = appearance.nsAppearance
-    }
-}
-
-enum AppRestart {
-    @MainActor
-    static func relaunch() {
-        let configuration = NSWorkspace.OpenConfiguration()
-        configuration.createsNewApplicationInstance = true
-        NSWorkspace.shared.openApplication(
-            at: Bundle.main.bundleURL,
-            configuration: configuration
-        ) { _, _ in
-            DispatchQueue.main.async {
-                NSApp.terminate(nil)
-            }
-        }
     }
 }
 

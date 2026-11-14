@@ -6,23 +6,30 @@ struct CustocubApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var store = CustocubStore()
     @StateObject private var brew = BrewStore()
+    @StateObject private var localization = LocalizationManager.shared
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(store)
                 .environmentObject(brew)
+                .environmentObject(localization)
+                .environment(\.locale, localization.locale)
+                .id(localization.revision)
                 .frame(minWidth: 1200, minHeight: 700)
         }
         .defaultSize(width: 1400, height: 860)
         .commands {
-            CustocubCommands(store: store, brew: brew)
+            CustocubCommands(store: store, brew: brew, localization: localization)
         }
 
         Settings {
             SettingsView()
                 .environmentObject(store)
                 .environmentObject(brew)
+                .environmentObject(localization)
+                .environment(\.locale, localization.locale)
+                .id(localization.revision)
         }
     }
 }
@@ -30,6 +37,7 @@ struct CustocubApp: App {
 struct CustocubCommands: Commands {
     @ObservedObject var store: CustocubStore
     @ObservedObject var brew: BrewStore
+    @ObservedObject var localization: LocalizationManager
 
     var body: some Commands {
         CommandGroup(replacing: .newItem) {
@@ -145,6 +153,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApplication.shared.activate(ignoringOtherApps: true)
+
+
 
 
         DispatchQueue.main.async {

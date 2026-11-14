@@ -5,7 +5,7 @@ struct SettingsView: View {
     var body: some View {
         TabView {
             GeneralSettingsTab()
-                .tabItem { Label("通用", systemImage: "gearshape") }
+                .tabItem { Label("常规", systemImage: "gearshape") }
 
             AppsSettingsTab()
                 .tabItem { Label("应用", systemImage: "square.grid.2x2") }
@@ -29,8 +29,6 @@ private struct GeneralSettingsTab: View {
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.system.rawValue
     @AppStorage("appearanceMode") private var appearanceMode = AppAppearance.system.rawValue
 
-    @State private var showingRestartAlert = false
-
     var body: some View {
         Form {
             Section("语言与外观") {
@@ -42,7 +40,6 @@ private struct GeneralSettingsTab: View {
                 .onChange(of: appLanguage) { _, newValue in
                     guard let language = AppLanguage(rawValue: newValue) else { return }
                     AppLanguage.set(language)
-                    showingRestartAlert = true
                 }
 
                 Picker("外观", selection: $appearanceMode) {
@@ -57,20 +54,12 @@ private struct GeneralSettingsTab: View {
             }
 
             Section {
-                Text("切换语言后需要重新启动 Custocub。外观会立即生效。")
+                Text("语言与外观会立即生效，无需重新启动。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
-        .alert("语言已更改", isPresented: $showingRestartAlert) {
-            Button("立即重启") {
-                AppRestart.relaunch()
-            }
-            Button("稍后", role: .cancel) {}
-        } message: {
-            Text("重新启动 Custocub 后生效。")
-        }
     }
 }
 

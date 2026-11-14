@@ -12,6 +12,7 @@
 		03067CD0CA970901A58A1421 /* SizeCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E304477F8D3049D1B72C716 /* SizeCache.swift */; };
 		0D7F6F5292D758C13DE25672 /* HomebrewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3644757FC6B3509B262907AC /* HomebrewView.swift */; };
 		0F86417C040121F1A6A982E6 /* BrewService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEF96434F85ECAF7ED80D2B2 /* BrewService.swift */; };
+		1221CF60C450EC2DA2BAF2B1 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 200ED805DD11C178CF51804A /* Localization.swift */; };
 		13AABF84A022A67BEE4E77E1 /* AppDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B844A82A4A7559A059AEE0E3 /* AppDetailView.swift */; };
 		268093F729E70406AF9CE9B9 /* BrewConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10218A4D8E942BF11055040B /* BrewConsoleView.swift */; };
 		277803656B8634C4971A516A /* BrewSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30C7D9CF9EE5A8A26DFDA8B7 /* BrewSnapshot.swift */; };
@@ -52,6 +53,7 @@
 		10218A4D8E942BF11055040B /* BrewConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewConsoleView.swift; sourceTree = "<group>"; };
 		1D9F35333C91991D3E58F940 /* SteamDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SteamDetector.swift; sourceTree = "<group>"; };
 		1DC486FE5333357ECBB841C9 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		200ED805DD11C178CF51804A /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		223E84F5782B3A096DB0CD7B /* AppScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppScanner.swift; sourceTree = "<group>"; };
 		289C498D0E1051A0658A43D6 /* BrewStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewStore.swift; sourceTree = "<group>"; };
 		2A02C718C475E6C56A81700D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -98,6 +100,7 @@
 				289C498D0E1051A0658A43D6 /* BrewStore.swift */,
 				FB55B6C1241B00D36BC70F76 /* CustocubApp.swift */,
 				D3AD33022FDAC6BD741EE6C1 /* CustocubStore.swift */,
+				200ED805DD11C178CF51804A /* Localization.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -294,6 +297,7 @@
 				0D7F6F5292D758C13DE25672 /* HomebrewView.swift in Sources */,
 				F5F26B8FF3FB294266A44468 /* IconProvider.swift in Sources */,
 				9E57412E1D2880829EE98C96 /* JetBrainsToolboxIndex.swift in Sources */,
+				1221CF60C450EC2DA2BAF2B1 /* Localization.swift in Sources */,
 				8BF008D7CB9164F84F40C6AC /* MachOReader.swift in Sources */,
 				4C715978C469DC4F64F992A3 /* SettingsView.swift in Sources */,
 				C7E4BCDAC58B3F81935C7958 /* SidebarView.swift in Sources */,

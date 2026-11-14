@@ -2,7 +2,6 @@
 "## %@（%d）" = "## %@ (%d)";
 "%@发生变化" = "%@ changed";
 "%d 个" = "%d items";
-"%d 个已保存快照" = "%d saved snapshots";
 "%d 个应用" = "%d apps";
 "- %@：%@ → %@" = "- %@: %@ → %@";
 "- Bundle ID：%@" = "- Bundle ID: %@";
@@ -19,16 +18,13 @@
 "Apple 芯片" = "Apple silicon";
 "Bundle ID 前缀" = "Bundle ID prefix";
 "Bundle ID 前缀：%@" = "Bundle ID prefix: %@";
-"Bundle ID 匹配此前缀的应用会归入「开发者的应用」。匹配数量大于 2 时才会在侧边栏显示该分类；留空可关闭。修改后请重新扫描。" = "Apps whose Bundle ID starts with this prefix appear under Developer Apps. The category is shown only when more than two apps match; leave it empty to disable it. Rescan after changing this.";
 "Bundle ID：%@" = "Bundle ID: %@";
 "Custocub = custos（守护） + cubby（收纳格）。用于清点 macOS 软件来源、架构与变化。" = "Custocub = custos (guardian) + cubby (storage compartment). An inventory of macOS apps, their sources, architectures, and changes.";
-"Custocub 设置" = "Custocub Settings";
 "Steam App ID：%@" = "Steam App ID: %@";
 "iPhone / iPad 应用（Apple 芯片）" = "iPhone / iPad app (Apple silicon)";
 "、" = ", ";
 "上次扫描 %@" = "Last scan %@";
 "两个快照完全一致" = "The two snapshots are identical";
-"个人应用" = "Personal Apps";
 "为这个快照添加备注…" = "Add a note to this snapshot…";
 "之前" = "Before";
 "之后" = "After";
@@ -50,7 +46,6 @@
 "关于" = "About";
 "关于 Custocub" = "About Custocub";
 "关闭体积计算后，列表会更快出现；保存快照时仍会补齐体积。" = "With size calculation off, the list appears faster; sizes are still filled in when saving a snapshot.";
-"切换语言后需要重新启动 Custocub。" = "Restart Custocub to apply a language change.";
 "删除「%@」" = "Delete “%@”";
 "删除当前快照…" = "Delete Current Snapshot…";
 "删除快照" = "Delete Snapshot";
@@ -169,7 +164,6 @@
 "未声明" = "Not Declared";
 "未知" = "Unknown";
 "未知错误" = "Unknown error";
-"未设置" = "Not Set";
 "来源" = "Source";
 "来源与平台" = "Source & Platform";
 "构建号" = "Build";
@@ -199,8 +193,6 @@
 "移除" = "Removed";
 "移除 · 版本 %@" = "Removed · version %@";
 "移除前信息" = "Previous Info";
-"稍后" = "Later";
-"立即重启" = "Restart Now";
 "第三方" = "Third-Party";
 "第三方应用" = "Third-Party App";
 "简体中文" = "简体中文";
@@ -214,7 +206,6 @@
 "该应用位于 Steam 库中，由 Steam 管理。" = "This app is located in a Steam library and managed by Steam.";
 "该应用由 JetBrains Toolbox 安装和管理。" = "This app is installed and managed by JetBrains Toolbox.";
 "语言" = "Language";
-"语言已更改" = "Language Changed";
 "请调整搜索内容或筛选条件。" = "Adjust your search or filters.";
 "请选择两个快照" = "Select Two Snapshots";
 "跟随系统" = "System";
@@ -230,8 +221,6 @@
 "通用" = "Universal";
 "通用二进制：arm64 + x86_64" = "Universal binary: arm64 + x86_64";
 "重命名快照" = "Rename Snapshot";
-"重新启动 Custocub 后生效。" = "Restart Custocub to apply.";
-"重新扫描" = "Rescan";
 "重新扫描这台 Mac 上的应用" = "Rescan apps on this Mac";
 "显示开发者的应用" = "Show Developer Apps";
 "Bundle ID 以 me.whynbnb. 开头的应用会归入「开发者的应用」。匹配数量大于 2 时才会在侧边栏显示该分类。" = "Apps whose Bundle ID starts with me.whynbnb. appear under Developer Apps. The category is shown in the sidebar only when more than two apps match.";
@@ -244,7 +233,6 @@
 "Custocub 应用快照 · %@ 的 Homebrew Cask" = "Custocub App Snapshot · Homebrew casks of %@";
 "F %d · C %d" = "F %d · C %d";
 "Homebrew %@" = "Homebrew %@";
-"Homebrew Cask (%d)" = "Homebrew Cask (%d)";
 "Homebrew 出错" = "Homebrew Error";
 "Homebrew 包" = "Homebrew Packages";
 "Homebrew 包详情" = "Homebrew Package Details";
@@ -311,7 +299,6 @@
 "打开 Homebrew" = "Open Homebrew";
 "打开 Homebrew 官网" = "Open the Homebrew website";
 "打开主页" = "Open homepage";
-"找不到 Homebrew。请先安装 Homebrew 后再使用这个界面。" = "Homebrew was not found. Install Homebrew before using this screen.";
 "找不到 Homebrew。请确认已经安装 Homebrew。" = "Homebrew was not found. Make sure Homebrew is installed.";
 "把当前已安装的包导出为 Brewfile" = "Export the currently installed packages as a Brewfile";
 "搜索包名、描述或版本" = "Search name, description, or version";
@@ -321,7 +308,6 @@
 "无法启动 Homebrew：%@" = "Could not launch Homebrew: %@";
 "无法读取 Homebrew 包列表。" = "Could not read the Homebrew package list.";
 "无法读取 Homebrew 快照：%@" = "Could not read Homebrew snapshots: %@";
-"显示或隐藏命令日志" = "Show or hide the command log";
 "暂无历史命令" = "No command history yet";
 "最新版本" = "Latest version";
 "最近命令" = "Recent commands";
@@ -357,7 +343,6 @@
 "应用快照会额外记录当时安装的 Homebrew Cask；Homebrew 快照则记录 Formula 与 Cask，两者互相独立。" = "An app snapshot also records the Homebrew casks that were installed; a Homebrew snapshot records both formulae and casks. They are independent.";
 "打开 Homebrew 界面" = "Open the Homebrew screen";
 
-"升级全部" = "Upgrade All";
 "更新 Homebrew 索引" = "Update the Homebrew index";
 "更新、清理和检查 Homebrew" = "Update, clean, and check Homebrew";
 "更新索引" = "Update index";
@@ -397,7 +382,6 @@
 "Homebrew 快照" = "Homebrew snapshots";
 "~/Library/Application Support/Custocub/Snapshots" = "~/Library/Application Support/Custocub/Snapshots";
 "体积缓存位于 ~/Library/Application Support/Custocub/size-cache.json，7 天后过期。" = "The size cache lives at ~/Library/Application Support/Custocub/size-cache.json and expires after 7 days.";
-"切换语言后需要重新启动 Custocub。外观会立即生效。" = "Changing the language requires restarting Custocub. Appearance changes apply immediately.";
 "在访达中显示 Homebrew 快照" = "Show Homebrew snapshots in Finder";
 "存储位置" = "Storage location";
 "安装前缀" = "Install prefix";
@@ -409,3 +393,7 @@
 "语言与外观" = "Language & Appearance";
 "重新读取包列表" = "Reload package list";
 "链接" = "Links";
+
+"常规" = "General";
+
+"语言与外观会立即生效，无需重新启动。" = "Language and appearance changes apply immediately, no restart needed.";
