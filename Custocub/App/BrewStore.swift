@@ -25,6 +25,7 @@ struct BrewLogEntry: Identifiable, Sendable {
 enum BrewSection: String, CaseIterable, Identifiable {
     case packages
     case explore
+    case upgrade
     case snapshots
     case services
     case cleanup
@@ -36,6 +37,7 @@ enum BrewSection: String, CaseIterable, Identifiable {
         switch self {
         case .packages: L.t("包")
         case .explore: L.t("探索")
+        case .upgrade: L.t("升级")
         case .snapshots: L.t("快照")
         case .services: L.t("服务")
         case .cleanup: L.t("清理")
@@ -47,6 +49,7 @@ enum BrewSection: String, CaseIterable, Identifiable {
         switch self {
         case .packages: "shippingbox"
         case .explore: "safari"
+        case .upgrade: "arrow.triangle.2.circlepath"
         case .snapshots: "camera"
         case .services: "gearshape.2"
         case .cleanup: "trash"
@@ -525,6 +528,18 @@ final class BrewStore: ObservableObject {
     func reloadCatalog() async {
         await loadCatalog(force: true)
         await loadPopularity(force: true)
+    }
+
+    /// 跳到「包」分区并选中指定包。
+    func revealPackage(_ package: BrewPackage) {
+        section = .packages
+        searchText = ""
+        kindFilter = nil
+        showsOutdatedOnly = false
+        showsPinnedOnly = false
+        showsDependencyPackages = true
+        selection = [package.id]
+        selectedPackageID = package.id
     }
 
     /// 跳到「包」分区并选中对应的已安装条目。

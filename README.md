@@ -21,7 +21,7 @@ Custocub is a native macOS app inventory and snapshot manager built with Swift 6
 - **Clear app types** — system vs. third-party, with `arm64` / `x86_64` / universal architecture detection.
 - **Developer apps smart group** — fixed `me.whynbnb.` Bundle ID prefix, with a show/hide toggle; shown only when more than two apps match.
 - **Snapshots and comparison** — keep historical inventories, compare changes, export or import snapshots, and generate Markdown reports.
-- **Deep Homebrew support** — a dedicated Homebrew screen for formulae and casks, standalone Homebrew snapshots, Brewfile export, and a live command log.
+- **Deep Homebrew support** — a dedicated Homebrew screen for formulae and casks, an upgrade center, standalone Homebrew snapshots, Brewfile export, and a live command log.
 - **Explore the whole repository** — browse every available Formula and Cask ranked by real download counts from the last 30 days (switchable to 90 or 365), with full search across names, aliases, and descriptions.
 - **Gallery** — browse installed apps and apps that have been uninstalled but still exist in historical snapshots.
 - **Native macOS experience** — native table virtualization, scrollbars, resizable columns, and system selection behavior.
@@ -129,6 +129,7 @@ The **Explore** tab is different from **Packages**: Packages lists what is insta
 - The `#rank` column shows the package's position in its own category, and the share column shows its percentage of all downloads in the range.
 - Already-installed packages are badged, and their installed version appears in the detail panel.
 - **Search, then install**: every row has an Install button; the detail panel also installs. If nothing matches, the empty state offers to run `brew install` with the typed name.
+- The header's outdated count is clickable and jumps straight to the **Upgrade** tab.
 - The catalog is cached locally: the catalog expires after 1 day and download counts after 1 hour. Once cached, opening Explore costs no network request.
 
 Homebrew snapshots are stored separately:
@@ -139,7 +140,11 @@ Homebrew snapshots are stored separately:
 
 **Everyday commands**
 
-New packages are installed from **Explore**: search, then press **Install** on a row (or in the detail panel). Uninstall, upgrade, upgrade all, reinstall, pin, and unpin stay on the toolbar, the table context menu, and the package detail panel.
+New packages are installed from **Explore**: search, then press **Install** on a row (or in the detail panel).
+
+**Upgrade** is a dedicated tab: it lists every outdated Formula and Cask with installed and latest versions, and offers per-row upgrade, selected upgrade, and **Upgrade All**. It also runs `brew update` via **Check for Updates**. The toolbar no longer carries an upgrade button.
+
+Uninstall, reinstall, pin, and unpin stay on the package table context menu and the package detail panel.
 
 The **Maintenance** menu also offers index update, cache/old-version cleanup, autoremove, environment check, config, and outdated listing.
 
@@ -382,6 +387,7 @@ Custocub/
 │  ├─ BrewHealthView.swift       # Configuration & diagnostics
 │  ├─ BrewServicesView.swift     # Background service management
 │  ├─ BrewExploreView.swift      # Full catalog browse and search
+│  ├─ BrewUpgradeView.swift      # Outdated list, per-row and bulk upgrade
 │  ├─ BrewCatalogDetailView.swift # Catalog entry detail panel
 │  ├─ Components.swift
 │  └─ FileActions.swift

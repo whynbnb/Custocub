@@ -405,6 +405,8 @@ struct MetricChip: View {
     let value: String
     let symbol: String
     let color: Color
+    /// 空间不足时只显示图标与数值，标题放进悬停提示。
+    var showsTitle = true
 
     var body: some View {
         HStack(spacing: 6) {
@@ -413,8 +415,10 @@ struct MetricChip: View {
             Text(value)
                 .fontWeight(.semibold)
                 .monospacedDigit()
-            Text(LocalizedStringKey(title))
-                .foregroundStyle(.secondary)
+            if showsTitle {
+                Text(LocalizedStringKey(title))
+                    .foregroundStyle(.secondary)
+            }
         }
         .font(.caption)
         .padding(.horizontal, 9)

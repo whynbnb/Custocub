@@ -516,7 +516,7 @@
 "运行环境诊断" = "Run environment diagnostics";
 "运行诊断" = "Run diagnostics";
 "还没有诊断结果。" = "No diagnostics yet.";
-"配置与诊断" = "Configuration & Diagnostics";
+"配置与诊断" = "Config";
 "重新读取配置" = "Reload configuration";
 "错误" = "Error";
 "隐藏原始输出" = "Hide raw output";
@@ -677,3 +677,19 @@
 "安装「%@」" = "Install “%@”";
 "安装「%@」？" = "Install “%@”?";
 "没有在目录中找到匹配项时，可以直接按这个名称执行 brew install。" = "When nothing in the catalog matches, you can still run brew install with this name.";
+
+"%d 个可更新" = "%d outdated";
+"Homebrew 升级" = "Homebrew Upgrade";
+"升级所选 %d 个" = "Upgrade Selected (%d)";
+"升级所选包？" = "Upgrade the selected packages?";
+"在包中查看" = "Show in Packages";
+"复制升级命令" = "Copy upgrade command";
+"将依次升级 %d 个包。" = "Upgrades %d packages in sequence.";
+"将依次升级所有可更新的 Formula 与 Cask。已固定的包会被 Homebrew 跳过。" = "Upgrades every outdated Formula and Cask in sequence. Homebrew skips pinned packages.";
+"已固定的包不会升级，请先取消固定。" = "Pinned packages are not upgraded. Unpin them first.";
+"开启 Homebrew 功能后才能升级已安装的包。" = "Turn on Homebrew features to upgrade installed packages.";
+"所有已安装的 Formula 与 Cask 都是最新版本。" = "Every installed Formula and Cask is up to date.";
+"查看可升级的包" = "Show upgradable packages";
+"检查更新" = "Check for Updates";
+"没有可升级的包" = "Everything Is Up to Date";
+"运行 brew update 后重新读取可升级列表。" = "Runs brew update, then rereads the list of upgradable packages.";

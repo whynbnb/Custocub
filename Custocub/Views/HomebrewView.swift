@@ -21,7 +21,6 @@ struct HomebrewView: View {
     @EnvironmentObject private var brew: BrewStore
 
     @State private var confirmUninstall: [BrewPackage] = []
-    @State private var showingUpgradeAllConfirmation = false
     @State private var showingBrewComparison = false
 
     var body: some View {
@@ -44,6 +43,8 @@ struct HomebrewView: View {
                         packagesSection
                     case .explore:
                         BrewExploreView()
+                    case .upgrade:
+                        BrewUpgradeView()
                     case .snapshots:
                         BrewSnapshotListView(showingComparison: $showingBrewComparison)
                     case .services:
@@ -91,18 +92,6 @@ struct HomebrewView: View {
         } message: {
             Text(L.t("包文件会被移除。依赖关系由 Homebrew 处理。"))
         }
-        .confirmationDialog(
-            L.t("升级全部可更新包？"),
-            isPresented: $showingUpgradeAllConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button(L.t("升级")) {
-                Task { await brew.upgradeAll() }
-            }
-            Button(L.t("取消"), role: .cancel) {}
-        } message: {
-            Text(L.t("将依次升级当前可更新的 Formula 与 Cask。"))
-        }
     }
 
     // MARK: - Header
@@ -110,39 +99,121 @@ struct HomebrewView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
             // 标题与统计共用一行，统计居右。
-            // 探索分区改为展示目录统计，因此切换分区时这一行的高度不会变化。
-            HStack(alignment: .center, spacing: 10) {
-                Text("Homebrew")
-                    .font(.title2.weight(.semibold))
-
-                if brew.detectedVersion != nil {
-                    BrewVersionPill(version: brew.brewVersion)
-                }
-
-                Image(systemName: "info.circle")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .help(Text(L.t("在这里集中管理 Formula 和 Cask，并保存独立的 Homebrew 快照。")))
-                    .accessibilityLabel("Homebrew 说明")
-
-                Spacer(minLength: 12)
-
-                if brew.isLoading {
-                    ProgressView().controlSize(.small)
-                }
-
-                if brew.section == .explore {
-                    exploreMetrics
-                } else {
-                    installedMetrics
-                }
+            // 语言或窗口宽度导致放不下时，统计会自动退化成「图标 + 数值」。
+            ViewThatFits(in: .horizontal) {
+                titleRow(statsCompact: false)
+                titleRow(statsCompact: true)
             }
             .frame(minHeight: 30)
 
             // 分区切换器与「可更新」放在同一行：
-            // 切换分区时切换器位置固定，行高也保持固定。
-            // 不用固定宽度：中文标签较长时会被裁切，交给 Picker 自己算宽度。
-            HStack(spacing: 12) {
+            // 切换分区时位置固定，行高也保持固定。
+            // 宽度不够时先压缩「可更新」，再退化成菜单。
+            ViewThatFits(in: .horizontal) {
+                sectionRow(segmented: true, chipCompact: false)
+                sectionRow(segmented: true, chipCompact: true)
+                sectionRow(segmented: false, chipCompact: true)
+            }
+            .frame(height: 26)
+        }
+        .padding(16)
+        .background(.background)
+        .opacity(brew.isAvailable ? 1 : 0.55)
+    }
+
+    @ViewBuilder
+    private func titleRow(statsCompact: Bool) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            Text("Homebrew")
+                .font(.title2.weight(.semibold))
+
+            if brew.detectedVersion != nil {
+                BrewVersionPill(version: brew.brewVersion)
+            }
+
+            Image(systemName: "info.circle")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .help(Text(L.t("在这里集中管理 Formula 和 Cask，并保存独立的 Homebrew 快照。")))
+                .accessibilityLabel("Homebrew 说明")
+
+            Spacer(minLength: 12)
+
+            if brew.isLoading {
+                ProgressView().controlSize(.small)
+            }
+
+            headerStats(compact: statsCompact)
+        }
+    }
+
+    @ViewBuilder
+    private func headerStats(compact: Bool) -> some View {
+        HStack(spacing: 10) {
+            if brew.section == .explore {
+                MetricChip(
+                    title: "Formula",
+                    value: "\(brew.catalogFormulaCount)",
+                    symbol: "terminal",
+                    color: .mint,
+                    showsTitle: !compact
+                )
+                MetricChip(
+                    title: "Cask",
+                    value: "\(brew.catalogCaskCount)",
+                    symbol: "shippingbox",
+                    color: .orange,
+                    showsTitle: !compact
+                )
+                if brew.popularity != nil {
+                    MetricChip(
+                        title: "总下载量",
+                        value: brew.activeTotalDownloads.formatted(.number.notation(.compactName)),
+                        symbol: "arrow.down.circle",
+                        color: .blue,
+                        showsTitle: !compact
+                    )
+                }
+            } else {
+                MetricChip(
+                    title: "Formula",
+                    value: "\(brew.formulaCount)",
+                    symbol: "terminal",
+                    color: .mint,
+                    showsTitle: !compact
+                )
+                MetricChip(
+                    title: "Cask",
+                    value: "\(brew.caskCount)",
+                    symbol: "shippingbox",
+                    color: .orange,
+                    showsTitle: !compact
+                )
+                // 没有固定任何包时不占位置。
+                if brew.pinnedCount > 0 {
+                    MetricChip(
+                        title: "已固定",
+                        value: "\(brew.pinnedCount)",
+                        symbol: "pin",
+                        color: .blue,
+                        showsTitle: !compact
+                    )
+                }
+                MetricChip(
+                    title: "依赖",
+                    value: "\(brew.dependencyCount)",
+                    symbol: "link",
+                    color: .purple,
+                    showsTitle: !compact
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func sectionRow(segmented: Bool, chipCompact: Bool) -> some View {
+        HStack(spacing: 12) {
+            if segmented {
                 Picker("视图", selection: $brew.section) {
                     ForEach(BrewSection.allCases) { section in
                         Text(section.title).tag(section)
@@ -152,79 +223,36 @@ struct HomebrewView: View {
                 .labelsHidden()
                 .controlSize(.small)
                 .fixedSize()
+            } else {
+                Menu {
+                    Picker("视图", selection: $brew.section) {
+                        ForEach(BrewSection.allCases) { section in
+                            Label(section.title, systemImage: section.symbol).tag(section)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                } label: {
+                    Label(brew.section.title, systemImage: brew.section.symbol)
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+            }
 
-                Spacer(minLength: 0)
+            Spacer(minLength: 0)
 
+            Button {
+                brew.section = .upgrade
+            } label: {
                 MetricChip(
                     title: "可更新",
                     value: "\(brew.outdatedCount)",
                     symbol: "arrow.triangle.2.circlepath",
-                    color: brew.outdatedCount > 0 ? .red : .secondary
+                    color: brew.outdatedCount > 0 ? .red : .secondary,
+                    showsTitle: !chipCompact
                 )
             }
-            .frame(height: 26)
-        }
-        .padding(16)
-        .background(.background)
-        .opacity(brew.isAvailable ? 1 : 0.55)
-    }
-
-    /// 已安装包的统计：Formula、Cask、固定与依赖数量。
-    private var installedMetrics: some View {
-        HStack(spacing: 10) {
-            MetricChip(
-                title: "Formula",
-                value: "\(brew.formulaCount)",
-                symbol: "terminal",
-                color: .mint
-            )
-            MetricChip(
-                title: "Cask",
-                value: "\(brew.caskCount)",
-                symbol: "shippingbox",
-                color: .orange
-            )
-            // 没有固定任何包时不占位置。
-            if brew.pinnedCount > 0 {
-                MetricChip(
-                    title: "已固定",
-                    value: "\(brew.pinnedCount)",
-                    symbol: "pin",
-                    color: .blue
-                )
-            }
-            MetricChip(
-                title: "依赖",
-                value: "\(brew.dependencyCount)",
-                symbol: "link",
-                color: .purple
-            )
-        }
-    }
-
-    /// 探索分区的统计：全部可安装的 Formula / Cask 与当前范围的总下载量。
-    private var exploreMetrics: some View {
-        HStack(spacing: 10) {
-            MetricChip(
-                title: "Formula",
-                value: "\(brew.catalogFormulaCount)",
-                symbol: "terminal",
-                color: .mint
-            )
-            MetricChip(
-                title: "Cask",
-                value: "\(brew.catalogCaskCount)",
-                symbol: "shippingbox",
-                color: .orange
-            )
-            if brew.popularity != nil {
-                MetricChip(
-                    title: "总下载量",
-                    value: brew.activeTotalDownloads.formatted(.number.notation(.compactName)),
-                    symbol: "arrow.down.circle",
-                    color: .blue
-                )
-            }
+            .buttonStyle(.plain)
+            .help(Text(L.t("查看可升级的包")))
         }
     }
 
@@ -470,16 +498,6 @@ struct HomebrewView: View {
     private var toolbarContent: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
             if brew.section == .packages, brew.isAvailable {
-                Button {
-                    if brew.outdatedCount > 0 {
-                        showingUpgradeAllConfirmation = true
-                    }
-                } label: {
-                    Label("升级全部", systemImage: "arrow.triangle.2.circlepath")
-                }
-                .help(Text(L.t("升级所有可更新的包")))
-                .disabled(!brew.isAvailable || brew.isRunningCommand || brew.outdatedCount == 0)
-
                 Menu {
                     Button(L.t("导出全部 Brewfile…")) {
                         brew.exportCurrentBrewfile()
