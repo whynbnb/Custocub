@@ -421,6 +421,7 @@ struct MetricChip: View {
         .frame(height: 25)
         .background(color.opacity(0.08), in: RoundedRectangle(cornerRadius: 7))
         .fixedSize(horizontal: true, vertical: false)
+        .help(Text("\(L.t(title)): \(value)"))
     }
 }
 

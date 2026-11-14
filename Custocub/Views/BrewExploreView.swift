@@ -166,42 +166,6 @@ struct BrewExploreView: View {
             Divider().opacity(0.6)
 
             HStack(spacing: 10) {
-                MetricChip(
-                    title: "Formula",
-                    value: "\(brew.catalogFormulaCount)",
-                    symbol: "terminal",
-                    color: .mint
-                )
-                MetricChip(
-                    title: "Cask",
-                    value: "\(brew.catalogCaskCount)",
-                    symbol: "shippingbox",
-                    color: .orange
-                )
-
-                if let ranking = brew.activeRanking {
-                    MetricChip(
-                        title: "总下载量",
-                        value: brew.activeTotalDownloads.formatted(.number.notation(.compactName)),
-                        symbol: "arrow.down.circle",
-                        color: .blue
-                    )
-                    .help(Text(L.t("%@ 期间的下载量统计。", ranking.dateRangeText ?? brew.exploreRange.title)))
-                }
-
-                if brew.popularity == nil && brew.hasAttemptedPopularityLoad && !brew.isLoadingPopularity {
-                    Label(L.t("下载量统计不可用"), systemImage: "exclamationmark.triangle")
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                        .fixedSize()
-                    Button(L.t("重试")) {
-                        Task { await brew.loadPopularity(force: true) }
-                    }
-                    .controlSize(.small)
-                }
-
-                Spacer(minLength: 0)
-
                 // 显示条数放在这里，避免第一行控件过多被裁切。
                 Picker("数量", selection: $brew.exploreLimit) {
                     ForEach(BrewCatalogLimit.allCases) { limit in
@@ -218,6 +182,28 @@ struct BrewExploreView: View {
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
                     .fixedSize()
+
+                if brew.popularity == nil && brew.hasAttemptedPopularityLoad && !brew.isLoadingPopularity {
+                    Label(L.t("下载量统计不可用"), systemImage: "exclamationmark.triangle")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .fixedSize()
+                    Button(L.t("重试")) {
+                        Task { await brew.loadPopularity(force: true) }
+                    }
+                    .controlSize(.small)
+                }
+
+                Spacer(minLength: 0)
+
+                // 统计区间放在右侧，补充说明下载量对应的时间范围。
+                if let range = brew.activeRanking?.dateRangeText {
+                    Text(range)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                        .fixedSize()
+                }
 
                 if brew.isLoadingCatalog || brew.isLoadingPopularity {
                     ProgressView().controlSize(.small)

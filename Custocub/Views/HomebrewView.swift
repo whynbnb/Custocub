@@ -114,7 +114,9 @@ struct HomebrewView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+            // 标题与统计共用一行，统计居右。
+            // 探索分区改为展示目录统计，因此切换分区时这一行的高度不会变化。
+            HStack(alignment: .center, spacing: 10) {
                 Text("Homebrew")
                     .font(.title2.weight(.semibold))
 
@@ -128,47 +130,107 @@ struct HomebrewView: View {
                     .help(Text(L.t("在这里集中管理 Formula 和 Cask，并保存独立的 Homebrew 快照。")))
                     .accessibilityLabel("Homebrew 说明")
 
-                Spacer()
+                Spacer(minLength: 12)
 
                 if brew.isLoading {
                     ProgressView().controlSize(.small)
                 }
-            }
 
-            // 探索分区有自己的目录指标（全部可安装包），
-            // 这里就不再重复显示已安装数量，避免两个 Formula 数字互相干扰。
-            if brew.section != .explore {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        MetricChip(title: "Formula", value: "\(brew.formulaCount)", symbol: "terminal", color: .mint)
-                        MetricChip(title: "Cask", value: "\(brew.caskCount)", symbol: "shippingbox", color: .orange)
-                        MetricChip(
-                            title: "可更新",
-                            value: "\(brew.outdatedCount)",
-                            symbol: "arrow.triangle.2.circlepath",
-                            color: brew.outdatedCount > 0 ? .red : .secondary
-                        )
-                        MetricChip(title: "已固定", value: "\(brew.pinnedCount)", symbol: "pin", color: .blue)
-                        MetricChip(title: "依赖", value: "\(brew.dependencyCount)", symbol: "link", color: .purple)
+                if brew.section == .explore {
+                    exploreMetrics
+                } else {
+                    installedMetrics
+                }
+            }
+            .frame(minHeight: 30)
+
+            // 分区切换器与「可更新」放在同一行：
+            // 切换分区时切换器位置固定，行高也保持固定。
+            // 不用固定宽度：中文标签较长时会被裁切，交给 Picker 自己算宽度。
+            HStack(spacing: 12) {
+                Picker("视图", selection: $brew.section) {
+                    ForEach(BrewSection.allCases) { section in
+                        Text(section.title).tag(section)
                     }
                 }
-            }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .controlSize(.small)
+                .fixedSize()
 
-            // 分区切换器固定在左侧，切换时位置不变。
-            // 不用固定宽度：中文标签较长时会被裁切，交给 Picker 自己算宽度。
-            Picker("视图", selection: $brew.section) {
-                ForEach(BrewSection.allCases) { section in
-                    Text(section.title).tag(section)
-                }
+                Spacer(minLength: 0)
+
+                MetricChip(
+                    title: "可更新",
+                    value: "\(brew.outdatedCount)",
+                    symbol: "arrow.triangle.2.circlepath",
+                    color: brew.outdatedCount > 0 ? .red : .secondary
+                )
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .controlSize(.small)
-            .fixedSize()
+            .frame(height: 26)
         }
         .padding(16)
         .background(.background)
         .opacity(brew.isAvailable ? 1 : 0.55)
+    }
+
+    /// 已安装包的统计：Formula、Cask、固定与依赖数量。
+    private var installedMetrics: some View {
+        HStack(spacing: 10) {
+            MetricChip(
+                title: "Formula",
+                value: "\(brew.formulaCount)",
+                symbol: "terminal",
+                color: .mint
+            )
+            MetricChip(
+                title: "Cask",
+                value: "\(brew.caskCount)",
+                symbol: "shippingbox",
+                color: .orange
+            )
+            // 没有固定任何包时不占位置。
+            if brew.pinnedCount > 0 {
+                MetricChip(
+                    title: "已固定",
+                    value: "\(brew.pinnedCount)",
+                    symbol: "pin",
+                    color: .blue
+                )
+            }
+            MetricChip(
+                title: "依赖",
+                value: "\(brew.dependencyCount)",
+                symbol: "link",
+                color: .purple
+            )
+        }
+    }
+
+    /// 探索分区的统计：全部可安装的 Formula / Cask 与当前范围的总下载量。
+    private var exploreMetrics: some View {
+        HStack(spacing: 10) {
+            MetricChip(
+                title: "Formula",
+                value: "\(brew.catalogFormulaCount)",
+                symbol: "terminal",
+                color: .mint
+            )
+            MetricChip(
+                title: "Cask",
+                value: "\(brew.catalogCaskCount)",
+                symbol: "shippingbox",
+                color: .orange
+            )
+            if brew.popularity != nil {
+                MetricChip(
+                    title: "总下载量",
+                    value: brew.activeTotalDownloads.formatted(.number.notation(.compactName)),
+                    symbol: "arrow.down.circle",
+                    color: .blue
+                )
+            }
+        }
     }
 
     private var unavailableView: some View {
