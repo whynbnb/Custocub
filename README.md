@@ -80,6 +80,17 @@ The Steam client and the JetBrains Toolbox client are added to their own source 
 
 Custocub has a dedicated **Homebrew** screen in the sidebar, separate from the app inventory.
 
+**Master switch**
+
+- Homebrew support is **on by default** and only activates when a `brew` executable is detected on the machine.
+- If Homebrew is not installed, nothing is shown or run: the Homebrew sidebar entry is hidden and no `brew` process is spawned.
+- The switch only controls the Homebrew **management** screen. Everything that already existed is untouched:
+  - Homebrew apps stay classified as the **Homebrew source** in the app inventory.
+  - Source counts, system/third-party split, platform detection, gallery, size cache, and snapshots all behave exactly as before.
+  - App snapshots keep saving normally; they simply skip the optional cask list when the switch is off.
+- When the switch is off, the Homebrew entry disappears from the sidebar entirely: no `brew` command runs, the package list is not read, and the Homebrew screens are not reachable. Saved snapshot files stay on disk, so nothing is deleted.
+- Turning it back on reloads the package list automatically.
+
 **Package list**
 
 - Reads the installed inventory with a single `brew info --json=v2 --installed` call.

@@ -38,16 +38,19 @@ struct SidebarView: View {
 
             }
 
-            Section("Homebrew") {
-                SidebarRow(
-                    title: "Homebrew 包",
-                    symbol: "mug.fill",
-                    count: brew.packageCount,
-                    tint: AppSource.homebrew.color,
-                    isSelected: store.sidebarSelection == .brew
-                )
-                .tag(SidebarSelection.brew)
-                .help(Text(L.t("独立管理 Formula、Cask 和 Homebrew 快照。")))
+            // 功能关闭或未安装时不显示入口，彻底关闭 Homebrew 相关界面。
+            if brew.isAvailable {
+                Section("Homebrew") {
+                    SidebarRow(
+                        title: "Homebrew 包",
+                        symbol: "mug.fill",
+                        count: brew.packageCount,
+                        tint: AppSource.homebrew.color,
+                        isSelected: store.sidebarSelection == .brew
+                    )
+                    .tag(SidebarSelection.brew)
+                    .help(Text(L.t("独立管理 Formula、Cask 和 Homebrew 快照。")))
+                }
             }
 
             Section("来源") {
@@ -137,6 +140,13 @@ struct SidebarView: View {
         .onChange(of: store.sidebarSelection) {
             store.selectedAppID = nil
             store.syncSourceFilterForSelection()
+        }
+        .onChange(of: brew.isAvailable) { _, available in
+            // Homebrew 入口被隐藏时，避免停留在已不可见的页面。
+            if !available && store.activeSelection == .brew {
+                store.sidebarSelection = .installed
+                store.selectedAppID = nil
+            }
         }
         .onChange(of: showDeveloperApps) { _, isVisible in
             if !isVisible && store.activeSelection == .own {

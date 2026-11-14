@@ -99,6 +99,7 @@ final class CustocubStore: ObservableObject {
         loadSidebarCache()
     }
 
+
     // MARK: - Derived data
 
     var activeSelection: SidebarSelection {
@@ -585,10 +586,15 @@ final class CustocubStore: ObservableObject {
             isSavingSnapshot = false
         }
 
+        // Homebrew 功能关闭时不读取，避免执行 brew 命令。
+        // 与体积计算并行执行，不增加保存快照的等待时间。
+        let brewInventoryTask = Task { () -> BrewInventory? in
+            guard BrewStore.isEnabledPreference else { return nil }
+            return await BrewService.loadInventory()
+        }
+
         let preparedApps = await prepareSnapshotApps()
-        // 应用快照同时记录 Homebrew Cask 列表，方便导出后直接重装。
-        // 只读取一次清单，避免重复执行 brew。
-        let inventory = await BrewService.loadInventory()
+        let inventory = await brewInventoryTask.value
         let now = Date()
         let formatter = DateFormatter()
         formatter.locale = Locale.current

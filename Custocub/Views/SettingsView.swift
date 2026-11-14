@@ -131,7 +131,24 @@ private struct HomebrewSettingsTab: View {
 
     var body: some View {
         Form {
+            Section {
+                Toggle("启用 Homebrew 功能", isOn: $brew.isEnabled)
+
+                Text("关闭后不会执行任何 brew 命令，也不会读取包列表。应用清单中的 Homebrew 来源、已保存的 Homebrew 快照都会保留。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("状态") {
+                LabeledContent("检测结果") {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(statusColor)
+                            .frame(width: 7, height: 7)
+                        Text(statusText)
+                    }
+                }
+
                 LabeledContent("可执行文件") {
                     Text(brew.executablePath)
                         .font(.caption.monospaced())
@@ -155,6 +172,10 @@ private struct HomebrewSettingsTab: View {
 
             Section {
                 HStack {
+                    Button("重新检测 Homebrew") {
+                        brew.rediscover()
+                    }
+
                     Button("重新读取包列表") {
                         Task { await brew.load(force: true) }
                     }
@@ -175,6 +196,18 @@ private struct HomebrewSettingsTab: View {
             }
         }
         .formStyle(.grouped)
+    }
+
+    private var statusText: String {
+        if brew.isDisabledByUser { return L.t("已关闭") }
+        if brew.isMissingInstallation { return L.t("未安装") }
+        return L.t("已启用")
+    }
+
+    private var statusColor: Color {
+        if brew.isDisabledByUser { return .secondary }
+        if brew.isMissingInstallation { return .orange }
+        return .green
     }
 }
 

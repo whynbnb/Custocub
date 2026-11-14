@@ -87,19 +87,53 @@ final class BrewStore: ObservableObject {
         }
     }
 
+    /// Homebrew 整体开关。默认开启，关闭后不执行任何 brew 命令。
+    /// 只影响 Homebrew 管理功能，应用清单中的 Homebrew 来源保持不变。
+    @Published var isEnabled: Bool {
+        didSet {
+            guard isEnabled != oldValue else { return }
+            UserDefaults.standard.set(isEnabled, forKey: Self.enabledKey)
+            if isEnabled {
+                Task { await load(force: true) }
+            } else {
+                deactivate()
+            }
+        }
+    }
+
     /// 启动时解析一次 brew 路径，避免在视图 body 中反复访问文件系统。
-    let executableURL = BrewService.locateExecutable()
+    /// 关闭开关时保持路径不变，重新开启可以立刻复用。
+    @Published private(set) var executableURL = BrewService.locateExecutable()
 
     private var runningProcess: BrewProcess?
     private let snapshotRepository = BrewSnapshotRepository()
 
+    private static let enabledKey = "homebrewEnabled"
+
+    /// 读取保存的开关状态，供其他组件在不持有 store 时判断。
+    /// 默认开启；用户显式关闭后为 false。
+    static var isEnabledPreference: Bool {
+        UserDefaults.standard.object(forKey: enabledKey) as? Bool ?? true
+    }
+
     init() {
+        isEnabled = Self.isEnabledPreference
         loadSnapshots()
     }
 
     // MARK: - 状态
 
-    var isAvailable: Bool { executableURL != nil }
+    /// 是否检测到 Homebrew 可执行文件。
+    var isInstalled: Bool { executableURL != nil }
+
+    /// 功能是否可用：用户开启且本机确实安装了 Homebrew。
+    var isAvailable: Bool { isEnabled && isInstalled }
+
+    /// 用户主动关闭时为 true。
+    var isDisabledByUser: Bool { !isEnabled }
+
+    /// 开启开关但本机未安装 Homebrew。
+    var isMissingInstallation: Bool { isEnabled && !isInstalled }
 
     var executablePath: String {
         executableURL?.path ?? L.t("未找到 Homebrew")
@@ -167,7 +201,7 @@ final class BrewStore: ObservableObject {
         if !force, let lastLoadedAt, Date().timeIntervalSince(lastLoadedAt) < 15 {
             return
         }
-        // 没有安装 Homebrew 时界面会显示引导状态，无需弹出错误。
+        // 开关关闭或本机未安装 Homebrew 时界面会显示对应状态，无需弹出错误。
         guard isAvailable else { return }
 
         isLoading = true
@@ -194,6 +228,14 @@ final class BrewStore: ObservableObject {
         title: String,
         refreshAfter: Bool = true
     ) async -> Bool {
+        guard isEnabled else {
+            errorMessage = L.t("Homebrew 功能已关闭。可在设置中重新开启。")
+            return false
+        }
+        guard isInstalled else {
+            errorMessage = L.t("找不到 Homebrew。请确认已经安装 Homebrew。")
+            return false
+        }
         guard !isRunningCommand else {
             appendLog(.info, L.t("已有命令正在执行，请稍候。"))
             return false
@@ -276,6 +318,24 @@ final class BrewStore: ObservableObject {
     func cancelRunningCommand() {
         runningProcess?.cancel()
         appendLog(.info, L.t("正在停止命令…"))
+    }
+
+    /// 关闭开关时停止正在执行的命令并清空运行时状态。
+    /// Homebrew 快照与日志保留，方便重新开启后继续使用。
+    private func deactivate() {
+        runningProcess?.cancel()
+        runningProcess = nil
+        inventory = nil
+        hasLoaded = false
+        lastLoadedAt = nil
+        selection.removeAll()
+        selectedPackageID = nil
+        appendLog(.info, L.t("Homebrew 功能已关闭，不再执行任何 brew 命令。"))
+    }
+
+    /// 重新检测本机是否安装了 Homebrew。
+    func rediscover() {
+        executableURL = BrewService.locateExecutable()
     }
 
     func clearLog() {
@@ -373,6 +433,10 @@ final class BrewStore: ObservableObject {
 
     /// 保存 Homebrew 快照。若当前清单尚未加载会先读取。
     func saveSnapshot() async {
+        guard isAvailable else {
+            errorMessage = L.t("Homebrew 功能当前不可用，无法保存快照。")
+            return
+        }
         guard !isSavingSnapshot else { return }
 
         if inventory == nil {

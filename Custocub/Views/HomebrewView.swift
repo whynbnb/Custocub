@@ -14,9 +14,13 @@ struct HomebrewView: View {
             header
             Divider()
 
-            if !brew.isAvailable {
+            switch brewState {
+            case .disabled:
+                // 关闭后不显示任何 Homebrew 管理内容。
+                disabledView
+            case .missing:
                 unavailableView
-            } else {
+            case .ready:
                 Group {
                     switch brew.section {
                     case .packages:
@@ -29,7 +33,9 @@ struct HomebrewView: View {
             }
 
             Divider()
-            BrewConsolePanel()
+            if brew.isEnabled {
+                BrewConsolePanel()
+            }
         }
         .navigationTitle("Homebrew")
         .toolbar { toolbarContent }
@@ -145,6 +151,7 @@ struct HomebrewView: View {
         }
         .padding(16)
         .background(.background)
+        .opacity(brew.isAvailable ? 1 : 0.55)
     }
 
     private var unavailableView: some View {
@@ -154,8 +161,66 @@ struct HomebrewView: View {
             Text(L.t("安装 Homebrew 后，这里会显示 Formula、Cask、快照和命令日志。"))
         } actions: {
             Link(L.t("打开 Homebrew 官网"), destination: URL(string: "https://brew.sh")!)
+                .buttonStyle(.bordered)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom) {
+            missingHint
+        }
+    }
+
+    /// 开关开启但本机没有 Homebrew 时的说明。
+    private var missingHint: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "info.circle")
+                .foregroundStyle(.secondary)
+            Text(L.t("如果 Homebrew 安装在其他位置，可以重新检测。"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            Button(L.t("重新检测")) {
+                brew.rediscover()
+            }
+            .controlSize(.small)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.bar)
+    }
+
+    /// 用户主动关闭 Homebrew 功能时的说明（入口已隐藏，作为过渡状态兜底）。
+    private var disabledView: some View {
+        ContentUnavailableView {
+            Label(L.t("Homebrew 功能已关闭"), systemImage: "mug")
+        } description: {
+            Text(L.t("开启后可以使用 Formula、Cask、快照和命令日志。应用清单中的 Homebrew 来源不受影响。"))
+        } actions: {
+            Button(L.t("启用 Homebrew")) {
+                brew.isEnabled = true
+            }
+            .buttonStyle(.borderedProminent)
+
+            SettingsLink {
+                Text(L.t("打开设置"))
+            }
+            .buttonStyle(.bordered)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// 三种界面状态，避免各处重复判断。
+    private enum BrewUIState {
+        case disabled
+        case missing
+        case ready
+    }
+
+    private var brewState: BrewUIState {
+        if brew.isDisabledByUser { return .disabled }
+        if brew.isMissingInstallation { return .missing }
+        return .ready
     }
 
     // MARK: - Packages
@@ -261,7 +326,7 @@ struct HomebrewView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
-            if brew.section == .packages {
+            if brew.section == .packages, brew.isAvailable {
                 Button {
                     showingInstallSheet = true
                 } label: {

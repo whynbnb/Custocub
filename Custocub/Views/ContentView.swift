@@ -35,6 +35,8 @@ struct ContentView: View {
         }
         .task {
             // 侧边栏需要 Homebrew 包数量，启动后后台读取一次。
+            // 功能关闭或未安装时直接跳过，不派生任何 brew 进程。
+            guard brew.isAvailable else { return }
             await brew.load()
         }
         .onReceive(NotificationCenter.default.publisher(for: .custocubShowBrewConsole)) { _ in

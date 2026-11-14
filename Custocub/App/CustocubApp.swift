@@ -64,7 +64,7 @@ struct CustocubCommands: Commands {
                 Task { await brew.saveSnapshot() }
             }
             .keyboardShortcut("s", modifiers: [.command, .shift])
-            .disabled(brew.isSavingSnapshot || brew.isRunningCommand || !brew.hasLoaded)
+            .disabled(!brew.isAvailable || brew.isSavingSnapshot || brew.isRunningCommand || !brew.hasLoaded)
         }
 
         CommandGroup(replacing: .appInfo) {
@@ -153,6 +153,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApplication.shared.activate(ignoringOtherApps: true)
+
 
 
 

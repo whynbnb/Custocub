@@ -397,3 +397,21 @@
 "常规" = "General";
 
 "语言与外观会立即生效，无需重新启动。" = "Language and appearance changes apply immediately, no restart needed.";
+
+"Homebrew 功能已关闭" = "Homebrew Disabled";
+"Homebrew 功能已关闭。可在设置中重新开启。" = "Homebrew is disabled. You can turn it back on in Settings.";
+"Homebrew 功能已关闭，不再执行任何 brew 命令。" = "Homebrew is disabled. No brew commands will be run.";
+"Homebrew 功能当前不可用，无法保存快照。" = "Homebrew is currently unavailable, so the snapshot cannot be saved.";
+"关闭后不会执行任何 brew 命令，也不会读取包列表。应用清单中的 Homebrew 来源、已保存的 Homebrew 快照都会保留。" = "When off, no brew commands run and the package list is not read. The Homebrew source in the app inventory and saved Homebrew snapshots are kept.";
+"启用 Homebrew" = "Enable Homebrew";
+"启用 Homebrew 功能" = "Enable Homebrew";
+"如果 Homebrew 安装在其他位置，可以重新检测。" = "If Homebrew is installed somewhere else, you can detect it again.";
+"已关闭" = "Disabled";
+"已启用" = "Enabled";
+"开启后可以使用 Formula、Cask、快照和命令日志。应用清单中的 Homebrew 来源不受影响。" = "Turn it on to use formulae, casks, snapshots, and the command log. The Homebrew source in the app inventory is unaffected.";
+"打开设置" = "Open Settings";
+"未安装" = "Not installed";
+"检测结果" = "Detection";
+"重新检测" = "Detect again";
+"重新检测 Homebrew" = "Detect Homebrew again";
+
