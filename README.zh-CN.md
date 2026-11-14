@@ -129,6 +129,20 @@ Custocub 执行的每条命令都会实时写入日志：
 - Homebrew 界面底部可折叠的日志面板，以及带历史记录的独立日志窗口
 - 可以停止正在执行的命令：先发送 `SIGINT`，如果 Homebrew 未退出再依次发送 `SIGTERM` / `SIGKILL`
 
+**清理**
+
+新增独立的 **清理** 页，先分析再执行 Homebrew 的真实清理命令。分析阶段只用只读命令（`-n` 试运行 + 目录统计），在你点击执行前不会改动任何文件。
+
+| 操作 | 命令 | 作用 |
+| --- | --- | --- |
+| 标准清理 | `brew cleanup` | 移除过期下载、旧版本、残留锁文件与日志，并自动移除无用依赖 |
+| 移除无用依赖 | `brew autoremove` | 卸载「只作为依赖安装、且已不再被需要」的 formula |
+| 清理全部缓存 | `brew cleanup --prune=all` | 删除全部下载缓存（含最新版本），保留已安装的包 |
+| 清空下载缓存 | `brew cleanup --prune=all --scrub` | 连 Ruby 缓存与临时文件一并清理 |
+| 修复安装前缀链接 | `brew cleanup --prune-prefix` | 只清理失效的符号链接和空目录 |
+
+界面会分别给出标准清理与深度清理预计可释放的空间、按目录拆分的缓存占用（`downloads`、`api`、`bootsnap`）、旧版本、无用依赖，以及 `brew missing` 健康检查。破坏性操作执行前会二次确认。
+
 **导出**
 
 - 把当前已安装包导出为 `Brewfile`，可直接交给 `brew bundle`
@@ -297,6 +311,7 @@ Custocub/
 │  ├─ BrewSnapshotListView.swift # Homebrew 快照与 Brewfile 导出
 │  ├─ BrewPackageDetailView.swift # Formula / Cask 详情与命令
 │  ├─ BrewConsoleView.swift      # 实时命令日志与历史
+│  ├─ BrewCleanupView.swift      # 清理分析与操作
 │  ├─ Components.swift
 │  └─ FileActions.swift
 └─ Resources/Assets.xcassets

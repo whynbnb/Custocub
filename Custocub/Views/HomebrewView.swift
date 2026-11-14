@@ -27,6 +27,8 @@ struct HomebrewView: View {
                         packagesSection
                     case .snapshots:
                         BrewSnapshotListView(showingComparison: $showingBrewComparison)
+                    case .cleanup:
+                        BrewCleanupView()
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -145,7 +147,7 @@ struct HomebrewView: View {
                 .pickerStyle(.segmented)
                 .labelsHidden()
                 .controlSize(.small)
-                .frame(width: 132)
+                .frame(width: 186)
                 .layoutPriority(1)
             }
         }
@@ -378,7 +380,7 @@ struct HomebrewView: View {
                 Divider()
 
                 Button(L.t("清理缓存与旧版本")) {
-                    Task { await brew.cleanup() }
+                    Task { await brew.cleanupStandard() }
                 }
                 Button(L.t("移除不再需要的依赖")) {
                     Task { await brew.autoremove() }

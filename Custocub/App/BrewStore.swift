@@ -25,6 +25,7 @@ struct BrewLogEntry: Identifiable, Sendable {
 enum BrewSection: String, CaseIterable, Identifiable {
     case packages
     case snapshots
+    case cleanup
 
     var id: String { rawValue }
 
@@ -32,6 +33,7 @@ enum BrewSection: String, CaseIterable, Identifiable {
         switch self {
         case .packages: L.t("包")
         case .snapshots: L.t("快照")
+        case .cleanup: L.t("清理")
         }
     }
 
@@ -39,6 +41,7 @@ enum BrewSection: String, CaseIterable, Identifiable {
         switch self {
         case .packages: "shippingbox"
         case .snapshots: "camera"
+        case .cleanup: "trash"
         }
     }
 }
@@ -70,6 +73,13 @@ final class BrewStore: ObservableObject {
     @Published private(set) var history: [BrewCommandHistoryItem] = []
     @Published var selectedPackageID: String?
     @Published var errorMessage: String?
+
+    /// 清理分析结果（缓存、旧版本、无用依赖等）。
+    @Published private(set) var cleanupReport: BrewCleanupReport?
+    @Published private(set) var isAnalyzingCleanup = false
+    @Published private(set) var lastCleanupAnalyzedAt: Date?
+    /// 上次清理释放的空间，用于在界面上反馈结果。
+    @Published private(set) var lastCleanupFreedBytes: Int64?
 
     @Published var searchText = ""
     @Published var kindFilter: BrewPackageKind?
@@ -601,12 +611,89 @@ final class BrewStore: ObservableObject {
         _ = await runCommand(["update"], title: L.t("更新 Homebrew 索引"))
     }
 
-    func cleanup() async {
-        _ = await runCommand(["cleanup"], title: L.t("清理缓存与旧版本"))
+    // MARK: - 清理
+
+    /// 分析可清理的内容。只执行只读命令，不修改任何文件。
+    func analyzeCleanup(force: Bool = false) async {
+        guard isAvailable, !isAnalyzingCleanup else { return }
+        if !force, let lastCleanupAnalyzedAt,
+           Date().timeIntervalSince(lastCleanupAnalyzedAt) < 60 {
+            return
+        }
+
+        isAnalyzingCleanup = true
+        defer { isAnalyzingCleanup = false }
+
+        cleanupReport = await BrewCleanupService.analyze()
+        lastCleanupAnalyzedAt = Date()
     }
 
+    /// 标准清理：等价于 `brew cleanup`。
+    /// 移除过期下载、旧版本 keg、残留锁文件和日志，并自动移除无用依赖。
+    func cleanupStandard() async {
+        lastCleanupFreedBytes = cleanupReport?.estimatedFreeBytes
+        await runCommand(["cleanup"], title: L.t("清理缓存与旧版本"))
+        await analyzeCleanup(force: true)
+    }
+
+    /// 深度清理：等价于 `brew cleanup --prune=all`。
+    /// 删除所有缓存下载（包括最新版本），能释放最多空间。
+    func cleanupAll() async {
+        lastCleanupFreedBytes = cleanupReport?.estimatedFreeBytes
+        await runCommand(["cleanup", "--prune=all"], title: L.t("清理全部缓存"))
+        await analyzeCleanup(force: true)
+    }
+
+    /// 彻底清空下载缓存目录，等价于删除 `$(brew --cache)`。
+    /// 下次安装或升级时会重新下载。
+    func cleanupEverything() async {
+        lastCleanupFreedBytes = cleanupReport?.estimatedFreeBytes
+        await runCommand(
+            ["cleanup", "--prune=all", "--scrub"],
+            title: L.t("清空下载缓存")
+        )
+        await analyzeCleanup(force: true)
+    }
+
+    /// 试运行清理，只显示会删除什么。
+    func cleanupDryRun() async {
+        await runCommand(["cleanup", "-n"], title: L.t("预览清理内容"), refreshAfter: false)
+    }
+
+    /// 只清理某个包的旧版本。
+    func cleanupPackage(_ package: BrewPackage) async {
+        await runCommand(
+            ["cleanup"] + (package.kind == .cask ? ["--cask"] : []) + [package.name],
+            title: L.t("清理 %@ 的旧版本", package.name)
+        )
+        await analyzeCleanup(force: true)
+    }
+
+    /// 移除不再被需要的依赖。Homebrew 会保留仍被其他包依赖的 formula。
     func autoremove() async {
-        _ = await runCommand(["autoremove"], title: L.t("移除不再需要的依赖"))
+        await runCommand(["autoremove"], title: L.t("移除不再需要的依赖"))
+        await analyzeCleanup(force: true)
+    }
+
+    /// 试运行 autoremove，只看会移除哪些包。
+    func autoremoveDryRun() async {
+        await runCommand(["autoremove", "-n"], title: L.t("预览无用依赖"), refreshAfter: false)
+    }
+
+    /// 检查已安装包的依赖是否完整。
+    func checkMissing() async {
+        await runCommand(["missing"], title: L.t("检查缺失依赖"), refreshAfter: false)
+    }
+
+    /// 清理残留的锁文件。
+    func cleanupLockfiles() async {
+        await runCommand(["cleanup", "-s"], title: L.t("清理残留锁文件"))
+        await analyzeCleanup(force: true)
+    }
+
+    /// 修复安装前缀里的符号链接和空目录，等价于 `brew cleanup --prune-prefix`。
+    func prunePrefix() async {
+        await runCommand(["cleanup", "--prune-prefix"], title: L.t("修复安装前缀链接"), refreshAfter: false)
     }
 
     func doctor() async {

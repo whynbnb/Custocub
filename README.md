@@ -129,6 +129,20 @@ Every command Custocub runs is streamed into a live log:
 - A collapsible panel at the bottom of the Homebrew screen, plus a standalone log window with the recent command history.
 - Running commands can be cancelled: `SIGINT` first, then `SIGTERM`/`SIGKILL` if Homebrew does not exit.
 
+**Cleanup**
+
+A dedicated **Cleanup** tab analyzes and then runs Homebrew's real cleanup commands. Analysis uses read-only commands only (`-n` dry runs plus directory sizing), so nothing is changed until you press Run.
+
+| Action | Command | What it does |
+| --- | --- | --- |
+| Standard cleanup | `brew cleanup` | Removes stale downloads, old kegs, stale lock files, logs, and autoremoves unneeded dependencies |
+| Remove unneeded dependencies | `brew autoremove` | Uninstalls formulae installed only as dependencies that are no longer needed |
+| Clean all caches | `brew cleanup --prune=all` | Deletes every download cache, including current versions; installed packages stay |
+| Wipe download cache | `brew cleanup --prune=all --scrub` | Also clears the Ruby cache and temporary files |
+| Repair prefix links | `brew cleanup --prune-prefix` | Removes only broken symlinks and empty directories |
+
+The screen shows reclaimable size for both a standard and a deep cleanup, a per-directory cache breakdown (`downloads`, `api`, `bootsnap`), old kegs, unneeded dependencies, and a `brew missing` health check. Destructive actions ask for confirmation first.
+
 **Exports**
 
 - Export the current inventory as a `Brewfile` for `brew bundle`.
@@ -285,7 +299,8 @@ Custocub/
 │  ├─ IconProvider.swift         # Icon loading, prefetching, snapshot PNGs
 │  ├─ SnapshotRepository.swift   # Snapshot persistence
 │  ├─ BrewService.swift          # brew discovery, streaming execution, JSON inventory
-│  └─ BrewSnapshotRepository.swift # Homebrew snapshot persistence
+│  ├─ BrewSnapshotRepository.swift # Homebrew snapshot persistence
+│  └─ BrewCleanupService.swift   # Cleanup analysis: cache, old kegs, autoremove
 ├─ Views/
 │  ├─ ContentView.swift
 │  ├─ SidebarView.swift
@@ -298,6 +313,7 @@ Custocub/
 │  ├─ BrewSnapshotListView.swift # Homebrew snapshots and Brewfile export
 │  ├─ BrewPackageDetailView.swift # Formula/cask detail and commands
 │  ├─ BrewConsoleView.swift      # Live command log and history
+│  ├─ BrewCleanupView.swift      # Cleanup analysis and actions
 │  ├─ Components.swift
 │  └─ FileActions.swift
 └─ Resources/Assets.xcassets
