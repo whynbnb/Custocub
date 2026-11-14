@@ -24,6 +24,7 @@ struct BrewLogEntry: Identifiable, Sendable {
 /// Homebrew 管理界面的分区。
 enum BrewSection: String, CaseIterable, Identifiable {
     case packages
+    case explore
     case snapshots
     case services
     case cleanup
@@ -34,6 +35,7 @@ enum BrewSection: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .packages: L.t("包")
+        case .explore: L.t("探索")
         case .snapshots: L.t("快照")
         case .services: L.t("服务")
         case .cleanup: L.t("清理")
@@ -44,6 +46,7 @@ enum BrewSection: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
         case .packages: "shippingbox"
+        case .explore: "safari"
         case .snapshots: "camera"
         case .services: "gearshape.2"
         case .cleanup: "trash"
@@ -119,6 +122,35 @@ final class BrewStore: ObservableObject {
             }
         }
     }
+
+    // MARK: - 探索
+
+    /// Homebrew 全量目录（所有可安装的 Formula 与 Cask，不只是本机已安装的）。
+    @Published private(set) var catalog: [BrewCatalogEntry] = []
+    /// 三档下载量统计。
+    @Published private(set) var popularity: BrewPopularitySnapshot?
+    @Published private(set) var isLoadingCatalog = false
+    @Published private(set) var isLoadingPopularity = false
+    @Published private(set) var hasLoadedCatalog = false
+    /// 是否至少尝试过一次读取目录，用于区分「还没开始」和「加载失败」。
+    @Published private(set) var hasAttemptedCatalogLoad = false
+    @Published private(set) var lastCatalogLoadedAt: Date?
+    @Published private(set) var lastPopularityLoadedAt: Date?
+    /// 是否至少尝试过一次读取下载量统计。
+    @Published private(set) var hasAttemptedPopularityLoad = false
+    private var catalogTask: Task<Void, Never>?
+    private var popularityTask: Task<Void, Never>?
+
+    /// 探索界面的筛选条件。
+    @Published var exploreSearchText = ""
+    @Published var exploreKindFilter: BrewPackageKind?
+    @Published var exploreRange: BrewAnalyticsRange = .month
+    @Published var exploreSort: BrewCatalogSort = .popularity
+    @Published var exploreLimit: BrewCatalogLimit = .hundred
+    /// 是否显示已弃用（deprecated / disabled）的包。
+    @Published var exploreShowsDeprecated = true
+    /// 探索列表中选中的包。
+    @Published var selectedCatalogEntryID: String?
 
     /// Homebrew 整体开关。默认开启，关闭后不执行任何 brew 命令。
     /// 只影响 Homebrew 管理功能，应用清单中的 Homebrew 来源保持不变。
@@ -310,6 +342,220 @@ final class BrewStore: ObservableObject {
         showsDependencyPackages = true
     }
 
+    // MARK: - 探索
+
+    /// 当前时间范围、指定包类型的下载量统计。
+    ///
+    /// Homebrew 把 Formula 与 Cask 分开统计，所以同一列表里两类包的
+    /// 下载量不能直接比较大小，排序时按各自的统计分别取排名。
+    func ranking(for kind: BrewPackageKind) -> BrewPopularityRanking? {
+        popularity?.ranking(for: exploreRange, kind: kind)
+    }
+
+    /// 当前筛选类型对应的下载量统计，用于顶部指标与详情面板。
+    var activeRanking: BrewPopularityRanking? {
+        ranking(for: exploreKindFilter ?? .formula)
+    }
+
+    /// 当前时间范围的总下载量。类型筛选为「全部」时，把 Formula 与 Cask 相加。
+    var activeTotalDownloads: Int {
+        if let kind = exploreKindFilter {
+            return popularity?.ranking(for: exploreRange, kind: kind)?.totalCount ?? 0
+        }
+        return BrewPackageKind.allCases.reduce(0) { total, kind in
+            total + (popularity?.ranking(for: exploreRange, kind: kind)?.totalCount ?? 0)
+        }
+    }
+
+    /// 探索列表：按关键词、类型、弃用状态筛选，再按下载量或名称排序并截断。
+    ///
+    /// 默认按下载量排序，只显示范围内下载量最大的若干个包；
+    /// 输入搜索关键词时总是返回全部匹配项。
+    var filteredCatalog: [BrewCatalogEntry] {
+        let query = catalogQuery
+        let revision = catalogRevision
+        let stamp = popularity?.fetchedAt
+
+        if let cached = exploreResultsCache,
+           cached.query == query,
+           cached.revision == revision,
+           cached.stamp == stamp {
+            return cached.result
+        }
+
+        let result = query.apply(to: catalog, popularity: popularity)
+        exploreResultsCache = (query, revision, stamp, result)
+        return result
+    }
+
+    /// 缓存筛选结果：一次 body 求值里 `filteredCatalog` 会被读取多次。
+    private var exploreResultsCache: (query: BrewCatalogQuery, revision: Int, stamp: Date?, result: [BrewCatalogEntry])?
+    /// 目录每次重新载入时递增，用于让筛选缓存失效。
+    private var catalogRevision = 0
+
+    /// 当前的探索筛选条件，供界面与测试共用。
+    var catalogQuery: BrewCatalogQuery {
+        BrewCatalogQuery(
+            searchText: exploreSearchText,
+            kind: exploreKindFilter,
+            range: exploreRange,
+            sort: exploreSort,
+            limit: exploreLimit,
+            showsDeprecated: exploreShowsDeprecated
+        )
+    }
+
+    /// 探索结果里的 Formula / Cask 数量，用于顶部指标。
+    var catalogFormulaCount: Int { catalog.count { $0.kind == .formula } }
+    var catalogCaskCount: Int { catalog.count { $0.kind == .cask } }
+
+    func isInstalled(_ entry: BrewCatalogEntry) -> Bool {
+        packages.contains { $0.kind == entry.kind && $0.name.caseInsensitiveCompare(entry.name) == .orderedSame }
+    }
+
+    /// 已安装的版本。探索列表里显示出来，方便对比最新版本。
+    func installedVersion(for entry: BrewCatalogEntry) -> String? {
+        packages.first {
+            $0.kind == entry.kind && $0.name.caseInsensitiveCompare(entry.name) == .orderedSame
+        }?.installedVersion
+    }
+
+    var selectedCatalogEntry: BrewCatalogEntry? {
+        guard let selectedCatalogEntryID else { return nil }
+        return catalog.first { $0.id == selectedCatalogEntryID }
+    }
+
+    func catalogEntry(id: String?) -> BrewCatalogEntry? {
+        guard let id else { return nil }
+        return catalog.first { $0.id == id }
+    }
+
+    /// 当前是否有任何探索筛选条件处于非默认状态。
+    var hasActiveExploreFilter: Bool {
+        catalogQuery.isActive
+    }
+
+    func resetExploreFilters() {
+        exploreSearchText = ""
+        exploreKindFilter = nil
+        exploreSort = .popularity
+        exploreLimit = .hundred
+        exploreShowsDeprecated = true
+    }
+
+    /// 读取 Homebrew 全量目录。
+    ///
+    /// 与已安装清单分开：这里的数据量更大（约 1.6 万个包），
+    /// 只有打开「探索」分区时才会加载，且命中磁盘缓存时不会联网。
+    func loadCatalog(force: Bool = false) async {
+        guard isAvailable else { return }
+        guard !isLoadingCatalog else {
+            _ = await catalogTask?.value
+            return
+        }
+        if !force, catalogLoadedRecently {
+            return
+        }
+
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.isLoadingCatalog = true
+            defer {
+                self.isLoadingCatalog = false
+                self.hasAttemptedCatalogLoad = true
+            }
+
+            if let cached = await BrewCatalogService.loadCatalog(force: force) {
+                self.catalog = cached.entries
+                self.catalogRevision &+= 1
+                self.lastCatalogLoadedAt = cached.fetchedAt
+                self.hasLoadedCatalog = true
+            } else {
+                self.errorMessage = L.t("无法读取 Homebrew 目录，请检查网络连接。")
+            }
+        }
+
+        catalogTask = task
+        await task.value
+    }
+
+    /// 读取下载量统计。
+    func loadPopularity(force: Bool = false) async {
+        guard isAvailable else { return }
+        guard !isLoadingPopularity else {
+            _ = await popularityTask?.value
+            return
+        }
+        if !force, popularityLoadedRecently {
+            return
+        }
+
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.isLoadingPopularity = true
+            defer {
+                self.isLoadingPopularity = false
+                self.hasAttemptedPopularityLoad = true
+            }
+
+            if let snapshot = await BrewCatalogService.loadPopularity(force: force) {
+                self.popularity = snapshot
+                self.lastPopularityLoadedAt = snapshot.fetchedAt
+            }
+        }
+
+        popularityTask = task
+        await task.value
+    }
+
+    private var catalogLoadedRecently: Bool {
+        guard hasLoadedCatalog, let lastCatalogLoadedAt else { return false }
+        return Date().timeIntervalSince(lastCatalogLoadedAt) < BrewCatalogService.catalogTTL
+    }
+
+    private var popularityLoadedRecently: Bool {
+        guard let lastPopularityLoadedAt else { return false }
+        return Date().timeIntervalSince(lastPopularityLoadedAt) < BrewCatalogService.popularityTTL
+    }
+
+    /// 强制重新下载目录与下载量统计。
+    ///
+    /// 不清空磁盘缓存：下载失败时仍可退回过期数据，
+    /// 用户也可以在设置里单独清除缓存。
+    func reloadCatalog() async {
+        await loadCatalog(force: true)
+        await loadPopularity(force: true)
+    }
+
+    /// 跳到「包」分区并选中对应的已安装条目。
+    func revealInstalled(_ entry: BrewCatalogEntry) {
+        section = .packages
+        searchText = entry.name
+        kindFilter = nil
+        showsOutdatedOnly = false
+        showsPinnedOnly = false
+        showsDependencyPackages = true
+
+        guard let package = packages.first(where: {
+            $0.kind == entry.kind && $0.name.caseInsensitiveCompare(entry.name) == .orderedSame
+        }) else { return }
+        selection = [package.id]
+        selectedPackageID = package.id
+    }
+
+    /// 复制探索条目的安装命令。
+    func copyInstallCommand(_ entry: BrewCatalogEntry) {
+        BrewExport.copy(entry.installCommand)
+    }
+
+    /// 安装探索到的包。安装完成后列表里的「已安装」标记会自动更新。
+    func install(_ entry: BrewCatalogEntry) async {
+        _ = await runCommand(
+            ["install"] + (entry.kind.commandFlag.map { [$0] } ?? []) + [entry.name],
+            title: L.t("安装 %@", entry.name)
+        )
+    }
+
     // MARK: - 加载
 
     func load(force: Bool = false) async {
@@ -449,6 +695,19 @@ final class BrewStore: ObservableObject {
         lastLoadedAt = nil
         selection.removeAll()
         selectedPackageID = nil
+
+        // 探索目录是网络数据，与 Homebrew 开关状态保持一致：关闭后不保留。
+        catalog = []
+        catalogRevision &+= 1
+        hasLoadedCatalog = false
+        hasAttemptedCatalogLoad = false
+        lastCatalogLoadedAt = nil
+        popularity = nil
+        lastPopularityLoadedAt = nil
+        hasAttemptedPopularityLoad = false
+        exploreResultsCache = nil
+        selectedCatalogEntryID = nil
+
         appendLog(.info, L.t("Homebrew 功能已关闭，不再执行任何 brew 命令。"))
     }
 

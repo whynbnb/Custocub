@@ -22,6 +22,7 @@ Custocub 是一个用 Swift 6 / SwiftUI 编写的原生 macOS 应用清单与快
 - **开发者的应用**：使用固定前缀 `me.whynbnb.` 自动归类，可开关显示，匹配数量大于 2 时出现。
 - **快照与对比**：保存历史清单、比较变化、导入导出、生成 Markdown 报告。
 - **Homebrew 深度支持**：独立的 Homebrew 管理界面、Formula / Cask 列表、独立 Homebrew 快照、Brewfile 导出和实时命令日志。
+- **探索完整仓库**：按近 30 天真实下载量浏览全部可安装的 Formula 与 Cask（可切换到 90 / 365 天），支持按包名、别名和描述搜索。
 - **展示框**：浏览已安装应用，也展示历史快照中已经卸载的应用。
 - **原生体验**：系统表格虚拟化、原生滚动条、可拖拽列宽和系统选择行为。
 - **中英文界面**：默认跟随系统语言，也可以在设置中手动切换，切换后立即生效，无需重新启动。
@@ -115,6 +116,20 @@ Custocub 的 Homebrew 功能需要 **Homebrew 7.0 或更高版本**。
 | Homebrew 快照 | Homebrew **Formula + Cask** 列表 | 完整的包管理器备份，与应用清单互相独立 |
 
 应用快照现在会额外保存 `casks` 数组。快照界面中新增 **Homebrew Cask** 页，可以复制安装命令、复制 Brewfile，或导出 Brewfile / 安装脚本。旧快照没有该字段时仍然可以正常读取，只是 Cask 列表为空。
+
+**探索完整仓库**
+
+「探索」分区和「包」的区别：「包」只列出这台 Mac 上已安装的包，「探索」列出 Homebrew 仓库里**全部**的 Formula 与 Cask，装没装都可以看到。
+
+- 目录来源：`formulae.brew.sh` 官方的 `formula.json` 与 `cask.json`，和 Homebrew 自己使用的文件一致
+- 下载量来源：`analytics/install/{30,90,365}d.json` 与 `analytics/cask-install/{30,90,365}d.json`，也就是 `brew formula-analytics` 背后的同一份匿名统计
+- **默认显示近 30 天下载量最大的包**，可以在近 30 / 90 / 365 天之间调整统计范围，也可以调整显示条数（前 50 / 100 / 200 / 500 / 全部）
+- 搜索覆盖包名、显示名、别名、描述、Tap 与版本；搜索时不受条数限制，匹配项全部列出
+- 可按下载量或名称排序，按 Formula / Cask 筛选，也可以选择是否显示已弃用、已停用的包
+- `#排名` 列显示该包在自己分类中的名次，占比列显示它在对应统计范围内的下载量占比
+- 已安装的包会带「已安装」徽章，详情面板里同时显示已安装版本
+- 可以直接在列表或详情面板里安装、复制安装命令，或跳转到「包」分区查看
+- 目录缓存在本地：目录 1 天过期，下载量 1 小时过期；命中缓存后打开探索不会发起任何网络请求
 
 Homebrew 快照单独存放：
 
@@ -332,6 +347,7 @@ Custocub/
 │  ├─ GalleryItem.swift          # 展示框条目
 │  ├─ BrewPackage.swift          # Homebrew 包记录与 Cask 快照条目
 │  ├─ BrewVersion.swift          # 版本号解析与最低版本限制
+│  ├─ BrewCatalog.swift          # 探索目录条目、下载量统计与筛选条件
 │  └─ BrewSnapshot.swift         # Homebrew 快照模型与 Brewfile 生成
 ├─ Services/
 │  ├─ AppScanner.swift           # 目录发现、Info.plist、来源识别
@@ -347,7 +363,8 @@ Custocub/
 │  ├─ BrewSnapshotRepository.swift # Homebrew 快照持久化
 │  ├─ BrewCleanupService.swift   # 清理分析：缓存、旧版本、无用依赖
 │  ├─ BrewHealthService.swift    # brew config / doctor 解析
-│  └─ BrewServicesService.swift  # brew services 解析
+│  ├─ BrewServicesService.swift  # brew services 解析
+│  └─ BrewCatalogService.swift   # 探索目录下载、缓存与解析
 ├─ Views/
 │  ├─ ContentView.swift
 │  ├─ SidebarView.swift
@@ -363,6 +380,8 @@ Custocub/
 │  ├─ BrewCleanupView.swift      # 清理分析与操作
 │  ├─ BrewHealthView.swift       # 配置与诊断
 │  ├─ BrewServicesView.swift     # 后台服务管理
+│  ├─ BrewExploreView.swift      # 全量目录浏览与搜索
+│  ├─ BrewCatalogDetailView.swift # 目录条目详情面板
 │  ├─ Components.swift
 │  └─ FileActions.swift
 └─ Resources/Assets.xcassets

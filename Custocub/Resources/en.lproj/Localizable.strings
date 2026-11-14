@@ -616,3 +616,60 @@
 "导出 Brewfile" = "Export Brewfile";
 "最新" = "Latest";
 "维护" = "Maintenance";
+
+"%@ 至 %@" = "from %@ to %@";
+"Homebrew 探索" = "Homebrew Explore";
+"Homebrew 探索详情" = "Homebrew Explore Details";
+"下载量" = "Downloads";
+"会执行 %@。已安装的包不受影响。" = "This runs %@. Installed packages are not affected.";
+"别名" = "Aliases";
+"刷新目录" = "Refresh Catalog";
+"前 %d 个" = "Top %d";
+"占比" = "Share";
+"在已安装中查看" = "Show in Installed";
+"安装 %@？" = "Install %@?";
+"已停用" = "Disabled";
+"已弃用" = "Deprecated";
+"开启 Homebrew 功能后才能浏览和安装仓库中的包。" = "Turn on Homebrew features to browse and install packages from the repository.";
+"总下载量" = "Total downloads";
+"排名" = "Rank";
+"排序" = "Sort";
+"探索" = "Explore";
+"搜索全部包名、别名或描述" = "Search all package names, aliases or descriptions";
+"数量" = "Count";
+"无法读取 Homebrew 目录，请检查网络连接。" = "Could not read the Homebrew catalog. Check your network connection.";
+"是否显示已标记为弃用或停止维护、但仍可安装的包。" = "Whether to show packages marked deprecated or disabled that can still be installed.";
+"显示 %d / %d" = "Showing %d of %d";
+"暂无下载量数据。" = "No download data available.";
+"最多显示多少个包。输入搜索关键词时显示全部匹配项。" = "How many packages to show. Searching always lists every match.";
+"查看 %@ 详情" = "Show %@ details";
+"查看包详情" = "Show package details";
+"查看已安装详情" = "Show installed details";
+"目录为空" = "Catalog Is Empty";
+"目录更新于 %@" = "Catalog updated %@";
+"统计范围" = "Time range";
+"统计范围。Homebrew 只提供近 30、90、365 天的匿名下载量。" = "Homebrew only publishes anonymous download counts for the last 30, 90 and 365 days.";
+"范围" = "Range";
+"许可证" = "License";
+"近 %d 天" = "Last %d days";
+"还没有下载到 Homebrew 目录。请检查网络后重试。" = "The Homebrew catalog has not been downloaded yet. Check your network and try again.";
+"这里列出 Homebrew 仓库中的全部 Formula 与 Cask，选中后可查看描述与安装方式。" = "Every Formula and Cask in the Homebrew repository is listed here. Select one to see its description and how to install it.";
+"选择一个包" = "Select a Package";
+"重新下载" = "Download Again";
+
+"%@ 期间的下载量统计。" = "Download statistics for %@.";
+"Homebrew 探索目录" = "Homebrew Explore Catalog";
+"探索目录缓存在 ~/Library/Application Support/Custocub/BrewCatalog，目录 1 天、下载量 1 小时后过期。" = "The explore catalog is cached in ~/Library/Application Support/Custocub/BrewCatalog. The catalog expires after 1 day and download counts after 1 hour.";
+"清除目录缓存" = "Clear Catalog Cache";
+
+
+"正在下载 Homebrew 目录，第一次约需下载 10 MB，可能需要十几秒…" = "Downloading the Homebrew catalog. The first run downloads about 10 MB and may take a few seconds…";
+
+"重新下载 Homebrew 目录与下载量统计。" = "Download the Homebrew catalog and download statistics again.";
+"目录更新于 %@。重新下载目录与下载量。" = "Catalog updated %@. Download the catalog and statistics again.";
+"重新读取探索目录与下载量统计" = "Reload the explore catalog and download statistics";
+"重新下载探索目录与下载量统计" = "Download the explore catalog and statistics again";
+
+"下载量统计不可用" = "Download statistics unavailable";
+
+"重试" = "Retry";

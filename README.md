@@ -22,6 +22,7 @@ Custocub is a native macOS app inventory and snapshot manager built with Swift 6
 - **Developer apps smart group** — fixed `me.whynbnb.` Bundle ID prefix, with a show/hide toggle; shown only when more than two apps match.
 - **Snapshots and comparison** — keep historical inventories, compare changes, export or import snapshots, and generate Markdown reports.
 - **Deep Homebrew support** — a dedicated Homebrew screen for formulae and casks, standalone Homebrew snapshots, Brewfile export, and a live command log.
+- **Explore the whole repository** — browse every available Formula and Cask ranked by real download counts from the last 30 days (switchable to 90 or 365), with full search across names, aliases, and descriptions.
 - **Gallery** — browse installed apps and apps that have been uninstalled but still exist in historical snapshots.
 - **Native macOS experience** — native table virtualization, scrollbars, resizable columns, and system selection behavior.
 - **English and Chinese** — follows the system language by default, with a manual switch that applies instantly (no restart).
@@ -115,6 +116,20 @@ Custocub's Homebrew features require **Homebrew 7.0 or later**.
 | Homebrew snapshot | Homebrew **formula + cask** list | Full package-manager backup, independent of the GUI inventory |
 
 An app snapshot now carries a `casks` array. The snapshot screen has an extra **Homebrew Cask** tab where you can copy the install command, copy the Brewfile, or export a Brewfile or install script. Older snapshots without the field still load; the cask list is simply empty.
+
+**Explore the full catalog**
+
+The **Explore** tab is different from **Packages**: Packages lists what is installed on this Mac, while Explore lists **every** Formula and Cask in the Homebrew repository, whether or not it is installed.
+
+- Catalog source: the official `formula.json` and `cask.json` from `formulae.brew.sh` — the same files Homebrew itself uses.
+- Download counts: `analytics/install/{30,90,365}d.json` and `analytics/cask-install/{30,90,365}d.json`, the same anonymous statistics behind `brew formula-analytics`.
+- **By default it shows the most downloaded packages in the last 30 days.** Switch the range between 30, 90, and 365 days, and adjust how many packages are listed (50 / 100 / 200 / 500 / all).
+- Search covers names, display names, aliases, descriptions, taps, and versions. While searching, every match is shown regardless of the list limit.
+- Sort by downloads or by name; filter by Formula/Cask; optionally hide deprecated or disabled packages.
+- The `#rank` column shows the package's position in its own category, and the share column shows its percentage of all downloads in the range.
+- Already-installed packages are badged, and their installed version appears in the detail panel.
+- Install, copy the install command, or jump to the package in the Packages tab directly from the list or the detail panel.
+- The catalog is cached locally: the catalog expires after 1 day and download counts after 1 hour. Once cached, opening Explore costs no network request.
 
 Homebrew snapshots are stored separately:
 
@@ -333,6 +348,7 @@ Custocub/
 │  ├─ GalleryItem.swift          # Gallery item model
 │  ├─ BrewPackage.swift          # Homebrew formula/cask record and cask snapshot entry
 │  ├─ BrewVersion.swift          # Version parsing and minimum-version check
+│  ├─ BrewCatalog.swift          # Explore catalog entries, download stats, query
 │  └─ BrewSnapshot.swift         # Homebrew snapshot model and Brewfile builder
 ├─ Services/
 │  ├─ AppScanner.swift           # Directory discovery, Info.plist, source detection
@@ -348,7 +364,8 @@ Custocub/
 │  ├─ BrewSnapshotRepository.swift # Homebrew snapshot persistence
 │  ├─ BrewCleanupService.swift   # Cleanup analysis: cache, old kegs, autoremove
 │  ├─ BrewHealthService.swift    # brew config / doctor parsing
-│  └─ BrewServicesService.swift  # brew services parsing
+│  ├─ BrewServicesService.swift  # brew services parsing
+│  └─ BrewCatalogService.swift   # Explore catalog download, cache, and decoding
 ├─ Views/
 │  ├─ ContentView.swift
 │  ├─ SidebarView.swift
@@ -364,6 +381,8 @@ Custocub/
 │  ├─ BrewCleanupView.swift      # Cleanup analysis and actions
 │  ├─ BrewHealthView.swift       # Configuration & diagnostics
 │  ├─ BrewServicesView.swift     # Background service management
+│  ├─ BrewExploreView.swift      # Full catalog browse and search
+│  ├─ BrewCatalogDetailView.swift # Catalog entry detail panel
 │  ├─ Components.swift
 │  └─ FileActions.swift
 └─ Resources/Assets.xcassets

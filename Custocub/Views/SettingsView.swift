@@ -237,6 +237,20 @@ private struct DataSettingsTab: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section("Homebrew 探索目录") {
+                HStack {
+                    Button("清除目录缓存") {
+                        BrewCatalogService.clearCache()
+                    }
+
+                    Spacer()
+                }
+
+                Text(L.t("探索目录缓存在 ~/Library/Application Support/Custocub/BrewCatalog，目录 1 天、下载量 1 小时后过期。"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("快照存储") {
                 LabeledContent("应用快照", value: L.t("%d 个", store.snapshots.count))
                 LabeledContent("存储位置") {

@@ -43,6 +43,8 @@ struct HomebrewView: View {
                     switch brew.section {
                     case .packages:
                         packagesSection
+                    case .explore:
+                        BrewExploreView()
                     case .snapshots:
                         BrewSnapshotListView(showingComparison: $showingBrewComparison)
                     case .services:
@@ -133,18 +135,22 @@ struct HomebrewView: View {
                 }
             }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    MetricChip(title: "Formula", value: "\(brew.formulaCount)", symbol: "terminal", color: .mint)
-                    MetricChip(title: "Cask", value: "\(brew.caskCount)", symbol: "shippingbox", color: .orange)
-                    MetricChip(
-                        title: "可更新",
-                        value: "\(brew.outdatedCount)",
-                        symbol: "arrow.triangle.2.circlepath",
-                        color: brew.outdatedCount > 0 ? .red : .secondary
-                    )
-                    MetricChip(title: "已固定", value: "\(brew.pinnedCount)", symbol: "pin", color: .blue)
-                    MetricChip(title: "依赖", value: "\(brew.dependencyCount)", symbol: "link", color: .purple)
+            // 探索分区有自己的目录指标（全部可安装包），
+            // 这里就不再重复显示已安装数量，避免两个 Formula 数字互相干扰。
+            if brew.section != .explore {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        MetricChip(title: "Formula", value: "\(brew.formulaCount)", symbol: "terminal", color: .mint)
+                        MetricChip(title: "Cask", value: "\(brew.caskCount)", symbol: "shippingbox", color: .orange)
+                        MetricChip(
+                            title: "可更新",
+                            value: "\(brew.outdatedCount)",
+                            symbol: "arrow.triangle.2.circlepath",
+                            color: brew.outdatedCount > 0 ? .red : .secondary
+                        )
+                        MetricChip(title: "已固定", value: "\(brew.pinnedCount)", symbol: "pin", color: .blue)
+                        MetricChip(title: "依赖", value: "\(brew.dependencyCount)", symbol: "link", color: .purple)
+                    }
                 }
             }
 
@@ -443,12 +449,20 @@ struct HomebrewView: View {
             }
 
             Button {
-                Task { await brew.load(force: true) }
+                Task {
+                    if brew.section == .explore {
+                        await brew.reloadCatalog()
+                    } else {
+                        await brew.load(force: true)
+                    }
+                }
             } label: {
                 Label("刷新", systemImage: "arrow.clockwise")
             }
-            .help(Text(L.t("重新读取 Homebrew 包列表")))
-            .disabled(brew.isLoading || brew.isRunningCommand)
+            .help(brew.section == .explore
+                  ? Text(L.t("重新下载探索目录与下载量统计"))
+                  : Text(L.t("重新读取 Homebrew 包列表")))
+            .disabled(brew.isLoading || brew.isLoadingCatalog || brew.isRunningCommand)
 
             Menu {
                 Button(L.t("更新索引")) {

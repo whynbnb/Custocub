@@ -162,7 +162,14 @@ struct ContentView: View {
     @ViewBuilder
     private var detailColumn: some View {
         if store.activeSelection == .brew {
-            BrewPackageDetailView(package: brew.selectedPackage)
+            if brew.section == .explore {
+                BrewCatalogDetailView(
+                    entry: brew.selectedCatalogEntry,
+                    ranking: brew.selectedCatalogEntry.flatMap { brew.ranking(for: $0.kind) }
+                )
+            } else {
+                BrewPackageDetailView(package: brew.selectedPackage)
+            }
         } else {
             AppDetailView(context: store.selectedAppContext)
         }
