@@ -107,6 +107,7 @@ Custocub's Homebrew features require **Homebrew 7.0 or later**.
 - Separates **Formula** (command-line packages) from **Cask** (GUI app packages).
 - Shows installed and latest versions, tap, install time, dependencies, `outdated`, `pinned`, and `auto_updates` state.
 - Filter by kind, outdated, or pinned; search by name, description, or version.
+- In the package detail panel, every command row puts its action button first (install, upgrade, reinstall, uninstall), followed by the command text and a copy button. Uninstall is shown in red.
 
 **Two different kinds of snapshots**
 

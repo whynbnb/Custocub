@@ -25,45 +25,6 @@ struct BrewPackageDetailView: View {
             VStack(alignment: .leading, spacing: 16) {
                 header(package)
 
-                HStack(spacing: 8) {
-                    if package.isOutdated {
-                        Button {
-                            Task { await brew.upgrade([package]) }
-                        } label: {
-                            Label(L.t("升级"), systemImage: "arrow.up.circle")
-                        }
-                        .buttonStyle(.borderedProminent)
-                    }
-
-                    Button {
-                        Task { await brew.reinstall(package) }
-                    } label: {
-                        Label(L.t("重新安装"), systemImage: "arrow.clockwise")
-                    }
-
-                    Button {
-                        brew.copyInstallCommand(package)
-                    } label: {
-                        Label(L.t("复制命令"), systemImage: "doc.on.doc")
-                            .labelStyle(.iconOnly)
-                    }
-                    .help(Text(L.t("复制安装命令")))
-
-                    if let url = package.homepage.flatMap(URL.init(string:)) {
-                        Button {
-                            NSWorkspace.shared.open(url)
-                        } label: {
-                            Label(L.t("打开主页"), systemImage: "safari")
-                                .labelStyle(.iconOnly)
-                        }
-                        .help(Text(L.t("打开主页")))
-                    }
-
-                    Spacer()
-                }
-                .controlSize(.small)
-                .disabled(brew.isRunningCommand)
-
                 SectionCard(title: "基本信息") {
                     DetailRow(label: "包名", value: package.name, monospaced: true)
                     DetailRow(label: "类型", value: package.kind.title)
@@ -111,20 +72,25 @@ struct BrewPackageDetailView: View {
                 }
 
                 SectionCard(title: "命令") {
-                    ForEach(commandLines(package), id: \.self) { line in
-                        HStack(spacing: 8) {
-                            Text(line)
-                                .font(.caption.monospaced())
-                                .textSelection(.enabled)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            Button {
-                                BrewExport.copy(line)
-                            } label: {
-                                Image(systemName: "doc.on.doc")
+                    Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 9) {
+                        ForEach(commands(for: package)) { item in
+                            GridRow(alignment: .center) {
+                                commandButton(item, for: package)
+
+                                Text(item.command)
+                                    .font(.caption.monospaced())
+                                    .textSelection(.enabled)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                                Button {
+                                    BrewExport.copy(item.command)
+                                } label: {
+                                    Image(systemName: "doc.on.doc")
+                                }
+                                .buttonStyle(.plain)
+                                .foregroundStyle(.secondary)
+                                .help(Text(L.t("复制")))
                             }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(.secondary)
-                            .help(Text(L.t("复制")))
                         }
                     }
                 }
@@ -148,10 +114,6 @@ struct BrewPackageDetailView: View {
                         }
 
                         Spacer()
-
-                        Button(L.t("卸载"), role: .destructive) {
-                            Task { await brew.uninstall([package]) }
-                        }
                     }
                     .controlSize(.small)
                     .disabled(brew.isRunningCommand)
@@ -206,12 +168,92 @@ struct BrewPackageDetailView: View {
         }
     }
 
-    private func commandLines(_ package: BrewPackage) -> [String] {
-        var lines = [package.installCommand, package.reinstallCommand, package.uninstallCommand]
-        if package.isOutdated {
-            lines.insert(package.upgradeCommand, at: 1)
+    /// 详情面板里的命令。按钮执行命令，后面的文本方便复制或核对。
+    private struct PackageCommand: Identifiable {
+        enum Kind: String {
+            case install
+            case upgrade
+            case reinstall
+            case uninstall
         }
-        return lines
+
+        let kind: Kind
+        let title: String
+        let symbol: String
+        let command: String
+
+        var id: String { kind.rawValue }
+
+        var isPrimary: Bool { kind == .upgrade }
+        var isDestructive: Bool { kind == .uninstall }
+    }
+
+    private func commands(for package: BrewPackage) -> [PackageCommand] {
+        var items = [
+            PackageCommand(
+                kind: .install,
+                title: L.t("安装"),
+                symbol: "arrow.down.circle",
+                command: package.installCommand
+            )
+        ]
+
+        if package.isOutdated {
+            items.append(PackageCommand(
+                kind: .upgrade,
+                title: L.t("升级"),
+                symbol: "arrow.up.circle",
+                command: package.upgradeCommand
+            ))
+        }
+
+        items.append(PackageCommand(
+            kind: .reinstall,
+            title: L.t("重新安装"),
+            symbol: "arrow.clockwise",
+            command: package.reinstallCommand
+        ))
+        items.append(PackageCommand(
+            kind: .uninstall,
+            title: L.t("卸载"),
+            symbol: "trash",
+            command: package.uninstallCommand
+        ))
+        return items
+    }
+
+    @ViewBuilder
+    private func commandButton(_ item: PackageCommand, for package: BrewPackage) -> some View {
+        let button = Button(role: item.isDestructive ? .destructive : nil) {
+            perform(item, for: package)
+        } label: {
+            Label(item.title, systemImage: item.symbol)
+        }
+        .disabled(brew.isRunningCommand)
+        .help(item.command)
+
+        if item.isPrimary {
+            button.buttonStyle(.borderedProminent)
+        } else if item.isDestructive {
+            button
+                .buttonStyle(.bordered)
+                .tint(.red)
+        } else {
+            button.buttonStyle(.bordered)
+        }
+    }
+
+    private func perform(_ item: PackageCommand, for package: BrewPackage) {
+        switch item.kind {
+        case .install:
+            Task { await brew.install([package.name], kind: package.kind) }
+        case .upgrade:
+            Task { await brew.upgrade([package]) }
+        case .reinstall:
+            Task { await brew.reinstall(package) }
+        case .uninstall:
+            Task { await brew.uninstall([package]) }
+        }
     }
 }
 
