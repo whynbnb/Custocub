@@ -43,6 +43,8 @@ struct HomebrewView: View {
                         packagesSection
                     case .snapshots:
                         BrewSnapshotListView(showingComparison: $showingBrewComparison)
+                    case .services:
+                        BrewServicesView()
                     case .cleanup:
                         BrewCleanupView()
                     case .health:

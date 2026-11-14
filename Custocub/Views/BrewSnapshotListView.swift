@@ -12,22 +12,26 @@ struct BrewSnapshotListView: View {
     }
 
     var body: some View {
-        HSplitView {
-            list
-                .frame(minWidth: 240, idealWidth: 280, maxWidth: 340)
+        // HSplitView 不会自动铺满剩余高度，用 GeometryReader 明确撑满。
+        GeometryReader { geometry in
+            HSplitView {
+                list
+                    .frame(minWidth: 240, idealWidth: 280, maxWidth: 340, maxHeight: .infinity)
 
-            Group {
-                if let selected {
-                    BrewSnapshotDetailView(snapshot: selected, kindFilter: $kindFilter)
-                } else {
-                    ContentUnavailableView(
-                        L.t("选择一个 Homebrew 快照"),
-                        systemImage: "camera",
-                        description: Text(L.t("Homebrew 快照记录当时的 Formula 与 Cask，可以导出 Brewfile 或安装脚本。"))
-                    )
+                Group {
+                    if let selected {
+                        BrewSnapshotDetailView(snapshot: selected, kindFilter: $kindFilter)
+                    } else {
+                        ContentUnavailableView(
+                            L.t("选择一个 Homebrew 快照"),
+                            systemImage: "camera",
+                            description: Text(L.t("Homebrew 快照记录当时的 Formula 与 Cask，可以导出 Brewfile 或安装脚本。"))
+                        )
+                    }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .onChange(of: brew.snapshots) { _, snapshots in
             if let selectedID, !snapshots.contains(where: { $0.id == selectedID }) {

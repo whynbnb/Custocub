@@ -25,6 +25,7 @@ struct BrewLogEntry: Identifiable, Sendable {
 enum BrewSection: String, CaseIterable, Identifiable {
     case packages
     case snapshots
+    case services
     case cleanup
     case health
 
@@ -34,6 +35,7 @@ enum BrewSection: String, CaseIterable, Identifiable {
         switch self {
         case .packages: L.t("包")
         case .snapshots: L.t("快照")
+        case .services: L.t("服务")
         case .cleanup: L.t("清理")
         case .health: L.t("配置与诊断")
         }
@@ -43,6 +45,7 @@ enum BrewSection: String, CaseIterable, Identifiable {
         switch self {
         case .packages: "shippingbox"
         case .snapshots: "camera"
+        case .services: "gearshape.2"
         case .cleanup: "trash"
         case .health: "stethoscope"
         }
@@ -92,6 +95,12 @@ final class BrewStore: ObservableObject {
     @Published private(set) var doctorReport: BrewDoctorReport?
     @Published private(set) var isRunningDoctor = false
     private var doctorTask: Task<Void, Never>?
+
+    /// 可被 `brew services` 管理的后台服务。
+    @Published private(set) var serviceEntries: [BrewServiceInfo] = []
+    @Published private(set) var isLoadingServices = false
+    @Published private(set) var lastServicesLoadedAt: Date?
+    private var servicesTask: Task<Void, Never>?
 
     @Published var searchText = ""
     @Published var kindFilter: BrewPackageKind?
@@ -719,6 +728,108 @@ final class BrewStore: ObservableObject {
     /// 修复安装前缀里的符号链接和空目录，等价于 `brew cleanup --prune-prefix`。
     func prunePrefix() async {
         await runCommand(["cleanup", "--prune-prefix"], title: L.t("修复安装前缀链接"), refreshAfter: false)
+    }
+
+    // MARK: - 后台服务
+
+    /// 读取 `brew services` 的服务列表。
+    ///
+    /// 使用独立任务：切换分区时 SwiftUI 会取消 `.task`，
+    /// 跟随视图生命周期会导致读取被中断、列表为空。
+    func loadServices(force: Bool = false) async {
+        guard isAvailable else { return }
+        if !force, let lastServicesLoadedAt,
+           Date().timeIntervalSince(lastServicesLoadedAt) < 10 {
+            return
+        }
+        if isLoadingServices {
+            _ = await servicesTask?.value
+            return
+        }
+
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.isLoadingServices = true
+            defer { self.isLoadingServices = false }
+
+            if let entries = await BrewServicesService.load() {
+                self.serviceEntries = entries
+                self.lastServicesLoadedAt = Date()
+            } else {
+                self.errorMessage = L.t("无法读取 brew services 的服务列表。")
+            }
+        }
+
+        servicesTask = task
+        await task.value
+    }
+
+    /// 启动服务，并注册为登录（或开机）自动启动，等价于 `brew services start`。
+    func startService(_ service: BrewServiceInfo) async {
+        await runServicesCommand(
+            ["start", service.name],
+            title: L.t("启动服务 %@", service.name)
+        )
+    }
+
+    /// 停止服务并取消自动启动注册，等价于 `brew services stop`。
+    func stopService(_ service: BrewServiceInfo) async {
+        await runServicesCommand(
+            ["stop", service.name],
+            title: L.t("停止服务 %@", service.name)
+        )
+    }
+
+    /// 重启服务，等价于 `brew services restart`。
+    func restartService(_ service: BrewServiceInfo) async {
+        await runServicesCommand(
+            ["restart", service.name],
+            title: L.t("重启服务 %@", service.name)
+        )
+    }
+
+    /// 只运行一次、不注册自动启动，等价于 `brew services run`。
+    func runServiceOnce(_ service: BrewServiceInfo) async {
+        await runServicesCommand(
+            ["run", service.name],
+            title: L.t("运行服务 %@（不自动启动）", service.name)
+        )
+    }
+
+    /// 立即停止但保留注册，等价于 `brew services kill`。
+    func killService(_ service: BrewServiceInfo) async {
+        await runServicesCommand(
+            ["kill", service.name],
+            title: L.t("立即停止服务 %@", service.name)
+        )
+    }
+
+    /// 停止时保留自动启动注册，等价于 `brew services stop --keep`。
+    func stopServiceKeepingRegistration(_ service: BrewServiceInfo) async {
+        await runServicesCommand(
+            ["stop", "--keep", service.name],
+            title: L.t("停止服务 %@（保留自动启动）", service.name)
+        )
+    }
+
+    /// 启动全部已注册的服务，等价于 `brew services start --all`。
+    func startAllServices() async {
+        await runServicesCommand(["start", "--all"], title: L.t("启动全部服务"))
+    }
+
+    /// 停止全部已注册的服务，等价于 `brew services stop --all`。
+    func stopAllServices() async {
+        await runServicesCommand(["stop", "--all"], title: L.t("停止全部服务"))
+    }
+
+    /// 清理无用服务，等价于 `brew services cleanup`。
+    func cleanupServices() async {
+        await runServicesCommand(["cleanup"], title: L.t("清理无用服务"))
+    }
+
+    private func runServicesCommand(_ arguments: [String], title: String) async {
+        await runCommand(["services"] + arguments, title: title, refreshAfter: false)
+        await loadServices(force: true)
     }
 
     // MARK: - 配置与诊断

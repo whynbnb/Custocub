@@ -129,6 +129,33 @@ Every command Custocub runs is streamed into a live log:
 - A collapsible panel at the bottom of the Homebrew screen, plus a standalone log window with the recent command history.
 - Running commands can be cancelled: `SIGINT` first, then `SIGTERM`/`SIGKILL` if Homebrew does not exit.
 
+**Background services**
+
+A dedicated **Services** tab manages formulae that ship a `service` definition (postgresql, redis, nginx, …). It reads `brew services info --all --json`, so it shows the real daemon state rather than a guess:
+
+| Field | Meaning |
+| --- | --- |
+| `status` | `started` / `stopped` / `scheduled` / `none` / `error` / `unknown` / `other` |
+| `running` | whether the process currently has a PID |
+| `registered` | whether it is registered to start at login (or boot) |
+| `schedulable` | whether it is a timed task (`interval` / `cron`) |
+
+Actions map one-to-one to Homebrew's subcommands:
+
+| Action | Command | Effect |
+| --- | --- | --- |
+| Start | `brew services start <name>` | Start now and register at login |
+| Start All | `brew services start --all` | Start every registered service |
+| Stop | `brew services stop <name>` | Stop and unregister |
+| Stop All | `brew services stop --all` | Stop and unregister all |
+| Restart | `brew services restart <name>` | Stop if needed, then start |
+| Run once | `brew services run <name>` | Run without registering |
+| Stop immediately | `brew services kill <name>` | Kill but keep registered |
+| Stop, keep auto-start | `brew services stop --keep <name>` | Stop without unregistering |
+| Clean unused | `brew services cleanup` | Remove stale service files |
+
+The list groups running/registered services first, marks scheduled tasks, and the detail pane shows the launch command, PID, exit code, run-as user, working directory, service file, and log paths with an **Open log** button.
+
 **Configuration & diagnostics**
 
 A single **Configuration & Diagnostics** tab combines two read-only inspections:
@@ -310,7 +337,8 @@ Custocub/
 │  ├─ BrewService.swift          # brew discovery, streaming execution, JSON inventory
 │  ├─ BrewSnapshotRepository.swift # Homebrew snapshot persistence
 │  ├─ BrewCleanupService.swift   # Cleanup analysis: cache, old kegs, autoremove
-│  └─ BrewHealthService.swift    # brew config / doctor parsing
+│  ├─ BrewHealthService.swift    # brew config / doctor parsing
+│  └─ BrewServicesService.swift  # brew services parsing
 ├─ Views/
 │  ├─ ContentView.swift
 │  ├─ SidebarView.swift
@@ -325,6 +353,7 @@ Custocub/
 │  ├─ BrewConsoleView.swift      # Live command log and history
 │  ├─ BrewCleanupView.swift      # Cleanup analysis and actions
 │  ├─ BrewHealthView.swift       # Configuration & diagnostics
+│  ├─ BrewServicesView.swift     # Background service management
 │  ├─ Components.swift
 │  └─ FileActions.swift
 └─ Resources/Assets.xcassets

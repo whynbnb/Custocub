@@ -129,6 +129,33 @@ Custocub 执行的每条命令都会实时写入日志：
 - Homebrew 界面底部可折叠的日志面板，以及带历史记录的独立日志窗口
 - 可以停止正在执行的命令：先发送 `SIGINT`，如果 Homebrew 未退出再依次发送 `SIGTERM` / `SIGKILL`
 
+**后台服务**
+
+新增独立的 **服务** 标签页，管理带有 `service` 定义的 Formula（postgresql、redis、nginx 等）。通过 `brew services info --all --json` 读取真实状态，而不是靠猜测：
+
+| 字段 | 含义 |
+| --- | --- |
+| `status` | `started` / `stopped` / `scheduled` / `none` / `error` / `unknown` / `other` |
+| `running` | 当前进程是否存活（有 PID） |
+| `registered` | 是否已注册为登录（或开机）自动启动 |
+| `schedulable` | 是否为定时任务（`interval` / `cron`） |
+
+操作与 Homebrew 子命令一一对应：
+
+| 操作 | 命令 | 效果 |
+| --- | --- | --- |
+| 启动 | `brew services start <name>` | 立即启动并注册自动启动 |
+| 启动全部 | `brew services start --all` | 启动所有已注册服务 |
+| 停止 | `brew services stop <name>` | 停止并取消自动启动 |
+| 停止全部 | `brew services stop --all` | 停止并取消全部注册 |
+| 重启 | `brew services restart <name>` | 必要时先停止再启动 |
+| 运行一次 | `brew services run <name>` | 仅运行，不注册自动启动 |
+| 立即停止 | `brew services kill <name>` | 立即结束但保留注册 |
+| 停止但保留自动启动 | `brew services stop --keep <name>` | 停止但不取消注册 |
+| 清理无用服务 | `brew services cleanup` | 移除失效的服务文件 |
+
+列表会把运行中 / 已注册的服务排在前面，并标记定时任务；详情面板显示启动命令、PID、退出码、运行用户、工作目录、服务文件与日志路径，并提供「打开日志」按钮。
+
 **配置与诊断**
 
 单独的 **配置与诊断** 标签页整合了两项只读检查：
@@ -307,7 +334,10 @@ Custocub/
 │  ├─ IconProvider.swift         # 图标加载、预取与快照 PNG
 │  ├─ SnapshotRepository.swift   # 快照持久化
 │  ├─ BrewService.swift          # brew 定位、流式执行与 JSON 清单
-│  └─ BrewSnapshotRepository.swift # Homebrew 快照持久化
+│  ├─ BrewSnapshotRepository.swift # Homebrew 快照持久化
+│  ├─ BrewCleanupService.swift   # 清理分析：缓存、旧版本、无用依赖
+│  ├─ BrewHealthService.swift    # brew config / doctor 解析
+│  └─ BrewServicesService.swift  # brew services 解析
 ├─ Views/
 │  ├─ ContentView.swift
 │  ├─ SidebarView.swift
@@ -322,6 +352,7 @@ Custocub/
 │  ├─ BrewConsoleView.swift      # 实时命令日志与历史
 │  ├─ BrewCleanupView.swift      # 清理分析与操作
 │  ├─ BrewHealthView.swift       # 配置与诊断
+│  ├─ BrewServicesView.swift     # 后台服务管理
 │  ├─ Components.swift
 │  └─ FileActions.swift
 └─ Resources/Assets.xcassets
