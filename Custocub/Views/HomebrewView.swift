@@ -486,6 +486,27 @@ struct HomebrewView: View {
                 }
                 .controlSize(.small)
             }
+
+            // 导出只属于「包」分区，因此放在这里，而不是全局工具栏。
+            Menu {
+                Button(L.t("导出全部 Brewfile…")) {
+                    brew.exportCurrentBrewfile()
+                }
+                Button(L.t("只导出 Formula…")) {
+                    brew.exportCurrentFormulae()
+                }
+                Button(L.t("只导出 Cask…")) {
+                    brew.exportCurrentCasks()
+                }
+            } label: {
+                Label(L.t("导出 Brewfile"), systemImage: "square.and.arrow.up")
+                    .labelStyle(.iconOnly)
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help(Text(L.t("把当前已安装的包导出为 Brewfile")))
+            .disabled(!brew.hasLoaded)
         }
         .padding(.horizontal, 14)
         .frame(height: 44)
@@ -497,39 +518,13 @@ struct HomebrewView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
-            if brew.section == .packages, brew.isAvailable {
-                Menu {
-                    Button(L.t("导出全部 Brewfile…")) {
-                        brew.exportCurrentBrewfile()
-                    }
-                    Button(L.t("只导出 Formula…")) {
-                        brew.exportCurrentFormulae()
-                    }
-                    Button(L.t("只导出 Cask…")) {
-                        brew.exportCurrentCasks()
-                    }
-                } label: {
-                    Label("导出 Brewfile", systemImage: "square.and.arrow.up")
-                }
-                .help(Text(L.t("把当前已安装的包导出为 Brewfile")))
-                .disabled(!brew.hasLoaded)
-            }
-
             Button {
-                Task {
-                    if brew.section == .explore {
-                        await brew.reloadCatalog()
-                    } else {
-                        await brew.load(force: true)
-                    }
-                }
+                Task { await brew.load(force: true) }
             } label: {
                 Label("刷新", systemImage: "arrow.clockwise")
             }
-            .help(brew.section == .explore
-                  ? Text(L.t("重新下载探索目录与下载量统计"))
-                  : Text(L.t("重新读取 Homebrew 包列表")))
-            .disabled(brew.isLoading || brew.isLoadingCatalog || brew.isRunningCommand)
+            .help(Text(L.t("重新读取 Homebrew 包列表")))
+            .disabled(brew.isLoading || brew.isRunningCommand)
 
             Menu {
                 Button(L.t("更新索引")) {

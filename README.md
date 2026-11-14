@@ -132,6 +132,8 @@ The **Explore** tab is different from **Packages**: Packages lists what is insta
 - The header's outdated count is clickable and jumps straight to the **Upgrade** tab.
 - The catalog is cached locally: the catalog expires after 1 day and download counts after 1 hour. Once cached, opening Explore costs no network request.
 
+The global Homebrew toolbar is identical on every tab. **Brewfile export** lives in the Packages tab filter bar, and **snapshot comparison** lives in the Snapshots tab header, so switching tabs never changes the toolbar.
+
 Homebrew snapshots are stored separately:
 
 ```text

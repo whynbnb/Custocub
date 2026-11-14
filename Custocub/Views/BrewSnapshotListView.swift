@@ -12,26 +12,31 @@ struct BrewSnapshotListView: View {
     }
 
     var body: some View {
-        // HSplitView 不会自动铺满剩余高度，用 GeometryReader 明确撑满。
-        GeometryReader { geometry in
-            HSplitView {
-                list
-                    .frame(minWidth: 240, idealWidth: 280, maxWidth: 340, maxHeight: .infinity)
+        VStack(spacing: 0) {
+            header
+            Divider()
 
-                Group {
-                    if let selected {
-                        BrewSnapshotDetailView(snapshot: selected, kindFilter: $kindFilter)
-                    } else {
-                        ContentUnavailableView(
-                            L.t("选择一个 Homebrew 快照"),
-                            systemImage: "camera",
-                            description: Text(L.t("Homebrew 快照记录当时的 Formula 与 Cask，可以导出 Brewfile 或安装脚本。"))
-                        )
+            // HSplitView 不会自动铺满剩余高度，用 GeometryReader 明确撑满。
+            GeometryReader { geometry in
+                HSplitView {
+                    list
+                        .frame(minWidth: 240, idealWidth: 280, maxWidth: 340, maxHeight: .infinity)
+
+                    Group {
+                        if let selected {
+                            BrewSnapshotDetailView(snapshot: selected, kindFilter: $kindFilter)
+                        } else {
+                            ContentUnavailableView(
+                                L.t("选择一个 Homebrew 快照"),
+                                systemImage: "camera",
+                                description: Text(L.t("Homebrew 快照记录当时的 Formula 与 Cask，可以导出 Brewfile 或安装脚本。"))
+                            )
+                        }
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(width: geometry.size.width, height: geometry.size.height)
             }
-            .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .onChange(of: brew.snapshots) { _, snapshots in
             if let selectedID, !snapshots.contains(where: { $0.id == selectedID }) {
@@ -43,17 +48,33 @@ struct BrewSnapshotListView: View {
         .onAppear {
             if selectedID == nil { selectedID = brew.snapshots.first?.id }
         }
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showingComparison.wrappedValue = true
-                } label: {
-                    Label(L.t("比较 Homebrew 快照"), systemImage: "arrow.left.arrow.right")
-                }
-                .help(Text(L.t("比较两个 Homebrew 快照的 Formula 与 Cask")))
-                .disabled(brew.snapshots.count < 2)
+    }
+
+    /// 快照分区自己的操作栏。比较功能只属于这里，不再占用全局工具栏。
+    private var header: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "camera")
+                .foregroundStyle(.secondary)
+            Text(L.t("%d 个快照", brew.snapshots.count))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+                .fixedSize()
+
+            Spacer(minLength: 0)
+
+            Button {
+                showingComparison.wrappedValue = true
+            } label: {
+                Label(L.t("比较快照"), systemImage: "arrow.left.arrow.right")
             }
+            .controlSize(.small)
+            .help(Text(L.t("比较两个 Homebrew 快照的 Formula 与 Cask")))
+            .disabled(brew.snapshots.count < 2)
         }
+        .padding(.horizontal, 16)
+        .frame(height: 40)
+        .background(.bar)
     }
 
     private var list: some View {

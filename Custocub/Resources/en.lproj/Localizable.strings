@@ -693,3 +693,5 @@
 "检查更新" = "Check for Updates";
 "没有可升级的包" = "Everything Is Up to Date";
 "运行 brew update 后重新读取可升级列表。" = "Runs brew update, then rereads the list of upgradable packages.";
+
+"%d 个快照" = "%d snapshots";
