@@ -673,3 +673,7 @@
 "下载量统计不可用" = "Download statistics unavailable";
 
 "重试" = "Retry";
+
+"安装「%@」" = "Install “%@”";
+"安装「%@」？" = "Install “%@”?";
+"没有在目录中找到匹配项时，可以直接按这个名称执行 brew install。" = "When nothing in the catalog matches, you can still run brew install with this name.";

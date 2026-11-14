@@ -128,7 +128,7 @@ The **Explore** tab is different from **Packages**: Packages lists what is insta
 - Sort by downloads or by name; filter by Formula/Cask; optionally hide deprecated or disabled packages.
 - The `#rank` column shows the package's position in its own category, and the share column shows its percentage of all downloads in the range.
 - Already-installed packages are badged, and their installed version appears in the detail panel.
-- Install, copy the install command, or jump to the package in the Packages tab directly from the list or the detail panel.
+- **Search, then install**: every row has an Install button; the detail panel also installs. If nothing matches, the empty state offers to run `brew install` with the typed name.
 - The catalog is cached locally: the catalog expires after 1 day and download counts after 1 hour. Once cached, opening Explore costs no network request.
 
 Homebrew snapshots are stored separately:
@@ -139,7 +139,7 @@ Homebrew snapshots are stored separately:
 
 **Everyday commands**
 
-Install, uninstall, upgrade, upgrade all, reinstall, pin, and unpin are available from the toolbar, the table context menu, and the package detail panel.
+New packages are installed from **Explore**: search, then press **Install** on a row (or in the detail panel). Uninstall, upgrade, upgrade all, reinstall, pin, and unpin stay on the toolbar, the table context menu, and the package detail panel.
 
 The **Maintenance** menu also offers index update, cache/old-version cleanup, autoremove, environment check, config, and outdated listing.
 

@@ -20,7 +20,6 @@ struct BrewVersionPill: View {
 struct HomebrewView: View {
     @EnvironmentObject private var brew: BrewStore
 
-    @State private var showingInstallSheet = false
     @State private var confirmUninstall: [BrewPackage] = []
     @State private var showingUpgradeAllConfirmation = false
     @State private var showingBrewComparison = false
@@ -65,10 +64,6 @@ struct HomebrewView: View {
         }
         .navigationTitle("Homebrew")
         .toolbar { toolbarContent }
-        .sheet(isPresented: $showingInstallSheet) {
-            BrewInstallSheet()
-                .environmentObject(brew)
-        }
         .sheet(isPresented: $showingBrewComparison) {
             BrewComparisonView()
                 .environmentObject(brew)
@@ -476,14 +471,6 @@ struct HomebrewView: View {
         ToolbarItemGroup(placement: .primaryAction) {
             if brew.section == .packages, brew.isAvailable {
                 Button {
-                    showingInstallSheet = true
-                } label: {
-                    Label("安装包", systemImage: "plus")
-                }
-                .help(Text(L.t("通过 brew install 安装 Formula 或 Cask")))
-                .disabled(!brew.isAvailable || brew.isRunningCommand)
-
-                Button {
                     if brew.outdatedCount > 0 {
                         showingUpgradeAllConfirmation = true
                     }
@@ -719,61 +706,5 @@ private struct BrewTinyBadge: View {
             .frame(height: 16)
             .background(color.opacity(0.13), in: Capsule())
             .fixedSize()
-    }
-}
-
-// MARK: - Install sheet
-
-private struct BrewInstallSheet: View {
-    @EnvironmentObject private var brew: BrewStore
-    @Environment(\.dismiss) private var dismiss
-
-    @State private var names = ""
-    @State private var kind: BrewPackageKind = .formula
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("安装 Homebrew 包")
-                .font(.headline)
-
-            Picker("类型", selection: $kind) {
-                ForEach(BrewPackageKind.allCases) { kind in
-                    Text(kind.title).tag(kind)
-                }
-            }
-            .pickerStyle(.segmented)
-
-            TextField(L.t("包名，多个用空格分隔"), text: $names)
-                .textFieldStyle(.roundedBorder)
-
-            Text(previewCommand)
-                .font(.caption.monospaced())
-                .foregroundStyle(.secondary)
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            HStack {
-                Spacer()
-                Button(L.t("取消")) { dismiss() }
-                    .keyboardShortcut(.cancelAction)
-
-                Button(L.t("安装")) {
-                    let list = names
-                        .split(whereSeparator: { $0.isWhitespace })
-                        .map(String.init)
-                    dismiss()
-                    Task { await brew.install(list, kind: kind) }
-                }
-                .keyboardShortcut(.defaultAction)
-                .disabled(names.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-        }
-        .padding(20)
-        .frame(width: 420)
-    }
-
-    private var previewCommand: String {
-        let list = names.split(whereSeparator: { $0.isWhitespace }).map(String.init)
-        return BrewPackage.command("install", kind: kind, names: list.isEmpty ? ["<name>"] : list)
     }
 }

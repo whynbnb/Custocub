@@ -12,6 +12,7 @@ struct BrewExploreView: View {
 
     @State private var showsTerminal = false
     @State private var confirmInstall: BrewCatalogEntry?
+    @State private var confirmNameInstall: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -66,6 +67,45 @@ struct BrewExploreView: View {
         } message: {
             Text(L.t("会执行 %@。已安装的包不受影响。", confirmInstall?.installCommand ?? ""))
         }
+        .confirmationDialog(
+            L.t("安装「%@」？", confirmNameInstall ?? ""),
+            isPresented: Binding(
+                get: { confirmNameInstall != nil },
+                set: { if !$0 { confirmNameInstall = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            if let name = confirmNameInstall {
+                Button(L.t("安装")) {
+                    confirmNameInstall = nil
+                    Task { await brew.install([name], kind: installKind) }
+                }
+            }
+            Button(L.t("取消"), role: .cancel) { confirmNameInstall = nil }
+        } message: {
+            Text(L.t("会执行 %@。已安装的包不受影响。", nameInstallCommand))
+        }
+    }
+
+    /// 没有选中目录条目时，按搜索关键词直接安装。
+    ///
+    /// 目录可能因为版本更新、第三方 tap 或网络失败而缺少某个包，
+    /// 这时仍然可以输入包名交给 `brew install` 处理。
+    private var installKind: BrewPackageKind {
+        brew.exploreKindFilter ?? .formula
+    }
+
+    private var nameInstallCommand: String {
+        guard let name = confirmNameInstall else { return "" }
+        return BrewPackage.command("install", kind: installKind, names: [name])
+    }
+
+    /// 可以按名称直接安装的搜索词：不含空格，且当前没有匹配结果。
+    private var installableQuery: String? {
+        guard brew.catalog.isEmpty == false, brew.filteredCatalog.isEmpty else { return nil }
+        let query = brew.exploreSearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty, !query.contains(where: { $0.isWhitespace }) else { return nil }
+        return query
     }
 
     // MARK: - 顶部筛选
@@ -249,11 +289,19 @@ struct BrewExploreView: View {
     }
 
     private var emptyState: some View {
-        ContentUnavailableView(
-            L.t("没有符合条件的包"),
-            systemImage: "safari",
-            description: Text(L.t("请调整搜索内容或筛选条件。"))
-        )
+        ContentUnavailableView {
+            Label(L.t("没有符合条件的包"), systemImage: "safari")
+        } description: {
+            Text(L.t("请调整搜索内容或筛选条件。"))
+        } actions: {
+            if let query = installableQuery {
+                Button(L.t("安装「%@」", query)) {
+                    confirmNameInstall = query
+                }
+                .buttonStyle(.borderedProminent)
+                .help(Text(L.t("没有在目录中找到匹配项时，可以直接按这个名称执行 brew install。")))
+            }
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
@@ -264,13 +312,20 @@ struct BrewExploreView: View {
             entries: brew.filteredCatalog,
             selection: $brew.selectedCatalogEntryID,
             rankingProvider: { brew.ranking(for: $0) },
-            isInstalledProvider: { brew.isInstalled($0) }
+            isInstalledProvider: { brew.isInstalled($0) },
+            canInstall: !brew.isRunningCommand,
+            onInstall: { confirmInstall = $0 }
         )
         .contextMenu(forSelectionType: String.self) { ids in
             contextMenu(for: ids)
         } primaryAction: { ids in
             guard let id = ids.first, let entry = brew.catalogEntry(id: id) else { return }
-            brew.copyInstallCommand(entry)
+            // 双击即安装；已安装的包则跳回「包」分区查看。
+            if brew.isInstalled(entry) {
+                brew.revealInstalled(entry)
+            } else {
+                confirmInstall = entry
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -323,6 +378,8 @@ private struct BrewCatalogTable: View {
     @Binding var selection: String?
     let rankingProvider: (BrewPackageKind) -> BrewPopularityRanking?
     let isInstalledProvider: (BrewCatalogEntry) -> Bool
+    let canInstall: Bool
+    let onInstall: (BrewCatalogEntry) -> Void
 
     var body: some View {
         Table(entries, selection: $selection) {
@@ -408,6 +465,24 @@ private struct BrewCatalogTable: View {
                     .lineLimit(1)
             }
             .width(min: 100, ideal: 130, max: 180)
+
+            TableColumn("操作") { entry in
+                if isInstalledProvider(entry) {
+                    Label(L.t("已安装"), systemImage: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                        .lineLimit(1)
+                } else {
+                    Button(L.t("安装")) {
+                        onInstall(entry)
+                    }
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
+                    .disabled(!canInstall)
+                    .help(Text(L.t("安装 %@", entry.name)))
+                }
+            }
+            .width(min: 58, ideal: 68, max: 88)
         }
     }
 }
