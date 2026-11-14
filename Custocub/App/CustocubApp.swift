@@ -98,7 +98,7 @@ enum AboutPanel {
 
     static func show() {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
-            ?? "1.0"
+            ?? "1.1"
 
         NSApplication.shared.orderFrontStandardAboutPanel(options: [
             .applicationName: "Custocub",

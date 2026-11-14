@@ -496,7 +496,7 @@ private struct DataSettingsTab: View {
 
 private struct AboutSettingsTab: View {
     private var version: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.1"
     }
 
     private var build: String {
