@@ -61,15 +61,9 @@ struct BrewPackageDetailView: View {
                     }
                 }
 
-                if !package.dependencies.isEmpty {
-                    SectionCard(title: "运行时依赖") {
-                        ForEach(package.dependencies, id: \.self) { dependency in
-                            Text(dependency)
-                                .font(.caption.monospaced())
-                                .textSelection(.enabled)
-                        }
-                    }
-                }
+                dependenciesSection(for: package)
+
+                reverseDependenciesSection(for: package)
 
                 SectionCard(title: "命令") {
                     Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 9) {
@@ -166,6 +160,89 @@ struct BrewPackageDetailView: View {
             RoundedRectangle(cornerRadius: 14)
                 .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
         }
+    }
+
+    // MARK: - 依赖关系
+
+    private func dependenciesSection(for package: BrewPackage) -> some View {
+        SectionCard(title: "依赖") {
+            if package.dependencies.isEmpty {
+                emptyRelationLabel(L.t("没有直接依赖"))
+            } else {
+                FlowLayout(spacing: 6) {
+                    ForEach(package.dependencies, id: \.self) { dependency in
+                        if let target = brew.package(named: dependency) {
+                            packageChip(target)
+                        } else {
+                            missingDependencyChip(dependency)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func reverseDependenciesSection(for package: BrewPackage) -> some View {
+        let dependents = brew.dependents(of: package)
+        return SectionCard(title: "反向依赖") {
+            if dependents.isEmpty {
+                emptyRelationLabel(L.t("没有其他已安装的包依赖它"))
+            } else {
+                FlowLayout(spacing: 6) {
+                    ForEach(dependents) { dependent in
+                        packageChip(dependent)
+                    }
+                }
+            }
+        }
+    }
+
+    private func emptyRelationLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// 可点击的小胶囊：跳到该包的详情。依赖与反向依赖共用。
+    private func packageChip(_ target: BrewPackage) -> some View {
+        Button {
+            brew.focusPackage(target)
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: target.kind.symbol)
+                    .font(.caption2)
+                    .foregroundStyle(target.kind.color)
+
+                Text(target.name)
+                    .font(.caption)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 8)
+            .frame(height: 22)
+            .background(Color.primary.opacity(0.06), in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .help(Text(L.t("查看 %@ 详情", target.name)))
+    }
+
+    /// 依赖没有对应的已安装包时显示一个只读胶囊。
+    private func missingDependencyChip(_ name: String) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: "questionmark.circle")
+                .font(.caption2)
+
+            Text(name)
+                .font(.caption)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 8)
+        .frame(height: 22)
+        .foregroundStyle(.secondary)
+        .background(Color.secondary.opacity(0.09), in: Capsule())
+        .help(Text(L.t("未安装")))
     }
 
     /// 详情面板里的命令。按钮执行命令，后面的文本方便复制或核对。

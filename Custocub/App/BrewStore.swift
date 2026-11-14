@@ -324,8 +324,42 @@ final class BrewStore: ObservableObject {
         return inventory?.package(id: id)
     }
 
+    /// 按名称查找已安装的包。依赖名可能带 tap 前缀，比较时忽略它。
+    /// 同名时优先 Formula，因为 Cask 不会作为 Formula 的依赖出现。
+    func package(named name: String) -> BrewPackage? {
+        let key = BrewPackage.dependencyKey(for: name)
+        return packages.first { $0.kind == .formula && $0.dependencyKey == key }
+            ?? packages.first { $0.dependencyKey == key }
+    }
+
     var selectedPackage: BrewPackage? {
         package(id: selectedPackageID)
+    }
+
+    /// 直接依赖指定包的所有已安装包。
+    func dependents(of package: BrewPackage) -> [BrewPackage] {
+        let key = package.dependencyKey
+        return packages
+            .filter { candidate in
+                guard candidate.id != package.id else { return false }
+                return candidate.dependencies.contains {
+                    BrewPackage.dependencyKey(for: $0) == key
+                }
+            }
+            .sorted { lhs, rhs in
+                if lhs.kind != rhs.kind { return lhs.kind == .formula }
+                return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+            }
+    }
+
+    /// 在详情面板里跳到另一个已安装包；能保留当前筛选时就保留。
+    func focusPackage(_ package: BrewPackage) {
+        if filteredPackages.contains(where: { $0.id == package.id }) {
+            selection = [package.id]
+            selectedPackageID = package.id
+        } else {
+            revealPackage(package)
+        }
     }
 
     /// 当前是否有任何筛选条件处于非默认状态。

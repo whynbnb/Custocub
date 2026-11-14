@@ -114,6 +114,14 @@ struct BrewPackage: Identifiable, Codable, Hashable, Sendable {
         kind == .formula && !isInstalledOnRequest
     }
 
+    /// 依赖名称可能带 tap 前缀，比较时只取最后一段并忽略大小写。
+    static func dependencyKey(for name: String) -> String {
+        let lastComponent = name.split(separator: "/").last.map(String.init) ?? name
+        return lastComponent.lowercased()
+    }
+
+    var dependencyKey: String { Self.dependencyKey(for: name) }
+
     var installCommand: String {
         Self.command("install", kind: kind, names: [name])
     }

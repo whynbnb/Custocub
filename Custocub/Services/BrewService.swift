@@ -356,7 +356,7 @@ enum BrewService {
                 isPinned: item["pinned"] as? Bool ?? false,
                 isInstalledOnRequest: installed?["installed_on_request"] as? Bool ?? true,
                 installedAt: installedTime.map { Date(timeIntervalSince1970: $0) },
-                dependencies: installed?["runtime_dependencies"] as? [String] ?? []
+                dependencies: item["dependencies"] as? [String] ?? []
             ))
         }
 

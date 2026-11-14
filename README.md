@@ -108,6 +108,7 @@ Custocub's Homebrew features require **Homebrew 7.0 or later**.
 - Shows installed and latest versions, tap, install time, dependencies, `outdated`, `pinned`, and `auto_updates` state.
 - Filter by kind, outdated, or pinned; search by name, description, or version.
 - In the package detail panel, every command row puts its action button first (install, upgrade, reinstall, uninstall), followed by the command text and a copy button. Uninstall is shown in red.
+- The detail panel lists both **direct dependencies** and **reverse dependencies** as small clickable chips. Selecting one jumps to its detail, scrolls the package list to the matching row, and highlights it, so you can move back and forth between connected packages.
 
 **Two different kinds of snapshots**
 
