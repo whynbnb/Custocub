@@ -523,3 +523,9 @@
 
 "筛选配置项" = "Filter configuration";
 "没有匹配的配置项" = "No matching configuration entries";
+
+"结果不完整" = "Incomplete result";
+"诊断结果不完整" = "Diagnostics result is incomplete";
+"诊断输出不完整（%.1f 秒）" = "Diagnostics output was incomplete (%.1f s)";
+"这次检查没有拿到完整的输出，结果不可信。请重新运行诊断。" = "This run did not receive complete output, so the result is unreliable. Run diagnostics again.";
+"重新运行" = "Run again";

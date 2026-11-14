@@ -116,13 +116,20 @@ struct BrewDoctorReport: Sendable {
     var rawText: String
     var checkedAt: Date
     var exitCode: Int32
+    /// 是否真正拿到了完整结果。命令被中断、或输出无法解析时为 false。
+    var isComplete: Bool
 
-    var isHealthy: Bool { findings.isEmpty }
+    var isHealthy: Bool { isComplete && findings.isEmpty }
 
     /// 与 `brew doctor` 的退出码保持一致：只要有问题就视为非零。
     var warningCount: Int { findings.count { $0.severity == .warning } }
     var errorCount: Int { findings.count { $0.severity == .error } }
     var noteCount: Int { findings.count { $0.severity == .note } }
+
+    /// 命令跑完了但没有解析出任何结果，说明输出格式与预期不符。
+    var isUnparsable: Bool {
+        !isComplete || (findings.isEmpty && exitCode != 0)
+    }
 
     var sortedFindings: [BrewDoctorFinding] {
         findings.sorted {
@@ -150,6 +157,8 @@ enum BrewHealthService {
         guard BrewService.isAvailable else { return nil }
 
         let json = await BrewService.runQuiet(arguments: ["doctor", "--json"])
+
+        // 只有在真正拿到完整 JSON 时才采用；被截断或解析失败都视为不可用。
         if let report = parseDoctorJSON(json.output, exitCode: json.result.exitCode) {
             return report
         }
@@ -236,7 +245,8 @@ enum BrewHealthService {
             findings: findings,
             rawText: output,
             checkedAt: Date(),
-            exitCode: exitCode
+            exitCode: exitCode,
+            isComplete: true
         )
     }
 
@@ -299,7 +309,10 @@ enum BrewHealthService {
             findings: findings,
             rawText: output,
             checkedAt: Date(),
-            exitCode: exitCode
+            exitCode: exitCode,
+            // 文本回退要求至少能识别出结论：
+            // 要么没有任何警告（输出里应有 "ready to brew"），要么解析到了具体问题。
+            isComplete: !findings.isEmpty || output.contains("ready to brew")
         )
     }
 }

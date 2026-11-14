@@ -87,9 +87,11 @@ final class BrewStore: ObservableObject {
     /// `brew config` 的解析结果。
     @Published private(set) var configInfo: BrewConfigInfo?
     @Published private(set) var isLoadingConfig = false
+    private var configTask: Task<Void, Never>?
     /// `brew doctor` 的诊断结果。
     @Published private(set) var doctorReport: BrewDoctorReport?
     @Published private(set) var isRunningDoctor = false
+    private var doctorTask: Task<Void, Never>?
 
     @Published var searchText = ""
     @Published var kindFilter: BrewPackageKind?
@@ -709,49 +711,80 @@ final class BrewStore: ObservableObject {
     // MARK: - 配置与诊断
 
     /// 读取 `brew config`。
+    ///
+    /// 同样使用独立任务，避免切换分区时被取消而留下空配置。
     func loadConfig(force: Bool = false) async {
-        guard isAvailable, !isLoadingConfig else { return }
+        guard isAvailable else { return }
         if !force, configInfo != nil { return }
+        if isLoadingConfig {
+            _ = await configTask?.value
+            return
+        }
 
-        isLoadingConfig = true
-        defer { isLoadingConfig = false }
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.isLoadingConfig = true
+            defer { self.isLoadingConfig = false }
+            self.configInfo = await BrewHealthService.loadConfig()
+        }
 
-        configInfo = await BrewHealthService.loadConfig()
+        configTask = task
+        await task.value
     }
 
     /// 运行 `brew doctor` 并把结果结构化展示；同时写入命令日志。
+    ///
+    /// 使用独立的 unstructured 任务执行：SwiftUI 切换分区时 `.task` 会被取消，
+    /// 若跟随视图生命周期，命令会被中途打断并留下不完整的结果。
     func runDoctor(force: Bool = false) async {
-        guard isAvailable, !isRunningDoctor else { return }
+        guard isAvailable else { return }
         if !force, doctorReport != nil { return }
+        if isRunningDoctor {
+            // 已有检查在跑，等它结束即可。
+            _ = await doctorTask?.value
+            return
+        }
 
-        isRunningDoctor = true
-        defer { isRunningDoctor = false }
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.isRunningDoctor = true
+            defer { self.isRunningDoctor = false }
 
-        logEntries.append(BrewLogEntry(level: .command, text: "$ brew doctor --json"))
-        let started = Date()
+            self.logEntries.append(BrewLogEntry(level: .command, text: "$ brew doctor --json"))
+            let started = Date()
 
-        let report = await BrewHealthService.loadDoctor()
-        doctorReport = report
+            let report = await BrewHealthService.loadDoctor()
+            self.doctorReport = report
 
-        let duration = Date().timeIntervalSince(started)
-        if let report {
-            if report.isHealthy {
-                logEntries.append(BrewLogEntry(
+            let duration = Date().timeIntervalSince(started)
+            guard let report else {
+                self.logEntries.append(BrewLogEntry(
+                    level: .failure,
+                    text: L.t("无法读取 brew doctor 输出（%.1f 秒）", duration)
+                ))
+                return
+            }
+
+            if !report.isComplete {
+                self.logEntries.append(BrewLogEntry(
+                    level: .failure,
+                    text: L.t("诊断输出不完整（%.1f 秒）", duration)
+                ))
+            } else if report.isHealthy {
+                self.logEntries.append(BrewLogEntry(
                     level: .success,
                     text: L.t("未发现问题（%.1f 秒）", duration)
                 ))
             } else {
-                logEntries.append(BrewLogEntry(
+                self.logEntries.append(BrewLogEntry(
                     level: .failure,
                     text: L.t("发现 %d 个问题（%.1f 秒）", report.findings.count, duration)
                 ))
             }
-        } else {
-            logEntries.append(BrewLogEntry(
-                level: .failure,
-                text: L.t("无法读取 brew doctor 输出（%.1f 秒）", duration)
-            ))
         }
+
+        doctorTask = task
+        await task.value
     }
 
     func showOutdated() async {

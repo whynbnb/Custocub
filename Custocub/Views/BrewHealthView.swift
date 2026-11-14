@@ -33,7 +33,12 @@ struct BrewHealthView: View {
         }
         .navigationTitle("Homebrew 配置与诊断")
         .task {
+            // 读配置很快，可以直接 await。
             await brew.loadConfig()
+        }
+        .task {
+            // doctor 较慢，且可能被取消。store 内部用独立任务执行，
+            // 即使视图被移除也会跑完并保存完整结果。
             await brew.runDoctor()
         }
         .sheet(isPresented: $showsTerminal) {
@@ -115,6 +120,28 @@ struct BrewHealthView: View {
                                     .foregroundStyle(.secondary)
                             }
                             Spacer()
+                        }
+                    } else if report.isUnparsable {
+                        // 命令被中断或输出无法解析，不能当成「健康」。
+                        HStack(alignment: .top, spacing: 9) {
+                            Image(systemName: "questionmark.circle.fill")
+                                .font(.title3)
+                                .foregroundStyle(.orange)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(L.t("诊断结果不完整"))
+                                    .font(.callout.weight(.medium))
+                                Text(L.t("这次检查没有拿到完整的输出，结果不可信。请重新运行诊断。"))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            Spacer()
+
+                            Button(L.t("重新运行")) {
+                                Task { await brew.runDoctor(force: true) }
+                            }
+                            .controlSize(.small)
+                            .disabled(brew.isRunningDoctor)
                         }
                     } else {
                         ForEach(report.sortedFindings) { finding in
@@ -282,18 +309,25 @@ private struct DoctorStatusBadge: View {
     let report: BrewDoctorReport
 
     private var color: Color {
+        if !report.isComplete { return .orange }
         if report.isHealthy { return .green }
         return report.errorCount > 0 ? .red : .orange
     }
 
     private var text: String {
+        if !report.isComplete { return L.t("结果不完整") }
         if report.isHealthy { return L.t("健康") }
         if report.errorCount > 0 { return L.t("%d 个问题", report.findings.count) }
         return L.t("%d 个警告", report.warningCount)
     }
 
+    private var symbol: String {
+        if !report.isComplete { return "questionmark.circle.fill" }
+        return report.isHealthy ? "checkmark.seal.fill" : "exclamationmark.triangle.fill"
+    }
+
     var body: some View {
-        Label(text, systemImage: report.isHealthy ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+        Label(text, systemImage: symbol)
             .font(.caption.weight(.medium))
             .foregroundStyle(color)
             .padding(.horizontal, 8)

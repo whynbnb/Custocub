@@ -184,19 +184,28 @@ enum BrewService {
     }
 
     /// 静默执行，等待结束后返回完整输出。
+    ///
+    /// 输出收集放在 detached 任务里：SwiftUI 的 `.task` 在视图消失时会被取消，
+    /// 若直接在调用方的任务中迭代事件流，会被提前中断并返回**被截断的输出**，
+    /// 进而导致解析结果错误（例如把 doctor 的警告当成「没有问题」）。
     static func runQuiet(arguments: [String]) async -> (output: String, result: BrewCommandResult) {
         let session = start(arguments: arguments)
-        var output = ""
-        var result = BrewCommandResult(exitCode: -1, wasCancelled: false)
-        for await event in session.stream {
-            switch event {
-            case .output(let chunk):
-                output += chunk
-            case .finished(let finished):
-                result = finished
+
+        return await Task.detached(priority: .userInitiated) {
+            var output = ""
+            var result = BrewCommandResult(exitCode: -1, wasCancelled: false)
+
+            for await event in session.stream {
+                switch event {
+                case .output(let chunk):
+                    output += chunk
+                case .finished(let finished):
+                    result = finished
+                }
             }
-        }
-        return (output, result)
+
+            return (output, result)
+        }.value
     }
 
     /// 非阻塞地读取管道剩余内容，最多等待 1 秒。
