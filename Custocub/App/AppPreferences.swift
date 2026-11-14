@@ -5,6 +5,15 @@ import SwiftUI
 enum AppConstants {
     /// 开发者的应用使用的 Bundle ID 前缀，固定不可修改。
     static let developerBundlePrefix = "me.whynbnb."
+
+    /// 应用扫描根目录，设置界面会原样展示。
+    static let scanDirectories = [
+        "/Applications",
+        "~/Applications",
+        "/System/Applications",
+        "/System/Library/CoreServices",
+        "/Library/Apple/System/Applications"
+    ]
 }
 
 /// 应用语言。`.system` 跟随 macOS 的语言设置。

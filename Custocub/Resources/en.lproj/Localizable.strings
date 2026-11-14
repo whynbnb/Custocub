@@ -393,3 +393,19 @@
 "比较两个 Homebrew 快照的 Formula 与 Cask" = "Compare formulae and casks between two Homebrew snapshots";
 
 "Cask (%d)" = "Cask (%d)";
+
+"Homebrew 快照" = "Homebrew snapshots";
+"~/Library/Application Support/Custocub/Snapshots" = "~/Library/Application Support/Custocub/Snapshots";
+"体积缓存位于 ~/Library/Application Support/Custocub/size-cache.json，7 天后过期。" = "The size cache lives at ~/Library/Application Support/Custocub/size-cache.json and expires after 7 days.";
+"切换语言后需要重新启动 Custocub。外观会立即生效。" = "Changing the language requires restarting Custocub. Appearance changes apply immediately.";
+"在访达中显示 Homebrew 快照" = "Show Homebrew snapshots in Finder";
+"存储位置" = "Storage location";
+"安装前缀" = "Install prefix";
+"应用快照" = "App snapshots";
+"快照存储" = "Snapshot storage";
+"版本 %@（%@）" = "Version %@ (%@)";
+"立即重新扫描" = "Rescan now";
+"缓存" = "Cache";
+"语言与外观" = "Language & Appearance";
+"重新读取包列表" = "Reload package list";
+"链接" = "Links";

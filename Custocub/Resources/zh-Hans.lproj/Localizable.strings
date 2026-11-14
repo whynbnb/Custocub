@@ -393,3 +393,19 @@
 "比较两个 Homebrew 快照的 Formula 与 Cask" = "比较两个 Homebrew 快照的 Formula 与 Cask";
 
 "Cask (%d)" = "Cask (%d)";
+
+"Homebrew 快照" = "Homebrew 快照";
+"~/Library/Application Support/Custocub/Snapshots" = "~/Library/Application Support/Custocub/Snapshots";
+"体积缓存位于 ~/Library/Application Support/Custocub/size-cache.json，7 天后过期。" = "体积缓存位于 ~/Library/Application Support/Custocub/size-cache.json，7 天后过期。";
+"切换语言后需要重新启动 Custocub。外观会立即生效。" = "切换语言后需要重新启动 Custocub。外观会立即生效。";
+"在访达中显示 Homebrew 快照" = "在访达中显示 Homebrew 快照";
+"存储位置" = "存储位置";
+"安装前缀" = "安装前缀";
+"应用快照" = "应用快照";
+"快照存储" = "快照存储";
+"版本 %@（%@）" = "版本 %@（%@）";
+"立即重新扫描" = "立即重新扫描";
+"缓存" = "缓存";
+"语言与外观" = "语言与外观";
+"重新读取包列表" = "重新读取包列表";
+"链接" = "链接";
