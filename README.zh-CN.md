@@ -21,7 +21,7 @@ Custocub 是一个用 Swift 6 / SwiftUI 编写的原生 macOS 应用清单与快
 - **平台与类型**：系统 / 第三方，以及 `arm64` / `x86_64` / 通用二进制检测。
 - **开发者的应用**：使用固定前缀 `me.whynbnb.` 自动归类，可开关显示，匹配数量大于 2 时出现。
 - **快照与对比**：保存历史清单、比较变化、导入导出、生成 Markdown 报告。
-- **Homebrew 深度支持**：独立的 Homebrew 管理界面、Formula / Cask 列表、升级中心、独立 Homebrew 快照、Brewfile 导出和实时命令日志。
+- **Homebrew 深度支持**：独立的 Homebrew 管理界面、Formula / Cask 列表、升级中心、SOCKS5 / HTTP 代理、独立 Homebrew 快照、Brewfile 导出和实时命令日志。
 - **探索完整仓库**：按近 30 天真实下载量浏览全部可安装的 Formula 与 Cask（可切换到 90 / 365 天），支持按包名、别名和描述搜索。
 - **展示框**：浏览已安装应用，也展示历史快照中已经卸载的应用。
 - **原生体验**：系统表格虚拟化、原生滚动条、可拖拽列宽和系统选择行为。
@@ -133,6 +133,15 @@ Custocub 的 Homebrew 功能需要 **Homebrew 7.0 或更高版本**。
 - 目录缓存在本地：目录 1 天过期，下载量 1 小时过期；命中缓存后打开探索不会发起任何网络请求
 
 Homebrew 的全局工具栏在每个分区都完全一致。**Brewfile 导出**放在「包」分区的筛选栏里，**快照对比**放在「快照」分区的标题栏里，切换分区时工具栏不会变化。
+
+**网络代理**
+
+- Homebrew 设置页可以让 Homebrew 的 `curl` 请求与「探索」目录下载走 **SOCKS5** 或 **HTTP** 代理。填写主机和端口后，可以用「测试连接」验证到 `formulae.brew.sh` 的连通性
+- Git 有自己的代理优先级：`git config` 里的 `http.proxy` 会覆盖 `http_proxy` / `all_proxy` 环境变量。因此 `brew update` 的 `git fetch` 默认使用 Git 配置的代理，而不是应用里的代理
+- **接管 Git 代理配置（仅 brew 子进程）** 默认关闭。开启后，Custocub 会向 brew 子进程注入命令级 `http.proxy` / `https.proxy`（包括按 URL 单独设置的 `http.<url>.proxy`），让 `brew update` 也走应用代理；不会写入 Git 全局配置
+- SOCKS5 使用远程 DNS（`socks5h`），域名由代理解析，不依赖本机 DNS
+- 它只影响 Custocub 启动的进程，不会修改系统、Git 或 Homebrew 的配置文件
+- 同一页还会**只读**显示 `git config --global` 中的代理配置，方便确认 Git 实际使用的代理，但无法在应用内修改
 
 Homebrew 快照单独存放：
 

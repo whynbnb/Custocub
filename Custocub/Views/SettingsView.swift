@@ -129,6 +129,24 @@ private struct HomebrewSettingsTab: View {
     @EnvironmentObject private var store: CustocubStore
     @EnvironmentObject private var brew: BrewStore
 
+    @AppStorage(BrewProxySettings.Keys.enabled) private var proxyEnabled = false
+    @AppStorage(BrewProxySettings.Keys.kind) private var proxyKindRaw = BrewProxyKind.socks5.rawValue
+    @AppStorage(BrewProxySettings.Keys.host) private var proxyHost = ""
+    @AppStorage(BrewProxySettings.Keys.port) private var proxyPort = BrewProxySettings.defaultPortText
+    @AppStorage(BrewProxySettings.Keys.overrideGit) private var proxyOverridesGit = false
+
+    @State private var proxyTest: ProxyTestState = .idle
+    @State private var gitProxyEntries: [GitProxyEntry] = []
+    @State private var isLoadingGitProxy = false
+
+    /// 代理连通性测试的界面状态。
+    private enum ProxyTestState: Equatable {
+        case idle
+        case testing
+        case success(milliseconds: Int)
+        case failure(String)
+    }
+
     var body: some View {
         Form {
             Section {
@@ -170,6 +188,10 @@ private struct HomebrewSettingsTab: View {
                 LabeledContent("Homebrew 快照", value: L.t("%d 个", brew.snapshots.count))
             }
 
+            proxySection
+
+            gitProxySection
+
             Section {
                 HStack {
                     Button("重新检测 Homebrew") {
@@ -196,6 +218,183 @@ private struct HomebrewSettingsTab: View {
             }
         }
         .formStyle(.grouped)
+        .onChange(of: proxySettings) { _, _ in
+            proxyTest = .idle
+        }
+        .task {
+            await loadGitProxy()
+        }
+    }
+
+    // MARK: - 代理
+
+    private var proxySection: some View {
+        Section {
+            Toggle("为 Homebrew 启用代理", isOn: $proxyEnabled)
+
+            Picker("协议", selection: proxyKindBinding) {
+                ForEach(BrewProxyKind.allCases) { kind in
+                    Text(kind.title).tag(kind)
+                }
+            }
+            .pickerStyle(.segmented)
+            .disabled(!proxyEnabled)
+
+            LabeledContent("主机") {
+                TextField("192.168.1.10", text: $proxyHost)
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 220)
+                    .disabled(!proxyEnabled)
+            }
+
+            LabeledContent("端口") {
+                TextField("1080", text: $proxyPort)
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 90)
+                    .disabled(!proxyEnabled)
+            }
+
+            if proxyEnabled,
+               !proxyHost.trimmingCharacters(in: .whitespaces).isEmpty,
+               !proxySettings.isConfigured {
+                Label("主机或端口格式不正确。", systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+
+            HStack(spacing: 10) {
+                Button("测试连接") {
+                    testProxy()
+                }
+                .disabled(!proxyEnabled || !proxySettings.isConfigured || proxyTest == .testing)
+
+                proxyStatusView
+
+                Spacer(minLength: 0)
+            }
+
+            Toggle("接管 Git 代理配置（仅 brew 子进程）", isOn: $proxyOverridesGit)
+                .disabled(!proxyEnabled)
+
+            Text("开启后，brew 执行 git fetch（例如 brew update）时也会使用上面的代理。只向子进程注入命令级配置，不会修改 Git 全局配置。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Text("代理会用于 brew 命令以及「探索」目录的下载，支持 SOCKS5 与 HTTP。SOCKS5 会通过代理解析域名。Git 的代理配置请在下方查看。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } header: {
+            Text("网络代理")
+        }
+    }
+
+    @ViewBuilder
+    private var proxyStatusView: some View {
+        switch proxyTest {
+        case .idle:
+            EmptyView()
+        case .testing:
+            HStack(spacing: 6) {
+                ProgressView().controlSize(.small)
+                Text("正在测试…")
+                    .foregroundStyle(.secondary)
+            }
+            .font(.caption)
+        case .success(let milliseconds):
+            Label(L.t("连接成功（%d 毫秒）", milliseconds), systemImage: "checkmark.circle.fill")
+                .font(.caption)
+                .foregroundStyle(.green)
+        case .failure(let message):
+            Label(L.t("连接失败：%@", message), systemImage: "xmark.circle.fill")
+                .font(.caption)
+                .foregroundStyle(.red)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var proxySettings: BrewProxySettings {
+        BrewProxySettings(
+            isEnabled: proxyEnabled,
+            kind: BrewProxyKind(rawValue: proxyKindRaw) ?? .socks5,
+            host: proxyHost,
+            port: proxyPort,
+            overridesGitProxy: proxyOverridesGit
+        )
+    }
+
+    private var proxyKindBinding: Binding<BrewProxyKind> {
+        Binding(
+            get: { BrewProxyKind(rawValue: proxyKindRaw) ?? .socks5 },
+            set: { proxyKindRaw = $0.rawValue }
+        )
+    }
+
+    private func testProxy() {
+        let settings = proxySettings
+        proxyTest = .testing
+        Task {
+            let result = await settings.testConnection()
+            switch result {
+            case .success(let milliseconds):
+                proxyTest = .success(milliseconds: milliseconds)
+            case .failure(let message):
+                proxyTest = .failure(message)
+            }
+        }
+    }
+
+    // MARK: - Git 代理
+
+    private var gitProxySection: some View {
+        Section {
+            if isLoadingGitProxy {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("读取中…")
+                        .foregroundStyle(.secondary)
+                }
+            } else if gitProxyEntries.isEmpty {
+                Text("未配置 Git 代理")
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(gitProxyEntries) { entry in
+                    LabeledContent(entry.key) {
+                        Text(entry.value)
+                            .font(.caption.monospaced())
+                            .textSelection(.enabled)
+                            .lineLimit(2)
+                    }
+                }
+            }
+
+            HStack {
+                Button("重新读取") {
+                    Task { await loadGitProxy() }
+                }
+                .disabled(isLoadingGitProxy)
+
+                Spacer()
+            }
+
+            Text("只读显示 git config --global 中的代理设置，修改请使用 git config 命令。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Text("关闭覆盖开关时，Git 自身配置的代理会优先于应用里的代理。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } header: {
+            Text("Git 全局代理配置")
+        }
+    }
+
+    private func loadGitProxy() async {
+        isLoadingGitProxy = true
+        gitProxyEntries = await GitProxyService.loadGlobalProxyEntries()
+        isLoadingGitProxy = false
     }
 
     private var statusText: String {

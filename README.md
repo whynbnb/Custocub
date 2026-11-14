@@ -21,7 +21,7 @@ Custocub is a native macOS app inventory and snapshot manager built with Swift 6
 - **Clear app types** — system vs. third-party, with `arm64` / `x86_64` / universal architecture detection.
 - **Developer apps smart group** — fixed `me.whynbnb.` Bundle ID prefix, with a show/hide toggle; shown only when more than two apps match.
 - **Snapshots and comparison** — keep historical inventories, compare changes, export or import snapshots, and generate Markdown reports.
-- **Deep Homebrew support** — a dedicated Homebrew screen for formulae and casks, an upgrade center, standalone Homebrew snapshots, Brewfile export, and a live command log.
+- **Deep Homebrew support** — a dedicated Homebrew screen for formulae and casks, an upgrade center, SOCKS5/HTTP proxy support, standalone Homebrew snapshots, Brewfile export, and a live command log.
 - **Explore the whole repository** — browse every available Formula and Cask ranked by real download counts from the last 30 days (switchable to 90 or 365), with full search across names, aliases, and descriptions.
 - **Gallery** — browse installed apps and apps that have been uninstalled but still exist in historical snapshots.
 - **Native macOS experience** — native table virtualization, scrollbars, resizable columns, and system selection behavior.
@@ -133,6 +133,15 @@ The **Explore** tab is different from **Packages**: Packages lists what is insta
 - The catalog is cached locally: the catalog expires after 1 day and download counts after 1 hour. Once cached, opening Explore costs no network request.
 
 The global Homebrew toolbar is identical on every tab. **Brewfile export** lives in the Packages tab filter bar, and **snapshot comparison** lives in the Snapshots tab header, so switching tabs never changes the toolbar.
+
+**Proxy**
+
+- The Homebrew settings tab can route Homebrew's `curl` traffic and Explore catalog downloads through a **SOCKS5** or **HTTP** proxy. Enter the host and port, then use **Test Connection** to verify the path to `formulae.brew.sh`.
+- Git has its own proxy priority: `http.proxy` in `git config` overrides the `http_proxy` / `all_proxy` environment variables. That means `brew update`'s `git fetch` normally uses the Git configuration rather than the app proxy.
+- **Override Git Proxy for brew (Child Processes)** is off by default. When enabled, Custocub injects command-level `http.proxy` / `https.proxy` entries, including any URL-specific `http.<url>.proxy` keys, into brew's child processes, so `brew update` also uses the app proxy. It never writes to the global Git configuration.
+- SOCKS5 uses remote DNS (`socks5h`), so hostnames are resolved through the proxy instead of relying on the local resolver.
+- It only affects processes started by Custocub. System, Git, and Homebrew configuration files are left untouched.
+- The same tab shows the proxy entries from `git config --global` **read-only**, so the effective Git configuration is visible without being editable.
 
 Homebrew snapshots are stored separately:
 

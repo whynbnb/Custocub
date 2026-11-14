@@ -138,8 +138,18 @@ enum BrewCatalogService {
         request.timeoutInterval = 60
         request.setValue("Custocub/1.0", forHTTPHeaderField: "User-Agent")
 
+        // 与 brew 命令共用设置里的代理配置。
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 60
+        configuration.timeoutIntervalForResource = 120
+        if let proxyDictionary = BrewProxySettings.current.connectionProxyDictionary {
+            configuration.connectionProxyDictionary = proxyDictionary
+        }
+        let session = URLSession(configuration: configuration)
+        defer { session.finishTasksAndInvalidate() }
+
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
                 return nil
             }

@@ -695,3 +695,27 @@
 "运行 brew update 后重新读取可升级列表。" = "Runs brew update, then rereads the list of upgradable packages.";
 
 "%d 个快照" = "%d snapshots";
+
+"网络代理" = "Network Proxy";
+"为 Homebrew 启用代理" = "Use a Proxy for Homebrew";
+"协议" = "Protocol";
+"主机" = "Host";
+"端口" = "Port";
+"测试连接" = "Test Connection";
+"正在测试…" = "Testing…";
+"连接成功（%d 毫秒）" = "Connected (%d ms)";
+"连接失败：%@" = "Connection failed: %@";
+"请先启用代理并填写主机和端口。" = "Enable the proxy and enter a host and port first.";
+"没有收到 HTTP 响应。" = "No HTTP response received.";
+"服务器返回 HTTP %d。" = "Server returned HTTP %d.";
+"尚未配置" = "Not configured";
+"代理会用于 brew 命令以及「探索」目录的下载，支持 SOCKS5 与 HTTP。SOCKS5 会通过代理解析域名。Git 的代理配置请在下方查看。" = "The proxy is used for brew commands and Explore catalog downloads. SOCKS5 and HTTP are supported; SOCKS5 resolves hostnames through the proxy. Git proxy settings are shown below.";
+"Git 全局代理配置" = "Git Global Proxy";
+"读取中…" = "Loading…";
+"未配置 Git 代理" = "No Git proxy configured";
+"主机或端口格式不正确。" = "The host or port is not valid.";
+"只读显示 git config --global 中的代理设置，修改请使用 git config 命令。" = "Read-only view of the proxy entries in git config --global. Use the git config command to change them.";
+
+"接管 Git 代理配置（仅 brew 子进程）" = "Override Git Proxy for brew (Child Processes)";
+"开启后，brew 执行 git fetch（例如 brew update）时也会使用上面的代理。只向子进程注入命令级配置，不会修改 Git 全局配置。" = "When on, git fetches run by brew (for example brew update) also use the proxy above. The override is injected into child processes only; the global Git configuration is not modified.";
+"关闭覆盖开关时，Git 自身配置的代理会优先于应用里的代理。" = "When the override is off, Git's own proxy settings take precedence over the app proxy.";

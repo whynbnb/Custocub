@@ -134,6 +134,23 @@ enum BrewService {
                 processEnvironment["PATH"] = (prepend + components).joined(separator: ":")
             }
 
+            // 设置里配置的代理通过环境变量传给 brew 及其派生的 git、curl。
+            let proxySettings = BrewProxySettings.current
+            for (key, value) in proxySettings.environmentOverrides {
+                processEnvironment[key] = value
+            }
+            // 可选：用应用代理覆盖 brew 子进程里的 Git 代理配置。
+            // 按 URL 单独设置的 `http.<url>.proxy` 比通用键更优先，需要一起覆盖。
+            let urlSpecificGitKeys = proxySettings.isActive && proxySettings.overridesGitProxy
+                ? GitProxyService.urlSpecificProxyKeys()
+                : []
+            for (key, value) in proxySettings.gitProxyEnvironment(
+                merging: processEnvironment,
+                additionalKeys: urlSpecificGitKeys
+            ) {
+                processEnvironment[key] = value
+            }
+
             for (key, value) in environment {
                 processEnvironment[key] = value
             }
