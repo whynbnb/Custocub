@@ -13,15 +13,30 @@ struct ContentView: View {
     @State private var showingBrewConsole = false
 
     var body: some View {
+        // 两列结构：侧边栏 + 右侧工作区。
+        //
+        // 右侧工作区内部再用 HSplitView 分成「列表」和「详情」。
+        // 之前用三列 NavigationSplitView，中间列和详情列会各自拥有
+        // 独立的标题栏段，标题栏被一条竖线切成两块，看起来像三列。
+        // 合并成一列后，标题、统计和工具栏是同一个 header。
         NavigationSplitView {
             SidebarView()
                 .navigationSplitViewColumnWidth(min: 220, ideal: 240, max: 300)
-        } content: {
-            content
-                .navigationSplitViewColumnWidth(min: 650, ideal: 880)
         } detail: {
-            detailColumn
-                .navigationSplitViewColumnWidth(min: 300, ideal: 350, max: 430)
+            if showsDetailPane {
+                HSplitView {
+                    content
+                        .frame(minWidth: 620, maxWidth: .infinity, maxHeight: .infinity)
+
+                    detailColumn
+                        .frame(minWidth: 300, idealWidth: 350, maxWidth: 430, maxHeight: .infinity)
+                }
+            } else {
+                // 快照、服务、清理和诊断分区自己就是整页内容，
+                // 不需要额外的详情列，直接铺满右侧工作区。
+                content
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         }
         .navigationSplitViewStyle(.balanced)
         .toolbar {
@@ -172,6 +187,21 @@ struct ContentView: View {
             }
         } else {
             AppDetailView(context: store.selectedAppContext)
+        }
+    }
+
+    /// 右侧是否需要「列表 + 详情」两栏。
+    ///
+    /// Homebrew 的快照、服务分区在视图内部已经有自己的左右分栏，
+    /// 清理和诊断则是单页内容，多出来的详情列只会显示一个空状态。
+    private var showsDetailPane: Bool {
+        guard store.activeSelection == .brew else { return true }
+
+        switch brew.section {
+        case .packages, .explore, .upgrade:
+            return true
+        case .snapshots, .services, .cleanup, .health:
+            return false
         }
     }
 
