@@ -25,6 +25,7 @@ Custocub is a native macOS app inventory and snapshot manager built with Swift 6
 - **Explore the whole repository** — browse every available Formula and Cask ranked by real download counts from the last 30 days (switchable to 90 or 365), with full search across names, aliases, and descriptions.
 - **Gallery** — browse installed apps and apps that have been uninstalled but still exist in historical snapshots.
 - **Native macOS experience** — native table virtualization, scrollbars, resizable columns, and system selection behavior.
+- **Remembered layout** — the sidebar width and window width are remembered separately for the app inventory and the Homebrew screen.
 - **English and Chinese** — follows the system language by default, with a manual switch that applies instantly (no restart).
 - **Light and dark appearance** — follows the system by default, with manual Light / Dark options that apply instantly.
 

@@ -21,7 +21,12 @@ struct ContentView: View {
         // 合并成一列后，标题、统计和工具栏是同一个 header。
         NavigationSplitView {
             SidebarView()
-                .navigationSplitViewColumnWidth(min: 220, ideal: 240, max: 300)
+                .navigationSplitViewColumnWidth(
+                    min: WorkspaceLayoutStore.sidebarMinWidth,
+                    ideal: WorkspaceLayoutStore.sidebarWidth(for: workspaceMode),
+                    max: WorkspaceLayoutStore.sidebarMaxWidth
+                )
+                .background(SidebarWidthMemory(mode: workspaceMode))
         } detail: {
             if showsDetailPane {
                 HSplitView {
@@ -39,6 +44,7 @@ struct ContentView: View {
             }
         }
         .navigationSplitViewStyle(.balanced)
+        .background(WindowWidthMemory(mode: workspaceMode))
         .toolbar {
             if store.activeSelection != .brew {
                 appToolbar
@@ -203,6 +209,11 @@ struct ContentView: View {
         case .snapshots, .services, .cleanup, .health:
             return false
         }
+    }
+
+    /// 当前工作区：Homebrew 和应用各记一套窗口与侧边栏宽度。
+    private var workspaceMode: WorkspaceLayoutStore.Mode {
+        WorkspaceLayoutStore.Mode.mode(for: store.activeSelection)
     }
 
     private var errorPresented: Binding<Bool> {

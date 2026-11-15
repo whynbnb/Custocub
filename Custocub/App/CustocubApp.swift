@@ -16,7 +16,7 @@ struct CustocubApp: App {
                 .environmentObject(localization)
                 .environment(\.locale, localization.locale)
                 .id(localization.revision)
-                .frame(minWidth: 1200, minHeight: 700)
+                .frame(minWidth: WorkspaceLayoutStore.windowMinWidth, minHeight: 700)
         }
         .defaultSize(width: 1400, height: 860)
         .commands {
