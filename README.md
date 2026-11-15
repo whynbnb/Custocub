@@ -157,6 +157,26 @@ New packages are installed from **Explore**: search, then press **Install** on a
 
 **Upgrade** is a dedicated tab: it lists every outdated Formula and Cask with installed and latest versions, and offers per-row upgrade, selected upgrade, and **Upgrade All**. It also runs `brew update` via **Check for Updates**. The toolbar no longer carries an upgrade button.
 
+**Upgrade policy**
+
+Custocub does not silently inherit whatever `HOMEBREW_*` variables your shell happens to export. Each brew invocation gets an explicit policy, selectable from the Upgrade tab or **Settings → Homebrew → Upgrade**:
+
+| Policy | Cask scope |
+| --- | --- |
+| **Standard** | Homebrew's own default: formulae plus auto-updating casks whose installed bundle is behind the tap version. `:latest` casks are still skipped. |
+| **Non-greedy** | Explicitly skips auto-updating and `:latest` casks entirely; only regular formulae and versioned casks are upgraded. |
+| **Greedy** | Also upgrades auto-updating and `:latest` casks. |
+
+The policy is applied consistently in three places, so the list and the command always agree:
+
+- `brew info --json=v2 --installed` and `brew outdated` mark the same packages as outdated, which drives the upgradable count and the Upgrade table.
+- `brew upgrade` receives `--greedy` only in Greedy mode.
+- Copied upgrade commands and the pasteable command shown in the package detail include the same flag.
+
+Changing the policy reloads the inventory immediately, so the counts update without restarting or running `brew update`.
+
+On this machine the difference is visible: with 114 casks installed, Standard reports 5 outdated casks and Non-greedy reports 2, because three of them are `auto_updates` casks that Homebrew would otherwise take over.
+
 Uninstall, reinstall, pin, and unpin stay on the package table context menu and the package detail panel.
 
 The **Maintenance** menu also offers index update, cache/old-version cleanup, autoremove, environment check, config, and outdated listing.

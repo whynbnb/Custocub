@@ -87,6 +87,25 @@ struct CustocubCommands: Commands {
             .keyboardShortcut("e", modifiers: [.command, .shift])
             .disabled(store.selectedSnapshot == nil)
         }
+
+        CommandMenu("Homebrew") {
+            Button("打开 Homebrew 升级") {
+                store.sidebarSelection = .brew
+                brew.section = .upgrade
+                Task { await brew.load() }
+            }
+            .disabled(!brew.isAvailable)
+
+            Divider()
+
+            // 直接在这里切换升级策略，不用打开设置。
+            Picker("升级策略", selection: $brew.upgradePolicy) {
+                ForEach(BrewUpgradePolicy.allCases) { policy in
+                    Text(policy.title).tag(policy)
+                }
+            }
+            .pickerStyle(.inline)
+        }
     }
 }
 

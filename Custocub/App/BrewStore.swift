@@ -169,6 +169,17 @@ final class BrewStore: ObservableObject {
         }
     }
 
+    /// 当前升级策略。切换后会重新读取清单，
+    /// 让「可更新」数量和升级列表立刻反映新的范围。
+    @Published var upgradePolicy: BrewUpgradePolicy {
+        didSet {
+            guard upgradePolicy != oldValue else { return }
+            UserDefaults.standard.set(upgradePolicy.rawValue, forKey: BrewUpgradePolicy.defaultsKey)
+            guard isAvailable else { return }
+            Task { await load(force: true) }
+        }
+    }
+
     /// 启动时解析一次 brew 路径，避免在视图 body 中反复访问文件系统。
     /// 关闭开关时保持路径不变，重新开启可以立刻复用。
     @Published private(set) var executableURL = BrewService.locateExecutable()
@@ -186,6 +197,7 @@ final class BrewStore: ObservableObject {
 
     init() {
         isEnabled = Self.isEnabledPreference
+        upgradePolicy = BrewUpgradePolicy.current
         loadSnapshots()
 
         // 版本检测很轻量（`brew --version` 约 20ms），在 init 中同步完成，
@@ -814,14 +826,20 @@ final class BrewStore: ObservableObject {
     func upgrade(_ packages: [BrewPackage]) async {
         guard !packages.isEmpty else { return }
         let names = packages.map(\.name)
+
+        // 传进来的包都已经由当前策略判定为可更新（`brew info` 与界面用同一套环境变量），
+        // 因此这里只需要在贪婪模式下补上 `--greedy`，保证命令与列表一致。
         _ = await runCommand(
-            ["upgrade"] + names,
+            ["upgrade"] + upgradePolicy.arguments(for: "upgrade") + names,
             title: L.t("升级 %@", names.joined(separator: ", "))
         )
     }
 
     func upgradeAll() async {
-        _ = await runCommand(["upgrade"], title: L.t("升级全部可更新包"))
+        _ = await runCommand(
+            ["upgrade"] + upgradePolicy.arguments(for: "upgrade"),
+            title: L.t("升级全部可更新包")
+        )
     }
 
     func reinstall(_ package: BrewPackage) async {
@@ -1306,7 +1324,11 @@ final class BrewStore: ObservableObject {
     }
 
     func showOutdated() async {
-        _ = await runCommand(["outdated", "--verbose"], title: L.t("查看可更新的包"), refreshAfter: false)
+        _ = await runCommand(
+            ["outdated", "--verbose"] + upgradePolicy.arguments(for: "outdated"),
+            title: L.t("查看可更新的包"),
+            refreshAfter: false
+        )
     }
 }
 

@@ -130,19 +130,33 @@ struct BrewPackage: Identifiable, Codable, Hashable, Sendable {
         Self.command("uninstall", kind: kind, names: [name])
     }
 
-    var upgradeCommand: String {
-        Self.command("upgrade", kind: kind, names: [name])
+    var upgradeCommand: String { upgradeCommand(policy: .current) }
+
+    /// 升级命令。贪婪模式下带上 `--greedy`，与界面里的策略保持一致。
+    func upgradeCommand(policy: BrewUpgradePolicy) -> String {
+        Self.command(
+            "upgrade",
+            kind: kind,
+            names: [name],
+            extraArguments: policy.arguments(for: "upgrade")
+        )
     }
 
     var reinstallCommand: String {
         Self.command("reinstall", kind: kind, names: [name])
     }
 
-    static func command(_ verb: String, kind: BrewPackageKind, names: [String]) -> String {
+    static func command(
+        _ verb: String,
+        kind: BrewPackageKind,
+        names: [String],
+        extraArguments: [String] = []
+    ) -> String {
         var parts = ["brew", verb]
         if let flag = kind.commandFlag {
             parts.append(flag)
         }
+        parts.append(contentsOf: extraArguments)
         parts.append(contentsOf: names)
         return parts.joined(separator: " ")
     }

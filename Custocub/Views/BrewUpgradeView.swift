@@ -30,13 +30,16 @@ struct BrewUpgradeView: View {
             }
         }
 
-        var message: String {
+        /// 说明文字需要拼上升级策略，因此由调用方把策略传进来。
+        func message(policy: BrewUpgradePolicy) -> String {
+            let summary: String
             switch self {
             case .all:
-                L.t("将依次升级所有可更新的 Formula 与 Cask。已固定的包会被 Homebrew 跳过。")
+                summary = L.t("将依次升级所有可更新的 Formula 与 Cask。已固定的包会被 Homebrew 跳过。")
             case .selected(let packages):
-                L.t("将依次升级 %d 个包。", packages.count)
+                summary = L.t("将依次升级 %d 个包。", packages.count)
             }
+            return summary + "\n" + policy.detail
         }
     }
 
@@ -109,26 +112,41 @@ struct BrewUpgradeView: View {
             }
             Button(L.t("取消"), role: .cancel) { pendingAction = nil }
         } message: {
-            Text(pendingAction?.message ?? "")
+            Text(pendingAction?.message(policy: brew.upgradePolicy) ?? "")
         }
     }
 
     // MARK: - Header
 
     private var header: some View {
+        ViewThatFits(in: .horizontal) {
+            headerRow(compact: false)
+            headerRow(compact: true)
+        }
+        .frame(height: 40)
+        .padding(.horizontal, 16)
+        .background(.bar)
+    }
+
+    private func headerRow(compact: Bool) -> some View {
         HStack(spacing: 8) {
             Button {
                 Task { await brew.load(force: true) }
             } label: {
-                Label(L.t("刷新"), systemImage: "arrow.clockwise")
+                headerLabel(L.t("刷新"), systemImage: "arrow.clockwise", compact: compact)
             }
             .controlSize(.small)
             .disabled(brew.isLoading || brew.isRunningCommand)
+            .help(Text(L.t("重新读取已安装包与可更新列表。")))
 
             Button {
                 Task { await brew.updateIndex() }
             } label: {
-                Label(L.t("检查更新"), systemImage: "arrow.triangle.2.circlepath.circle")
+                headerLabel(
+                    L.t("检查更新"),
+                    systemImage: "arrow.triangle.2.circlepath.circle",
+                    compact: compact
+                )
             }
             .controlSize(.small)
             .disabled(brew.isRunningCommand)
@@ -137,19 +155,31 @@ struct BrewUpgradeView: View {
             Button {
                 showsTerminal = true
             } label: {
-                Label(L.t("命令日志"), systemImage: "terminal")
+                headerLabel(L.t("命令日志"), systemImage: "terminal", compact: compact)
             }
             .controlSize(.small)
+            .help(Text(L.t("在独立窗口中查看命令日志")))
+
+            upgradePolicyMenu(compact: compact)
 
             Spacer(minLength: 8)
 
             HStack(spacing: 10) {
                 Text(L.t("%d 个可更新", outdatedPackages.count))
                     .foregroundStyle(outdatedPackages.isEmpty ? Color.secondary : Color.red)
-                Label("\(outdatedFormulaCount) Formula", systemImage: "terminal")
-                    .foregroundStyle(.secondary)
-                Label("\(outdatedCaskCount) Cask", systemImage: "shippingbox")
-                    .foregroundStyle(.secondary)
+                if compact {
+                    Label("\(outdatedFormulaCount)", systemImage: "terminal")
+                        .foregroundStyle(.secondary)
+                        .help(Text(L.t("%d 个可更新的 Formula", outdatedFormulaCount)))
+                    Label("\(outdatedCaskCount)", systemImage: "shippingbox")
+                        .foregroundStyle(.secondary)
+                        .help(Text(L.t("%d 个可更新的 Cask", outdatedCaskCount)))
+                } else {
+                    Label("\(outdatedFormulaCount) Formula", systemImage: "terminal")
+                        .foregroundStyle(.secondary)
+                    Label("\(outdatedCaskCount) Cask", systemImage: "shippingbox")
+                        .foregroundStyle(.secondary)
+                }
             }
             .font(.caption)
             .monospacedDigit()
@@ -159,24 +189,69 @@ struct BrewUpgradeView: View {
                 Button {
                     pendingAction = .selected(selectedPackages)
                 } label: {
-                    Label(L.t("升级所选 %d 个", selectedPackages.count), systemImage: "arrow.up.circle")
+                    headerLabel(
+                        L.t("升级所选 %d 个", selectedPackages.count),
+                        systemImage: "arrow.up.circle",
+                        compact: compact
+                    )
                 }
                 .controlSize(.small)
                 .disabled(brew.isRunningCommand)
+                .help(Text(L.t("升级所选 %d 个", selectedPackages.count)))
             }
 
             Button {
                 pendingAction = .all
             } label: {
-                Label(L.t("升级全部"), systemImage: "arrow.triangle.2.circlepath")
+                headerLabel(
+                    L.t("升级全部"),
+                    systemImage: "arrow.triangle.2.circlepath",
+                    compact: compact
+                )
             }
             .controlSize(.small)
             .buttonStyle(.borderedProminent)
             .disabled(brew.isRunningCommand || outdatedPackages.isEmpty)
+            .help(Text(L.t("升级全部可更新包")))
         }
-        .frame(height: 40)
-        .padding(.horizontal, 16)
-        .background(.bar)
+    }
+
+    /// 宽度不够时只留图标，文字放进悬停提示。
+    @ViewBuilder
+    private func headerLabel(_ title: String, systemImage: String, compact: Bool) -> some View {
+        if compact {
+            Image(systemName: systemImage)
+                .frame(width: 16)
+        } else {
+            Label(title, systemImage: systemImage)
+        }
+    }
+
+    /// 升级策略菜单：菜单里直接切换，切换后列表会立刻反映新的范围。
+    private func upgradePolicyMenu(compact: Bool) -> some View {
+        Menu {
+            Picker(L.t("升级策略"), selection: $brew.upgradePolicy) {
+                ForEach(BrewUpgradePolicy.allCases) { policy in
+                    Label(policy.title, systemImage: policy.symbol).tag(policy)
+                }
+            }
+            .pickerStyle(.inline)
+
+            Divider()
+
+            Text(brew.upgradePolicy.summary)
+        } label: {
+            if compact {
+                Image(systemName: brew.upgradePolicy.symbol)
+                    .frame(width: 16)
+            } else {
+                Label(brew.upgradePolicy.title, systemImage: brew.upgradePolicy.symbol)
+            }
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .controlSize(.small)
+        .help(Text(L.t("切换升级策略：%@", brew.upgradePolicy.summary)))
     }
 
     // MARK: - Content
@@ -300,7 +375,7 @@ struct BrewUpgradeView: View {
             .disabled(selected.allSatisfy(\.isPinned))
 
             Button(L.t("复制升级命令")) {
-                BrewExport.copy(package.upgradeCommand)
+                BrewExport.copy(package.upgradeCommand(policy: brew.upgradePolicy))
             }
 
             if package.isPinned {

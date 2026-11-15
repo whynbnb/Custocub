@@ -134,6 +134,11 @@ enum BrewService {
                 processEnvironment["PATH"] = (prepend + components).joined(separator: ":")
             }
 
+            // 升级策略通过环境变量统一生效：
+            // 既影响 `brew upgrade` 的实际范围，也影响 `brew info` / `brew outdated`
+            // 判断哪些 Cask 算「可更新」，保证列表与实际执行一致。
+            BrewUpgradePolicy.current.apply(to: &processEnvironment)
+
             // 设置里配置的代理通过环境变量传给 brew 及其派生的 git、curl。
             let proxySettings = BrewProxySettings.current
             for (key, value) in proxySettings.environmentOverrides {

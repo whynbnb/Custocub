@@ -723,3 +723,19 @@
 "反向依赖" = "Reverse Dependencies";
 "没有直接依赖" = "No direct dependencies";
 "没有其他已安装的包依赖它" = "No installed package depends on it";
+
+"升级策略" = "Upgrade Policy";
+"标准" = "Standard";
+"非贪婪" = "Non-greedy";
+"贪婪" = "Greedy";
+"切换升级策略：%@" = "Switch upgrade policy: %@";
+"按 Homebrew 默认行为升级。版本落后的自动更新 Cask 也会一并升级，但不处理 :latest。" = "Follow Homebrew's default behaviour. Auto-updating casks that are behind their tap version are upgraded too, but :latest casks are not.";
+"只升级普通包与明确版本过旧的 Formula，完全跳过自动更新和 :latest 的 Cask。" = "Upgrade only regular packages and formulae with an outdated version. Auto-updating and :latest casks are skipped entirely.";
+"同时升级自动更新与 :latest 的 Cask。" = "Also upgrade auto-updating and :latest casks.";
+"当前为标准策略：Homebrew 可能接管版本落后的自动更新 Cask。" = "Standard policy: Homebrew may pick up auto-updating casks that are behind.";
+"当前为非贪婪策略：自动更新和 :latest 的 Cask 不会被升级。" = "Non-greedy policy: auto-updating and :latest casks will not be upgraded.";
+"当前为贪婪策略：自动更新和 :latest 的 Cask 也会被升级。" = "Greedy policy: auto-updating and :latest casks will be upgraded as well.";
+"Homebrew 7 默认会接管版本落后的自动更新 Cask。想要完全跳过它们，请选择非贪婪。" = "Homebrew 7 picks up auto-updating casks that are behind by default. Choose Non-greedy to skip them completely.";
+"策略同时影响「可更新」数量、升级列表和实际执行的 brew 命令，不受 shell 里 HOMEBREW_* 环境变量的影响。" = "The policy affects the upgradable count, the upgrade list, and the actual brew commands, regardless of HOMEBREW_* variables in your shell.";
+"%d 个可更新的 Formula" = "%d upgradable formulae";
+"%d 个可更新的 Cask" = "%d upgradable casks";

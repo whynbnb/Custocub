@@ -266,6 +266,7 @@ struct BrewPackageDetailView: View {
     }
 
     private func commands(for package: BrewPackage) -> [PackageCommand] {
+        let upgradePolicy = brew.upgradePolicy
         var items = [
             PackageCommand(
                 kind: .install,
@@ -280,7 +281,7 @@ struct BrewPackageDetailView: View {
                 kind: .upgrade,
                 title: L.t("升级"),
                 symbol: "arrow.up.circle",
-                command: package.upgradeCommand
+                command: package.upgradeCommand(policy: upgradePolicy)
             ))
         }
 

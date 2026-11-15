@@ -190,6 +190,8 @@ private struct HomebrewSettingsTab: View {
 
             proxySection
 
+            upgradePolicySection
+
             gitProxySection
 
             Section {
@@ -223,6 +225,35 @@ private struct HomebrewSettingsTab: View {
         }
         .task {
             await loadGitProxy()
+        }
+    }
+
+    // MARK: - 升级策略
+
+    private var upgradePolicySection: some View {
+        Section {
+            Picker("升级策略", selection: $brew.upgradePolicy) {
+                ForEach(BrewUpgradePolicy.allCases) { policy in
+                    Text(policy.title).tag(policy)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            Text(brew.upgradePolicy.summary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            if brew.upgradePolicy == .standard {
+                Text("Homebrew 7 默认会接管版本落后的自动更新 Cask。想要完全跳过它们，请选择非贪婪。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("升级")
+        } footer: {
+            Text("策略同时影响「可更新」数量、升级列表和实际执行的 brew 命令，不受 shell 里 HOMEBREW_* 环境变量的影响。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
