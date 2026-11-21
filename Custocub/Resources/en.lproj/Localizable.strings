@@ -847,3 +847,6 @@
 "这个合集还是空的" = "This collection is empty";
 "在应用右键菜单里添加到合集。" = "Add apps to this collection from their context menu.";
 "给这个合集起一个名字，例如「开发工具」或「必装应用」。" = "Give this collection a name, such as “Developer Tools” or “Must Have”.";
+"视觉对比" = "Visual comparison";
+"图标发生变化" = "Icon changed";
+"元数据变化" = "Metadata change";

@@ -83,11 +83,30 @@ struct AppChange: Identifiable, Hashable, Sendable {
         append(.ownApp, before.isOwn ? L.t("是") : L.t("否"), after.isOwn ? L.t("是") : L.t("否"))
         append(.systemType, before.typeTitle, after.typeTitle)
         append(.architecture, before.architectureText, after.architectureText)
-        append(.size, before.displaySize, after.displaySize)
+        if let oldSize = before.sizeInBytes, let newSize = after.sizeInBytes, oldSize != newSize {
+            changes.append(FieldChange(
+                field: .size,
+                oldValue: oldSize.formatted(.byteCount(style: .file)),
+                newValue: newSize.formatted(.byteCount(style: .file))
+            ))
+        }
         append(.installedAt, before.installedAtText, after.installedAtText)
         append(.updatedAt, before.updatedAtText, after.updatedAtText)
         append(.minimumSystemVersion, before.minimumSystemVersion, after.minimumSystemVersion)
         return changes
+    }
+
+    /// 两张快照之间图标是否发生变化。
+    ///
+    /// 当前状态的快照不保存 iconData，缺少图标时视为“未知”，
+    /// 不能因为一边是 nil 就把所有应用都标记成图标变化。
+    var iconChanged: Bool {
+        guard let before, let after,
+              let oldIcon = before.iconData, !oldIcon.isEmpty,
+              let newIcon = after.iconData, !newIcon.isEmpty else {
+            return false
+        }
+        return oldIcon != newIcon
     }
 
     var summary: String {
@@ -98,10 +117,36 @@ struct AppChange: Identifiable, Hashable, Sendable {
             return L.t("移除 · 版本 %@", before?.displayVersion ?? L.t("未知"))
         case .updated:
             let fields = fieldChanges.map(\.field.title)
+            if fields.isEmpty, iconChanged {
+                return L.t("图标发生变化")
+            }
             return fields.isEmpty
                 ? L.t("元数据发生变化")
                 : L.t("%@发生变化", fields.joined(separator: L.t("、")))
         }
+    }
+
+    /// 忽略快照比较中的易变字段：lastSeenAt 每次扫描都会变；
+    /// 当前状态没有 iconData；体积未测量完成时也不应该算变化。
+    private static func hasMaterialChange(before: AppRecord, after: AppRecord) -> Bool {
+        let oldIcon = before.iconData.flatMap { $0.isEmpty ? nil : $0 }
+        let newIcon = after.iconData.flatMap { $0.isEmpty ? nil : $0 }
+        if let oldIcon, let newIcon, oldIcon != newIcon {
+            return true
+        }
+
+        var old = before
+        var new = after
+        old.lastSeenAt = new.lastSeenAt
+        old.iconData = nil
+        new.iconData = nil
+
+        if old.sizeInBytes == nil || new.sizeInBytes == nil {
+            old.sizeInBytes = nil
+            new.sizeInBytes = nil
+        }
+
+        return old != new
     }
 
     static func compare(_ older: AppSnapshot, _ newer: AppSnapshot) -> [AppChange] {
@@ -113,7 +158,7 @@ struct AppChange: Identifiable, Hashable, Sendable {
         for path in Set(oldApps.keys).intersection(newApps.keys) {
             guard let before = oldApps.removeValue(forKey: path),
                   let after = newApps.removeValue(forKey: path) else { continue }
-            if before != after {
+            if hasMaterialChange(before: before, after: after) {
                 changes.append(AppChange(id: path, kind: .updated, before: before, after: after))
             }
         }
@@ -133,7 +178,7 @@ struct AppChange: Identifiable, Hashable, Sendable {
                   let after = newByBundleID[bundleID]?.first?.1 else { continue }
             oldApps.removeValue(forKey: before.path)
             newApps.removeValue(forKey: after.path)
-            if before != after {
+            if hasMaterialChange(before: before, after: after) {
                 changes.append(AppChange(
                     id: "\(before.path)→\(after.path)",
                     kind: .updated,

@@ -28,6 +28,7 @@ Custocub is a native macOS app inventory and snapshot manager built with Swift 6
 - **Snapshot time machine** — scrub the Gallery back through saved snapshots to see exactly which apps, versions, and icons existed on that date.
 - **App Story** — a per-app retrospective that combines first/last appearance, version timeline, source changes, and icon history from every saved snapshot.
 - **Favorites and collections** — star apps or curate custom collections that can include both installed and uninstalled apps.
+- **Visual snapshot comparison** — changed apps appear as an icon wall, with old and new icons side by side when available.
 - **Gallery** — browse installed apps and apps that have been uninstalled but still exist in historical snapshots, with multi-select filters for status, source, platform, and type.
 - **Native macOS experience** — native table virtualization, scrollbars, resizable columns, and system selection behavior.
 - **Remembered layout** — the sidebar width and window width are remembered separately for the app inventory and the Homebrew screen. The app detail pane is collapsed by default, opens on demand, and remembers its width.
@@ -278,6 +279,7 @@ Each record also includes Bundle ID, version, build number, minimum macOS versio
 - When app snapshots contain Homebrew casks, the comparison view also has a **Homebrew Cask** tab for cask additions, removals, and version changes.
 - Compare against the **Current State** without saving it first.
 - Export a Markdown comparison report.
+- The comparison view includes a **visual comparison** strip: changed apps appear as cards, and snapshot-to-snapshot icon changes show the old and new icons side by side.
 
 ### Inventory reports
 

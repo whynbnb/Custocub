@@ -40,6 +40,10 @@ struct ComparisonView: View {
             } else {
                 filterBar
                 Divider()
+                if !filteredChanges.isEmpty {
+                    visualComparison
+                    Divider()
+                }
                 results
             }
         }
@@ -227,6 +231,30 @@ struct ComparisonView: View {
         }
         .padding(.horizontal, 16)
         .frame(height: 44)
+    }
+
+    private var visualComparison: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text("视觉对比")
+                    .font(.headline)
+                Text(L.t("%d 个应用", filteredChanges.count))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(filteredChanges) { change in
+                        VisualChangeCard(change: change)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
     }
 
     @ViewBuilder
@@ -489,6 +517,94 @@ private struct MetadataDetails: View {
         }
         .font(.callout)
         .textSelection(.enabled)
+    }
+}
+
+private struct VisualChangeCard: View {
+    let change: AppChange
+
+    var body: some View {
+        VStack(spacing: 6) {
+            HStack(spacing: 6) {
+                if change.kind == .updated, change.iconChanged {
+                    ChangeIconView(app: change.before, size: 38)
+                    Image(systemName: "arrow.right")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    ChangeIconView(app: change.after, size: 38)
+                } else {
+                    ChangeIconView(app: change.app, size: 46)
+                }
+            }
+            .frame(height: 46)
+
+            Text(change.app.name)
+                .font(.caption.weight(.medium))
+                .lineLimit(1)
+
+            Text(versionText)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+
+            Label(LocalizedStringKey(change.kind.title), systemImage: change.kind.symbol)
+                .font(.caption2)
+                .foregroundStyle(change.kind.color)
+        }
+        .padding(8)
+        .frame(width: 156)
+        .background(
+            change.kind.color.opacity(0.06),
+            in: RoundedRectangle(cornerRadius: 10)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(change.kind.color.opacity(0.18), lineWidth: 1)
+        }
+        .help(Text(change.summary))
+    }
+
+    private var versionText: String {
+        switch change.kind {
+        case .added:
+            return L.t("版本 %@", change.after?.displayVersion ?? L.t("未知"))
+        case .removed:
+            return L.t("版本 %@", change.before?.displayVersion ?? L.t("未知"))
+        case .updated:
+            let old = change.before?.displayVersion ?? L.t("未知")
+            let new = change.after?.displayVersion ?? L.t("未知")
+            if old != new {
+                return "\(old) → \(new)"
+            }
+            return change.iconChanged ? L.t("图标变化") : L.t("元数据变化")
+        }
+    }
+}
+
+private struct ChangeIconView: View {
+    let app: AppRecord?
+    var size: CGFloat
+
+    var body: some View {
+        Group {
+            if let app, let data = app.iconData, let image = NSImage(data: data) {
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+            } else if let app {
+                // 当前状态没有 iconData，但可以从磁盘读取实时图标。
+                AppIconView(app: app, size: size)
+            } else {
+                Image(systemName: "app.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(size * 0.2)
+                    .foregroundStyle(.secondary)
+                    .frame(width: size, height: size)
+            }
+        }
+        .frame(width: size, height: size)
     }
 }
 
