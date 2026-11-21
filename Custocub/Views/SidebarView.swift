@@ -29,7 +29,7 @@ struct SidebarView: View {
 
                 SidebarRow(
                     title: "展示框",
-                    symbol: "rectangle.grid.2x2.fill",
+                    symbol: "photo.stack.fill",
                     count: store.sidebarGalleryCount,
                     tint: .purple,
                     isSelected: store.sidebarSelection == .gallery
