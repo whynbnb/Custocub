@@ -813,3 +813,15 @@
 "这个快照没有应用" = "No apps in this snapshot";
 "这个快照没有记录任何应用。" = "This snapshot did not record any apps.";
 "保存快照后可回看历史" = "Save a snapshot to browse history";
+"应用档案" = "App Story";
+"查看应用档案…" = "View App Story…";
+"首次出现" = "First seen";
+"最后出现" = "Last seen";
+"快照出现" = "Snapshot appearances";
+"包含此应用的快照" = "Snapshots containing this app";
+"首次记录" = "First recorded";
+"还没有保存过快照。保存快照后，这里会汇总这个应用的历史变化。" = "No snapshots yet. Save one to build this app's history.";
+"这个应用还没有出现在任何快照中。" = "This app has not appeared in any snapshot yet.";
+"仍在磁盘上" = "Still on disk";
+"版本时间线" = "Version timeline";
+"来源变化" = "Source changes";

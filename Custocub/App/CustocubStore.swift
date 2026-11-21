@@ -426,6 +426,79 @@ final class CustocubStore: ObservableObject {
         iconHistory(for: app).count > 1
     }
 
+    /// 汇总一个应用在全部历史快照中的档案。
+    func appStory(for app: AppRecord) -> AppStory {
+        let key = comparisonKey(for: app)
+        let ordered = snapshots.sorted { $0.createdAt < $1.createdAt }
+
+        var firstSeen: AppSnapshot?
+        var lastSeen: AppSnapshot?
+        var appearances = 0
+        var versions: [AppStory.VersionEntry] = []
+        var sourceChanges: [AppStory.SourceEntry] = []
+        var lastVersion: String?
+        var lastBuild: String?
+        var lastSource: AppSource?
+
+        for snapshot in ordered {
+            guard let item = snapshot.apps.first(where: { comparisonKey(for: $0) == key }) else {
+                continue
+            }
+
+            appearances += 1
+            if firstSeen == nil { firstSeen = snapshot }
+            lastSeen = snapshot
+
+            let version = normalized(item.version)
+            let build = normalized(item.build)
+            if versions.isEmpty || version != lastVersion || build != lastBuild {
+                versions.append(
+                    AppStory.VersionEntry(
+                        snapshotID: snapshot.id,
+                        snapshotName: snapshot.name,
+                        capturedAt: snapshot.createdAt,
+                        version: item.version,
+                        build: item.build,
+                        source: item.source,
+                        sizeInBytes: item.sizeInBytes
+                    )
+                )
+                lastVersion = version
+                lastBuild = build
+            }
+
+            if sourceChanges.isEmpty || item.source != lastSource {
+                sourceChanges.append(
+                    AppStory.SourceEntry(
+                        snapshotID: snapshot.id,
+                        snapshotName: snapshot.name,
+                        capturedAt: snapshot.createdAt,
+                        source: item.source
+                    )
+                )
+                lastSource = item.source
+            }
+        }
+
+        let liveKeys = Set(apps.map { comparisonKey(for: $0) })
+
+        return AppStory(
+            app: app,
+            firstSeen: firstSeen,
+            lastSeen: lastSeen,
+            appearances: appearances,
+            totalSnapshots: snapshots.count,
+            versions: versions,
+            sourceChanges: sourceChanges,
+            iconHistory: iconHistory(for: app),
+            isCurrentlyInstalled: liveKeys.contains(key)
+        )
+    }
+
+    private func normalized(_ value: String?) -> String {
+        value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
     /// 最近快照里记录过、但当前已经没有安装的应用。
     var uninstalledSinceLastSnapshot: [AppRecord] {
         guard hasScanned, let snapshot = latestSnapshot else { return [] }

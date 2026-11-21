@@ -5,6 +5,7 @@ struct GalleryView: View {
     @EnvironmentObject private var store: CustocubStore
 
     @State private var iconHistoryApp: AppRecord?
+    @State private var appStoryApp: AppRecord?
 
     private let columns = [
         GridItem(.adaptive(minimum: 172, maximum: 230), spacing: 14)
@@ -71,6 +72,10 @@ struct GalleryView: View {
         .navigationTitle("展示框")
         .sheet(item: $iconHistoryApp) { app in
             IconHistorySheet(app: app)
+                .environmentObject(store)
+        }
+        .sheet(item: $appStoryApp) { app in
+            AppStorySheet(app: app)
                 .environmentObject(store)
         }
     }
@@ -313,6 +318,10 @@ struct GalleryView: View {
 
         Button(L.t("查看图标历史…")) {
             iconHistoryApp = app
+        }
+
+        Button(L.t("查看应用档案…")) {
+            appStoryApp = app
         }
 
         Button("复制 Bundle ID") {

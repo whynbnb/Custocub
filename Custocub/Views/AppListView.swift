@@ -637,6 +637,7 @@ private struct AppTable: View {
         KeyPathComparator(\AppRecord.name, order: .forward)
     ]
     @State private var selection: String?
+    @State private var storyApp: AppRecord?
 
     private var filtered: [AppRecord] {
         store.filteredApps(apps, sortOrder: sortOrder)
@@ -742,6 +743,10 @@ private struct AppTable: View {
                 selection = newValue
             }
         }
+        .sheet(item: $storyApp) { app in
+            AppStorySheet(app: app)
+                .environmentObject(store)
+        }
     }
 
     /// 应用列表右键菜单：打开、在访达中显示、复制标识。
@@ -772,6 +777,10 @@ private struct AppTable: View {
             }
 
             if selected.count == 1, let app = selected.first {
+                Button(L.t("查看应用档案…")) {
+                    storyApp = app
+                }
+
                 Divider()
 
                 Button(L.t("复制 Bundle ID")) {

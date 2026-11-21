@@ -5,6 +5,8 @@ struct AppDetailView: View {
     @EnvironmentObject private var store: CustocubStore
     let context: SelectedAppContext?
 
+    @State private var storyApp: AppRecord?
+
     var body: some View {
         Group {
             if let context {
@@ -18,6 +20,10 @@ struct AppDetailView: View {
             }
         }
         .navigationTitle("应用详情")
+        .sheet(item: $storyApp) { app in
+            AppStorySheet(app: app)
+                .environmentObject(store)
+        }
     }
 
     private func detail(for context: SelectedAppContext) -> some View {
@@ -72,6 +78,14 @@ struct AppDetailView: View {
                         }
                         .help(Text(L.t("在展示框中查看")))
                     }
+
+                    Button {
+                        storyApp = app
+                    } label: {
+                        Label("应用档案", systemImage: "clock.arrow.circlepath")
+                            .labelStyle(.iconOnly)
+                    }
+                    .help(Text(L.t("应用档案")))
                 }
                 .controlSize(.small)
 
