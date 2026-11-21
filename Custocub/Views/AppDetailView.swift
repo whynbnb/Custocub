@@ -5,8 +5,6 @@ struct AppDetailView: View {
     @EnvironmentObject private var store: CustocubStore
     let context: SelectedAppContext?
 
-    @State private var iconHistoryEntries: [IconHistoryEntry] = []
-
     var body: some View {
         Group {
             if let context {
@@ -20,32 +18,12 @@ struct AppDetailView: View {
             }
         }
         .navigationTitle("应用详情")
-        .task(id: iconHistoryTaskKey) {
-            await loadIconHistory()
-        }
-    }
-
-    private var iconHistoryTaskKey: String {
-        guard let app = context?.app else { return "" }
-        let updated = app.updatedAt?.timeIntervalSince1970 ?? 0
-        return "\(IconHistoryStore.key(for: app))|\(app.version ?? "")|\(app.build ?? "")|\(updated)|\(store.iconHistoryRevision)"
-    }
-
-    private func loadIconHistory() async {
-        guard let app = context?.app else {
-            iconHistoryEntries = []
-            return
-        }
-        let entries = await IconHistoryStore.shared.entries(
-            forKey: IconHistoryStore.key(for: app)
-        )
-        guard !Task.isCancelled else { return }
-        iconHistoryEntries = entries
     }
 
     private func detail(for context: SelectedAppContext) -> some View {
         let app = context.app
         let isInstalled = FileManager.default.fileExists(atPath: app.path)
+        let iconHistory = store.iconHistory(for: app)
 
         return ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -92,8 +70,8 @@ struct AppDetailView: View {
                 }
                 .controlSize(.small)
 
-                if iconHistoryEntries.count > 1 {
-                    IconHistoryStrip(app: app, entries: iconHistoryEntries)
+                if iconHistory.count > 1 {
+                    IconHistoryStrip(entries: iconHistory)
                 }
 
                 SectionCard(title: "基本信息") {
@@ -101,10 +79,14 @@ struct AppDetailView: View {
                     if let previousVersion = context.previousVersion, !previousVersion.isEmpty {
                         DetailRow(label: "版本变化", value: "\(previousVersion) → \(app.displayVersion)")
                     }
-                    if let iconUpdatedAt = store.latestIconUpdate(for: app) {
+                    if iconHistory.count > 1, let latest = iconHistory.last {
                         DetailRow(
-                            label: "图标更新",
-                            value: iconUpdatedAt.formatted(date: .abbreviated, time: .shortened)
+                            label: "图标变化",
+                            value: L.t(
+                                "快照「%@」· %@",
+                                latest.snapshotName,
+                                latest.capturedAt.formatted(date: .abbreviated, time: .shortened)
+                            )
                         )
                     }
                     DetailRow(label: "构建号", value: app.build ?? L.t("无"))

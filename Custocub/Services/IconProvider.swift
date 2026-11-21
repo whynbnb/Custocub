@@ -25,10 +25,6 @@ enum IconDiskCache {
         return NSImage(data: data)
     }
 
-    static func loadData(bundleID: String) -> Data? {
-        try? Data(contentsOf: url(for: bundleID))
-    }
-
     static func store(_ data: Data, bundleID: String) {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try? data.write(to: url(for: bundleID), options: .atomic)
@@ -183,11 +179,6 @@ final class IconProvider {
         }
         guard !targets.isEmpty else { return }
 
-        let appsByPath = Dictionary(
-            apps.map { ($0.path, $0) },
-            uniquingKeysWith: { first, _ in first }
-        )
-
         let chunkSize = 8
         var start = 0
 
@@ -196,31 +187,16 @@ final class IconProvider {
             let end = min(start + chunkSize, targets.count)
             let chunk = Array(targets[start..<end])
 
-            await withTaskGroup(of: (String, String, Data?).self) { group in
+            await withTaskGroup(of: (String, Data?).self) { group in
                 for target in chunk {
                     group.addTask {
-                        (
-                            target.bundleID,
-                            target.path,
-                            Self.renderPNG(forPath: target.path, pixelSize: 192)
-                        )
+                        (target.bundleID, Self.renderPNG(forPath: target.path, pixelSize: 192))
                     }
                 }
-                for await (bundleID, path, data) in group {
-                    guard let data else { continue }
-                    guard let app = appsByPath[path] else {
+                for await (bundleID, data) in group {
+                    if let data {
                         IconDiskCache.store(data, bundleID: bundleID)
-                        continue
                     }
-                    // 全量刷新等场景下旧图标还在，先记入历史再覆盖。
-                    if let oldData = IconDiskCache.loadData(bundleID: bundleID) {
-                        await IconHistoryStore.shared.recordBaselineIfNeeded(
-                            app: app,
-                            iconData: oldData
-                        )
-                    }
-                    IconDiskCache.store(data, bundleID: bundleID)
-                    await IconHistoryStore.shared.record(app: app, iconData: data)
                 }
             }
 

@@ -38,7 +38,7 @@ struct GalleryView: View {
                                         item: item,
                                         isSelected: store.selectedAppID == item.app.id,
                                         isManager: store.isManagerNode(item.app),
-                                        hasIconHistory: store.latestIconUpdate(for: item.app) != nil,
+                                        hasIconHistory: store.hasIconHistory(for: item.app),
                                         onShowIconHistory: { iconHistoryApp = item.app }
                                     )
                                     .onTapGesture {
@@ -64,6 +64,7 @@ struct GalleryView: View {
         .navigationTitle("展示框")
         .sheet(item: $iconHistoryApp) { app in
             IconHistorySheet(app: app)
+                .environmentObject(store)
         }
     }
 

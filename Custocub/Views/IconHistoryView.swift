@@ -1,15 +1,15 @@
 import AppKit
 import SwiftUI
 
-/// 展示单个应用的历史图标。用于展示框的「查看图标历史」窗口。
+/// 展示单个应用在历史快照中的图标变化。
 struct IconHistorySheet: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var store: CustocubStore
     let app: AppRecord
 
-    @State private var entries: [IconHistoryEntry] = []
-    @State private var isLoading = true
-
-    private var historyKey: String { IconHistoryStore.key(for: app) }
+    private var entries: [AppIconHistoryEntry] {
+        store.iconHistory(for: app)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -18,9 +18,6 @@ struct IconHistorySheet: View {
             content
         }
         .frame(minWidth: 560, minHeight: 460)
-        .task(id: historyKey) {
-            await load()
-        }
     }
 
     private var header: some View {
@@ -30,7 +27,7 @@ struct IconHistorySheet: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("图标历史")
                     .font(.title3.weight(.semibold))
-                Text(L.t("共 %d 个图标版本", entries.count))
+                Text(L.t("共 %d 个快照图标版本", entries.count))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -45,23 +42,20 @@ struct IconHistorySheet: View {
 
     @ViewBuilder
     private var content: some View {
-        if isLoading {
-            ProgressView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if entries.isEmpty {
+        if entries.isEmpty {
             ContentUnavailableView(
-                "还没有图标更新记录",
-                systemImage: "photo.stack",
-                description: Text("当检测到图标变化时，旧图标会保留在这里。")
+                "还没有快照图标记录",
+                systemImage: "camera",
+                description: Text("保存快照后会记录图标；这里只展示不同快照之间的图标变化。")
             )
         } else {
             ScrollView {
                 LazyVStack(spacing: 10) {
-                    ForEach(Array(entries.reversed())) { entry in
+                    ForEach(Array(entries.reversed().enumerated()), id: \.element.id) { index, entry in
                         IconHistoryRow(
-                            historyKey: historyKey,
                             entry: entry,
-                            isCurrent: entry.id == entries.last?.id
+                            isCurrent: index == 0,
+                            isFirst: index == entries.count - 1
                         )
                     }
                 }
@@ -69,45 +63,36 @@ struct IconHistorySheet: View {
             }
         }
     }
-
-    private func load() async {
-        isLoading = true
-        let entries = await IconHistoryStore.shared.entries(forKey: historyKey)
-        guard !Task.isCancelled else { return }
-        self.entries = entries
-        isLoading = false
-    }
 }
 
 /// 应用详情里的横向图标时间线。
 struct IconHistoryStrip: View {
-    let app: AppRecord
-    let entries: [IconHistoryEntry]
-
-    private var historyKey: String { IconHistoryStore.key(for: app) }
+    let entries: [AppIconHistoryEntry]
 
     var body: some View {
         SectionCard(title: "图标历史") {
+            Text("来自历史快照，只显示图标发生变化的快照。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
             ScrollView(.horizontal) {
                 HStack(alignment: .top, spacing: 14) {
                     ForEach(Array(entries.reversed().enumerated()), id: \.element.id) { index, entry in
+                        let isCurrent = index == 0
+                        let isFirst = index == entries.count - 1
                         VStack(spacing: 6) {
-                            HistoryIconView(
-                                historyKey: historyKey,
-                                entry: entry,
-                                size: 64,
-                                cornerRadius: 14
-                            )
+                            HistoryIconView(iconData: entry.iconData, size: 64, cornerRadius: 14)
 
                             Text(entry.capturedAt, format: .dateTime.year().month().day())
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
 
-                            Text(iconLabel(for: entry, isCurrent: index == 0))
+                            Text(iconLabel(isCurrent: isCurrent, isFirst: isFirst))
                                 .font(.caption2.weight(.medium))
-                                .foregroundStyle(iconLabelColor(for: entry, isCurrent: index == 0))
+                                .foregroundStyle(iconLabelColor(isCurrent: isCurrent, isFirst: isFirst))
                         }
                         .frame(width: 86)
+                        .help(Text(L.t("快照「%@」", entry.snapshotName)))
                     }
                 }
                 .padding(.vertical, 2)
@@ -116,34 +101,34 @@ struct IconHistoryStrip: View {
         }
     }
 
-    private func iconLabel(for entry: IconHistoryEntry, isCurrent: Bool) -> String {
-        if isCurrent { return L.t("当前") }
-        return entry.isBaseline ? L.t("初始图标") : L.t("更新")
+    private func iconLabel(isCurrent: Bool, isFirst: Bool) -> String {
+        if isCurrent { return L.t("最新快照") }
+        return isFirst ? L.t("初始图标") : L.t("更新")
     }
 
-    private func iconLabelColor(for entry: IconHistoryEntry, isCurrent: Bool) -> Color {
+    private func iconLabelColor(isCurrent: Bool, isFirst: Bool) -> Color {
         if isCurrent { return .green }
-        return entry.isBaseline ? .secondary : .orange
+        return isFirst ? .secondary : .orange
     }
 }
 
 private struct IconHistoryRow: View {
-    let historyKey: String
-    let entry: IconHistoryEntry
+    let entry: AppIconHistoryEntry
     let isCurrent: Bool
+    let isFirst: Bool
 
     var body: some View {
         HStack(spacing: 14) {
-            HistoryIconView(historyKey: historyKey, entry: entry, size: 58, cornerRadius: 13)
+            HistoryIconView(iconData: entry.iconData, size: 58, cornerRadius: 13)
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
-                    Text(entry.isBaseline ? L.t("初始图标") : L.t("图标更新"))
+                    Text(isFirst ? L.t("初始图标") : L.t("图标更新"))
                         .font(.callout.weight(.semibold))
-                        .foregroundStyle(entry.isBaseline ? .secondary : Color.orange)
+                        .foregroundStyle(isFirst ? .secondary : Color.orange)
 
                     if isCurrent {
-                        Text("当前")
+                        Text("最新快照")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.green)
                             .padding(.horizontal, 6)
@@ -151,6 +136,10 @@ private struct IconHistoryRow: View {
                             .background(Color.green.opacity(0.12), in: Capsule())
                     }
                 }
+
+                Text(L.t("快照「%@」· %@", entry.snapshotName, entry.capturedAt.formatted(date: .abbreviated, time: .shortened)))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
                 HStack(spacing: 8) {
                     Text(L.t("版本 %@", entry.version ?? L.t("未知")))
@@ -160,10 +149,6 @@ private struct IconHistoryRow: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
-
-                Text(entry.capturedAt, format: .dateTime.year().month().day().hour().minute())
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
             Spacer()
@@ -173,18 +158,15 @@ private struct IconHistoryRow: View {
     }
 }
 
-/// 从 IconHistoryStore 异步加载单张历史图标。
+/// 直接展示快照中保存的图标。
 struct HistoryIconView: View {
-    let historyKey: String
-    let entry: IconHistoryEntry
+    let iconData: Data
     var size: CGFloat = 56
     var cornerRadius: CGFloat = 12
 
-    @State private var image: NSImage?
-
     var body: some View {
         Group {
-            if let image {
+            if let image = NSImage(data: iconData) {
                 Image(nsImage: image)
                     .resizable()
                     .interpolation(.high)
@@ -195,18 +177,12 @@ struct HistoryIconView: View {
                     .scaledToFit()
                     .padding(size * 0.22)
                     .foregroundStyle(.secondary)
-                    .background(
-                        Color.secondary.opacity(0.1),
-                        in: RoundedRectangle(cornerRadius: cornerRadius)
-                    )
             }
         }
         .frame(width: size, height: size)
-        .task(id: entry.id) {
-            guard let data = await IconHistoryStore.shared.imageData(for: entry, key: historyKey) else {
-                return
-            }
-            image = NSImage(data: data)
-        }
+        .background(
+            Color.secondary.opacity(0.1),
+            in: RoundedRectangle(cornerRadius: cornerRadius)
+        )
     }
 }

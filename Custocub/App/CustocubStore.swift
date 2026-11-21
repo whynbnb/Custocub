@@ -60,7 +60,11 @@ private struct SidebarCache: Codable {
 @MainActor
 final class CustocubStore: ObservableObject {
     @Published private(set) var apps: [AppRecord] = []
-    @Published private(set) var snapshots: [AppSnapshot] = []
+    @Published private(set) var snapshots: [AppSnapshot] = [] {
+        didSet { iconHistoryCache.removeAll() }
+    }
+    /// 图标历史按应用缓存；快照列表变化时清空。
+    private var iconHistoryCache: [String: [AppIconHistoryEntry]] = [:]
     @Published var sidebarSelection: SidebarSelection? = .installed
     @Published var selectedAppID: String?
 
@@ -71,10 +75,6 @@ final class CustocubStore: ObservableObject {
     @Published private(set) var enrichmentTotal = 0
     @Published private(set) var lastScanAt: Date?
     @Published private(set) var hasScanned = false
-    /// 每个应用最近一次图标变化时间，键为 Bundle ID（无则路径）。
-    @Published private(set) var iconUpdateDates: [String: Date] = [:]
-    /// 图标历史发生变化时递增，用于让详情里的时间线重新加载。
-    @Published private(set) var iconHistoryRevision = 0
 
     @Published var errorMessage: String?
     @Published var statusMessage = ""
@@ -342,17 +342,48 @@ final class CustocubStore: ObservableObject {
         }
         return apps.filter { app in
             guard let old = previous[comparisonKey(for: app)] else { return false }
-            if Self.versionChanged(from: old, to: app) { return true }
-            guard let iconChangedAt = iconUpdateDates[IconHistoryStore.key(for: app)] else {
-                return false
-            }
-            return iconChangedAt > snapshot.createdAt
+            return Self.versionChanged(from: old, to: app)
         }
     }
 
-    /// 某个应用最近一次图标变化的时间；从未记录过则为 nil。
-    func latestIconUpdate(for app: AppRecord) -> Date? {
-        iconUpdateDates[IconHistoryStore.key(for: app)]
+    /// 从历史快照中提取图标变化；连续相同的图标只保留第一次出现的快照。
+    func iconHistory(for app: AppRecord) -> [AppIconHistoryEntry] {
+        let key = comparisonKey(for: app)
+        if let cached = iconHistoryCache[key] {
+            return cached
+        }
+
+        var entries: [AppIconHistoryEntry] = []
+        var lastIcon: Data?
+
+        for snapshot in snapshots.sorted(by: { $0.createdAt < $1.createdAt }) {
+            guard let item = snapshot.apps.first(where: { comparisonKey(for: $0) == key }),
+                  let iconData = item.iconData,
+                  !iconData.isEmpty else {
+                continue
+            }
+            if lastIcon == iconData { continue }
+
+            entries.append(
+                AppIconHistoryEntry(
+                    snapshotID: snapshot.id,
+                    snapshotName: snapshot.name,
+                    capturedAt: snapshot.createdAt,
+                    version: item.version,
+                    build: item.build,
+                    iconData: iconData
+                )
+            )
+            lastIcon = iconData
+        }
+
+        iconHistoryCache[key] = entries
+        return entries
+    }
+
+    /// 快照里是否出现过不止一个图标版本。
+    func hasIconHistory(for app: AppRecord) -> Bool {
+        iconHistory(for: app).count > 1
     }
 
     /// 最近快照里记录过、但当前已经没有安装的应用。
@@ -547,14 +578,6 @@ final class CustocubStore: ObservableObject {
             IconProvider.shared.invalidate(apps: iconChanges)
             for app in iconChanges {
                 if let bundleID = app.bundleIdentifier, !bundleID.isEmpty {
-                    // 先保存旧图标，并关联旧版本信息，然后再覆盖磁盘缓存。
-                    if let previous = previousByPath[app.path],
-                       let oldData = IconDiskCache.loadData(bundleID: bundleID) {
-                        await IconHistoryStore.shared.recordBaselineIfNeeded(
-                            app: previous,
-                            iconData: oldData
-                        )
-                    }
                     IconDiskCache.remove(bundleID: bundleID)
                 }
             }
@@ -577,8 +600,6 @@ final class CustocubStore: ObservableObject {
                 forceDiskRewrite: fullRefresh,
                 forcePaths: iconChangePaths
             )
-            iconUpdateDates = await IconHistoryStore.shared.latestChangeDates()
-            iconHistoryRevision &+= 1
         }
 
         // 当前筛选的来源如果已经不存在，自动回到全部来源。

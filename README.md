@@ -22,7 +22,7 @@ Custocub is a native macOS app inventory and snapshot manager built with Swift 6
 - **Developer apps smart group** — fixed `me.whynbnb.` Bundle ID prefix, with a show/hide toggle; shown only when more than two apps match.
 - **Snapshots and comparison** — keep historical inventories, compare changes, export or import snapshots, and generate Markdown reports.
 - **Inventory reports** — export the current scan or a selected snapshot as a self-contained HTML report, a paginated PDF, or a CSV spreadsheet from **More → Export Report**.
-- **Icon history** — every detected icon change is recorded with its version and date, so you can inspect how an app's icon evolved from the Gallery or the detail pane.
+- **Snapshot icon history** — icons are captured with snapshots; the Gallery and detail pane only show snapshots where an app's icon actually changed.
 - **Deep Homebrew support** — a dedicated Homebrew screen for formulae and casks, an upgrade center, SOCKS5/HTTP proxy support, standalone Homebrew snapshots, Brewfile export, and a live command log.
 - **Explore the whole repository** — browse every available Formula and Cask ranked by real download counts from the last 30 days (switchable to 90 or 365), with full search across names, aliases, and descriptions.
 - **Gallery** — browse installed apps and apps that have been uninstalled but still exist in historical snapshots.
@@ -303,18 +303,21 @@ The Gallery is an icon-grid view of your software collection:
 The sidebar also has two snapshot-comparison views:
 
 - **New** — apps installed after the most recent snapshot.
-- **Updated** — apps whose version **or icon** differs from the most recent snapshot.
+- **Updated** — apps whose version differs from the most recent snapshot.
 - **Uninstalled** — apps recorded in the most recent snapshot that are no longer installed.
 
 These views compare against the latest saved snapshot; when no snapshot exists, they explain how to create one.
 
 ### Icon history
 
-When a scan detects that an app's icon has changed, Custocub keeps the previous icon and records the new one with its version, build, and timestamp. Up to 24 versions are kept per app.
+Icon history is derived entirely from saved snapshots:
 
+- Every snapshot stores each app's icon. Custocub compares consecutive snapshots and only lists the snapshots where the icon actually differs.
+- Identical icons across several snapshots are collapsed into one entry. If an icon changes and later reverts, both changes appear.
 - Click the clock badge on a Gallery card, or choose **View Icon History…** from its context menu, to see the full timeline.
-- The app detail pane shows an **Icon History** strip and the last icon update time when more than one version exists.
-- An icon-only change also makes the app appear in **Updated**, even when the version number is unchanged.
+- The app detail pane shows an **Icon History** strip and the snapshot where the icon last changed.
+
+There is no separate scan-time icon log. If you want a richer icon history, save snapshots when apps update.
 
 ## Performance notes
 

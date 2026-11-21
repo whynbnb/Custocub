@@ -18,6 +18,7 @@
 		1AABA9C6E66ACB952DF0E67A /* BrewServicesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39C399A3D9459CD90509E43 /* BrewServicesView.swift */; };
 		268093F729E70406AF9CE9B9 /* BrewConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10218A4D8E942BF11055040B /* BrewConsoleView.swift */; };
 		277803656B8634C4971A516A /* BrewSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30C7D9CF9EE5A8A26DFDA8B7 /* BrewSnapshot.swift */; };
+		285CAD2B1C9538250A028953 /* AppIconHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = E125B4B5B596429B41253AE8 /* AppIconHistory.swift */; };
 		2D6854D2B47D23563016A2A9 /* BrewUpgradePolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = BED4ACC0C504A0B206AB7BFE /* BrewUpgradePolicy.swift */; };
 		33B49897B520BEB8BEE6B6FB /* AppListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D97BB0861124D1642EB69C /* AppListView.swift */; };
 		3498D1B4063CEBF1271D3992 /* BrewCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CB790B1C6C2F5463C5B77DA /* BrewCatalog.swift */; };
@@ -34,7 +35,6 @@
 		6A26085E75627050B88D20E9 /* BrewServicesService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A104774C7EA14DC7B94A3CD /* BrewServicesService.swift */; };
 		6E84E076179D6914B348819E /* WorkspaceLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B6743FC8C960368DC89A96B /* WorkspaceLayout.swift */; };
 		70E69DA51CDE753461D2E85C /* AppChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E54E4AC77EF16FC5B78C837 /* AppChange.swift */; };
-		828660767B686FB22534B085 /* IconHistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12A7B81714A71ED72566CC01 /* IconHistoryStore.swift */; };
 		8BF008D7CB9164F84F40C6AC /* MachOReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90B5B27E6EE91F5B84801601 /* MachOReader.swift */; };
 		8F5BBB6B200952B6A0804B59 /* BrewSnapshotRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E78273918ED54AAEEEF2B05 /* BrewSnapshotRepository.swift */; };
 		943795B1ABBBD85BE00057F9 /* BrewSnapshotListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CD0745F0340F8405FD11C5 /* BrewSnapshotListView.swift */; };
@@ -72,7 +72,6 @@
 		06E5DFFFB21F029F94D43D7D /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
 		0D524AEB924A34D1313EDD62 /* BrewUpgradeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewUpgradeView.swift; sourceTree = "<group>"; };
 		10218A4D8E942BF11055040B /* BrewConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewConsoleView.swift; sourceTree = "<group>"; };
-		12A7B81714A71ED72566CC01 /* IconHistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconHistoryStore.swift; sourceTree = "<group>"; };
 		1A104774C7EA14DC7B94A3CD /* BrewServicesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewServicesService.swift; sourceTree = "<group>"; };
 		1B6743FC8C960368DC89A96B /* WorkspaceLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceLayout.swift; sourceTree = "<group>"; };
 		1D9F35333C91991D3E58F940 /* SteamDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SteamDetector.swift; sourceTree = "<group>"; };
@@ -123,6 +122,7 @@
 		D87BC7BED3E3834EAA7916D2 /* BrewHealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewHealthView.swift; sourceTree = "<group>"; };
 		DD5C281BF2C55B183A016BA3 /* BrewExploreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewExploreView.swift; sourceTree = "<group>"; };
 		DDEDA7C65BB44C967065B4E2 /* SnapshotRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotRepository.swift; sourceTree = "<group>"; };
+		E125B4B5B596429B41253AE8 /* AppIconHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconHistory.swift; sourceTree = "<group>"; };
 		E1E3C8DCBBC747BA735898D5 /* BrewProxySettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewProxySettings.swift; sourceTree = "<group>"; };
 		E494F2C5DBAFFD55C067618A /* GalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryView.swift; sourceTree = "<group>"; };
 		E776D8D8CDDD0D61BC927FC1 /* FileActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileActions.swift; sourceTree = "<group>"; };
@@ -151,6 +151,7 @@
 			isa = PBXGroup;
 			children = (
 				7E54E4AC77EF16FC5B78C837 /* AppChange.swift */,
+				E125B4B5B596429B41253AE8 /* AppIconHistory.swift */,
 				4DA09AF85222FE4871D4FE0A /* AppRecord.swift */,
 				9AB50555493B4354CE8877CD /* AppSnapshot.swift */,
 				5A293578D0B15FED3D90C8AF /* AppSource.swift */,
@@ -222,7 +223,6 @@
 				58FF69E32C98890ED8128E09 /* DirectorySize.swift */,
 				A41B308E1A89C55CC812F8F9 /* GitProxyService.swift */,
 				6DD24184BC491E6AB1A21E7D /* HomebrewIndex.swift */,
-				12A7B81714A71ED72566CC01 /* IconHistoryStore.swift */,
 				49DF1B3BF2E854CB0A1D189E /* IconProvider.swift */,
 				23504D70FEB837D3D27C4E8A /* InventoryReport.swift */,
 				CB29DD222217857737C23E7C /* JetBrainsToolboxIndex.swift */,
@@ -329,6 +329,7 @@
 			files = (
 				70E69DA51CDE753461D2E85C /* AppChange.swift in Sources */,
 				13AABF84A022A67BEE4E77E1 /* AppDetailView.swift in Sources */,
+				285CAD2B1C9538250A028953 /* AppIconHistory.swift in Sources */,
 				33B49897B520BEB8BEE6B6FB /* AppListView.swift in Sources */,
 				5E80DAE89D2319EFA84A6FAE /* AppPreferences.swift in Sources */,
 				43598E67937BC21B5E8BA946 /* AppRecord.swift in Sources */,
@@ -370,7 +371,6 @@
 				FE32DC56BBB98A5EE7518D1D /* GitProxyService.swift in Sources */,
 				A6AA667D52C030239A97EC90 /* HomebrewIndex.swift in Sources */,
 				0D7F6F5292D758C13DE25672 /* HomebrewView.swift in Sources */,
-				828660767B686FB22534B085 /* IconHistoryStore.swift in Sources */,
 				DA7781A2658EC5268FC2FD73 /* IconHistoryView.swift in Sources */,
 				F5F26B8FF3FB294266A44468 /* IconProvider.swift in Sources */,
 				19C14EAA38BA34D5B065BEAE /* InventoryReport.swift in Sources */,
