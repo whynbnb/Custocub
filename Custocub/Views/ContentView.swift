@@ -159,11 +159,13 @@ struct ContentView: View {
             .disabled(store.comparisonSnapshots.count < 2)
 
             Button {
-                Task { await store.refresh(ignoreRecentScan: true) }
+                // 按住 ⌥ 点击时做全量刷新：图标和体积都重新生成。
+                let fullRefresh = NSEvent.modifierFlags.contains(.option)
+                Task { await store.refresh(ignoreRecentScan: true, fullRefresh: fullRefresh) }
             } label: {
                 Label("扫描应用", systemImage: "arrow.clockwise")
             }
-            .help("重新扫描这台 Mac 上的应用")
+            .help(Text(L.t("重新扫描这台 Mac 上的应用（按住 ⌥ 全量刷新图标和体积）")))
             .disabled(store.isScanning || store.isSavingSnapshot)
 
             Button {

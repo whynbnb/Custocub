@@ -298,6 +298,7 @@ Both compare against the latest saved snapshot; when no snapshot exists, the vie
   - Unchanged apps are not re-walked on every scan.
   - Settings → Data → **Clear Size Cache & Recalculate** forces a full re-measure.
 - **Async icons** are loaded off the main thread and prefetched in the background after scanning.
+- **Hold ⌥ while clicking Rescan** to force a full refresh: every icon is re-rendered and every app size is measured again, bypassing both caches.
 - **Batched size updates** avoid refreshing the whole table for every app.
 - **Native SwiftUI Table** is used for NSTableView-backed virtualization, native scrollbars, and resizable columns.
 - Switching sources rebuilds the table instead of animating hundreds of row removals, which keeps the UI responsive.

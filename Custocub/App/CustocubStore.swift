@@ -464,7 +464,12 @@ final class CustocubStore: ObservableObject {
 
     // MARK: - Scanning
 
-    func refresh(ignoreRecentScan: Bool = false) async {
+    /// 扫描应用。
+    ///
+    /// - Parameter fullRefresh: 按住 ⌥ 点击刷新时使用。会丢掉体积缓存，
+    ///   并让内存图标缓存失效、重写所有已安装应用的磁盘图标，
+    ///   让所有图标和体积重新生成，而不是沿用旧数据。
+    func refresh(ignoreRecentScan: Bool = false, fullRefresh: Bool = false) async {
         guard !isScanning, !isSavingSnapshot else { return }
 
         if !ignoreRecentScan,
@@ -475,20 +480,28 @@ final class CustocubStore: ObservableObject {
 
         isScanning = true
         errorMessage = nil
-        statusMessage = L.t("正在扫描应用…")
+        statusMessage = fullRefresh ? L.t("正在全量刷新应用…") : L.t("正在扫描应用…")
 
         enrichmentTask?.cancel()
         enrichmentToken = UUID()
         isEnriching = false
         iconPrefetchTask?.cancel()
 
+        if fullRefresh {
+            sizeCache.removeFile()
+            sizeCache = SizeCache(fileURL: SizeCache.defaultFileURL)
+            IconProvider.shared.clearMemoryCache()
+        }
+
         var scannedApps = await scanner.scan()
         var cacheHits = 0
 
-        for index in scannedApps.indices {
-            if let cachedSize = sizeCache.size(for: scannedApps[index]) {
-                scannedApps[index].sizeInBytes = cachedSize
-                cacheHits += 1
+        if !fullRefresh {
+            for index in scannedApps.indices {
+                if let cachedSize = sizeCache.size(for: scannedApps[index]) {
+                    scannedApps[index].sizeInBytes = cachedSize
+                    cacheHits += 1
+                }
             }
         }
 
@@ -503,7 +516,7 @@ final class CustocubStore: ObservableObject {
 
         let iconApps = scannedApps
         iconPrefetchTask = Task {
-            await IconProvider.shared.prefetch(apps: iconApps)
+            await IconProvider.shared.prefetch(apps: iconApps, forceDiskRewrite: fullRefresh)
         }
 
         // 当前筛选的来源如果已经不存在，自动回到全部来源。

@@ -94,10 +94,19 @@ final class IconProvider {
         return image
     }
 
+    /// 全量刷新时清空内存图标缓存。磁盘缓存不整体删除，
+    /// 只重写当前已安装应用的条目，这样已卸载应用仍能保留自己的图标。
+    func clearMemoryCache() {
+        cache.removeAllObjects()
+    }
+
     /// 扫描完成后在后台预取图标，并把高清图标写入磁盘缓存。
-    func prefetch(apps: [AppRecord]) async {
+    ///
+    /// - Parameter forceDiskRewrite: 全量刷新时置为 true，即使磁盘缓存
+    ///   看起来是新的，也重新渲染并覆盖当前应用的图标。
+    func prefetch(apps: [AppRecord], forceDiskRewrite: Bool = false) async {
         await prefetchIntoMemory(paths: apps.map(\.path))
-        await storeIconsOnDisk(apps: apps)
+        await storeIconsOnDisk(apps: apps, force: forceDiskRewrite)
     }
 
     private func prefetchIntoMemory(paths: [String]) async {
@@ -137,10 +146,10 @@ final class IconProvider {
 
     /// 把当前扫描到的应用图标渲染成 192px PNG 写进缓存。
     /// 只处理新增或应用本体有更新的条目，正常启动几乎不做事。
-    private func storeIconsOnDisk(apps: [AppRecord]) async {
+    private func storeIconsOnDisk(apps: [AppRecord], force: Bool = false) async {
         let targets: [(bundleID: String, path: String)] = apps.compactMap { app in
             guard let bundleID = app.bundleIdentifier, !bundleID.isEmpty else { return nil }
-            guard !IconDiskCache.isFresh(bundleID: bundleID, appPath: app.path) else { return nil }
+            if !force, IconDiskCache.isFresh(bundleID: bundleID, appPath: app.path) { return nil }
             return (bundleID, app.path)
         }
         guard !targets.isEmpty else { return }

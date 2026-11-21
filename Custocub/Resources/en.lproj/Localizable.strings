@@ -756,3 +756,5 @@
 "没有新安装的应用" = "No apps installed since the latest snapshot";
 "显示详情面板" = "Show Details";
 "隐藏详情面板" = "Hide Details";
+"正在全量刷新应用…" = "Refreshing all apps…";
+"重新扫描这台 Mac 上的应用（按住 ⌥ 全量刷新图标和体积）" = "Rescan apps on this Mac (hold ⌥ to refresh every icon and size)";
