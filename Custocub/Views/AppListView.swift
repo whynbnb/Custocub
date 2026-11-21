@@ -161,7 +161,9 @@ private struct InstalledHeader: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
+            // 总数、系统、第三方三个关键数字放在标题行右侧，
+            // 下面的指标行只保留分来源的细分数字。
+            HStack(alignment: .center, spacing: 12) {
                 HStack(spacing: 7) {
                     Text("已安装应用")
                         .font(.title2.weight(.semibold))
@@ -171,18 +173,19 @@ private struct InstalledHeader: View {
                         .help("扫描 /Applications、~/Applications 与系统应用目录，并识别每个应用的来源和架构。")
                         .accessibilityLabel("扫描说明")
                 }
-                Spacer()
-                if let lastScanAt = store.lastScanAt {
-                    Text(lastScanAt, format: .dateTime.year().month().day().hour().minute())
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
+                .layoutPriority(1)
+
+                Spacer(minLength: 12)
+
+                HStack(spacing: 10) {
+                    MetricChip(title: "应用", value: "\(store.installedCount)", symbol: "square.grid.2x2", color: .accentColor)
+                    MetricChip(title: "系统", value: "\(store.systemCount)", symbol: "apple.logo", color: .secondary)
+                    MetricChip(title: "第三方", value: "\(store.thirdPartyCount)", symbol: "shippingbox", color: .green)
                 }
+                .fixedSize()
             }
 
             MetricChipRow {
-                MetricChip(title: "应用", value: "\(store.installedCount)", symbol: "square.grid.2x2", color: .accentColor)
-                MetricChip(title: "系统", value: "\(store.systemCount)", symbol: "apple.logo", color: .secondary)
-                MetricChip(title: "第三方", value: "\(store.thirdPartyCount)", symbol: "shippingbox", color: .green)
                 MetricChip(title: "App Store", value: "\(store.sourceCounts[.appStore, default: 0] + store.sourceCounts[.appStoreIOS, default: 0])", symbol: "bag", color: .blue)
                 MetricChip(title: "Homebrew", value: "\(store.sourceCounts[.homebrew, default: 0])", symbol: "mug", color: .orange)
                 if store.sourceCounts[.steam, default: 0] > 0 {
