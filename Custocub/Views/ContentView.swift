@@ -202,6 +202,17 @@ struct ContentView: View {
 
                 Divider()
 
+                Menu("导出报告") {
+                    ForEach(InventoryReportFormat.allCases) { format in
+                        Button(format.menuTitle) {
+                            exportReport(format)
+                        }
+                    }
+                }
+                .disabled(reportSource == nil)
+
+                Divider()
+
                 Button("删除当前快照…", role: .destructive) {
                     showingDeleteConfirmation = true
                 }
@@ -209,7 +220,7 @@ struct ContentView: View {
             } label: {
                 Label("更多", systemImage: "ellipsis.circle")
             }
-            .help("导入、导出和删除快照")
+            .help(Text(L.t("导入、导出快照与报告")))
         }
     }
 
@@ -326,6 +337,25 @@ struct ContentView: View {
     /// 当前工作区：Homebrew 和应用各记一套窗口与侧边栏宽度。
     private var workspaceMode: WorkspaceLayoutStore.Mode {
         WorkspaceLayoutStore.Mode.mode(for: store.activeSelection)
+    }
+
+    /// 报告导出的数据源：优先当前选中的历史快照，否则用当前扫描结果。
+    private var reportSource: InventoryReportSource? {
+        if let snapshot = store.selectedSnapshot {
+            return .snapshot(snapshot)
+        }
+        if !store.apps.isEmpty {
+            return .currentScan(apps: store.apps, lastScanAt: store.lastScanAt)
+        }
+        if let latest = store.latestSnapshot {
+            return .snapshot(latest)
+        }
+        return nil
+    }
+
+    private func exportReport(_ format: InventoryReportFormat) {
+        guard let source = reportSource else { return }
+        FileActions.exportReport(source: source, format: format, store: store)
     }
 
     private var errorPresented: Binding<Bool> {

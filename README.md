@@ -21,6 +21,7 @@ Custocub is a native macOS app inventory and snapshot manager built with Swift 6
 - **Clear app types** — system vs. third-party, with `arm64` / `x86_64` / universal architecture detection.
 - **Developer apps smart group** — fixed `me.whynbnb.` Bundle ID prefix, with a show/hide toggle; shown only when more than two apps match.
 - **Snapshots and comparison** — keep historical inventories, compare changes, export or import snapshots, and generate Markdown reports.
+- **Inventory reports** — export the current scan or a selected snapshot as a self-contained HTML report, a paginated PDF, or a CSV spreadsheet from **More → Export Report**.
 - **Deep Homebrew support** — a dedicated Homebrew screen for formulae and casks, an upgrade center, SOCKS5/HTTP proxy support, standalone Homebrew snapshots, Brewfile export, and a live command log.
 - **Explore the whole repository** — browse every available Formula and Cask ranked by real download counts from the last 30 days (switchable to 90 or 365), with full search across names, aliases, and descriptions.
 - **Gallery** — browse installed apps and apps that have been uninstalled but still exist in historical snapshots.
@@ -273,6 +274,16 @@ Each record also includes Bundle ID, version, build number, minimum macOS versio
 - When app snapshots contain Homebrew casks, the comparison view also has a **Homebrew Cask** tab for cask additions, removals, and version changes.
 - Compare against the **Current State** without saving it first.
 - Export a Markdown comparison report.
+
+### Inventory reports
+
+Use **More → Export Report** in the toolbar to share or archive the app inventory:
+
+- **HTML** — a single self-contained file with summary cards, a source breakdown, and a print-friendly table. The page always shows a scrollbar, even when macOS is set to hide scrollbars.
+- **PDF** — a paginated A4 report with the same summary and table, suitable for printing or long-term archiving.
+- **CSV** — UTF-8 with BOM for spreadsheet apps, including Bundle ID, build, architecture, raw size in bytes, update time, and install path.
+
+When a historical snapshot is selected in the sidebar, the report describes that snapshot. Otherwise it exports the current scan.
 
 ### Gallery
 
