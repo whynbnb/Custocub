@@ -87,6 +87,13 @@ struct CustocubCommands: Commands {
         CommandGroup(after: .newItem) {
             Divider()
 
+            Button("命令面板") {
+                NotificationCenter.default.post(name: .custocubShowCommandPalette, object: nil)
+            }
+            .keyboardShortcut("k", modifiers: .command)
+
+            Divider()
+
             Button("导入快照…") {
                 FileActions.importSnapshots(into: store)
             }

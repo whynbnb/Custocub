@@ -69,6 +69,7 @@
 		F5F26B8FF3FB294266A44468 /* IconProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49DF1B3BF2E854CB0A1D189E /* IconProvider.swift */; };
 		F7A26D52765545E8FA1F5D15 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 7B4C4471FEEFF2CC4A301024 /* Localizable.strings */; };
 		FADB818F51F10C6B1911C2EF /* BrewUpgradeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D524AEB924A34D1313EDD62 /* BrewUpgradeView.swift */; };
+		FB3572EC21CD5DEB2DD6E6D9 /* CommandPaletteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D79CA1EDF7CD77F33350FB79 /* CommandPaletteView.swift */; };
 		FD74F97E4502B7EAD3D71304 /* BrewComparisonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837A3EC35965C200DFD864EA /* BrewComparisonView.swift */; };
 		FE32DC56BBB98A5EE7518D1D /* GitProxyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A41B308E1A89C55CC812F8F9 /* GitProxyService.swift */; };
 /* End PBXBuildFile section */
@@ -129,6 +130,7 @@
 		CEF96434F85ECAF7ED80D2B2 /* BrewService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewService.swift; sourceTree = "<group>"; };
 		CFF2ABDA02E2B93882C8B1FA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D3AD33022FDAC6BD741EE6C1 /* CustocubStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustocubStore.swift; sourceTree = "<group>"; };
+		D79CA1EDF7CD77F33350FB79 /* CommandPaletteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPaletteView.swift; sourceTree = "<group>"; };
 		D87BC7BED3E3834EAA7916D2 /* BrewHealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewHealthView.swift; sourceTree = "<group>"; };
 		DD5C281BF2C55B183A016BA3 /* BrewExploreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewExploreView.swift; sourceTree = "<group>"; };
 		DDEDA7C65BB44C967065B4E2 /* SnapshotRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotRepository.swift; sourceTree = "<group>"; };
@@ -203,6 +205,7 @@
 				B39C399A3D9459CD90509E43 /* BrewServicesView.swift */,
 				59CD0745F0340F8405FD11C5 /* BrewSnapshotListView.swift */,
 				0D524AEB924A34D1313EDD62 /* BrewUpgradeView.swift */,
+				D79CA1EDF7CD77F33350FB79 /* CommandPaletteView.swift */,
 				32FC1CD964603D78201C400F /* ComparisonView.swift */,
 				9A2890D4AA064047CFB77010 /* Components.swift */,
 				2A02C718C475E6C56A81700D /* ContentView.swift */,
@@ -378,6 +381,7 @@
 				2D6854D2B47D23563016A2A9 /* BrewUpgradePolicy.swift in Sources */,
 				FADB818F51F10C6B1911C2EF /* BrewUpgradeView.swift in Sources */,
 				C927DCF61DE6D925DFD25A6F /* BrewVersion.swift in Sources */,
+				FB3572EC21CD5DEB2DD6E6D9 /* CommandPaletteView.swift in Sources */,
 				D9E0945BB07BDA33E8E9758C /* ComparisonView.swift in Sources */,
 				D6A18C7D80F1299382D3FE1A /* Components.swift in Sources */,
 				DC7B02217750489EB802C9F8 /* ContentView.swift in Sources */,

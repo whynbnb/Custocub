@@ -20,6 +20,7 @@ struct ContentView: View {
     @State private var showingComparison = false
     @State private var showingDeleteConfirmation = false
     @State private var showingBrewConsole = false
+    @State private var showingCommandPalette = false
 
     var body: some View {
         // 两列结构：侧边栏 + 右侧工作区。
@@ -59,6 +60,9 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .custocubShowBrewConsole)) { _ in
             showingBrewConsole = true
         }
+        .onReceive(NotificationCenter.default.publisher(for: .custocubShowCommandPalette)) { _ in
+            showingCommandPalette = true
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active {
                 optionHeld = false
@@ -87,6 +91,11 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingBrewConsole) {
             BrewConsoleView()
+                .environmentObject(brew)
+        }
+        .sheet(isPresented: $showingCommandPalette) {
+            CommandPaletteView()
+                .environmentObject(store)
                 .environmentObject(brew)
         }
         .confirmationDialog(

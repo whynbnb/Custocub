@@ -864,3 +864,12 @@
 "退出展示模式" = "Exit Presentation Mode";
 "没有可展示的应用" = "No apps to present";
 "调整展示框的筛选条件后再试。" = "Adjust the Gallery filters and try again.";
+"命令面板" = "Command Palette";
+"搜索应用、快照或操作" = "Search apps, snapshots, or actions";
+"没有匹配的结果" = "No matching results";
+"试试应用名称、Bundle ID、快照名称或操作。" = "Try an app name, Bundle ID, snapshot name, or action.";
+"进入 Homebrew 包管理" = "Open Homebrew package management";
+"浏览全部应用与历史快照" = "Browse all apps and historical snapshots";
+"查看收藏的应用" = "View favorited apps";
+"已卸载 · 最后出现于 %@" = "Uninstalled · last seen in %@";
+"%d 个应用 · %@" = "%d apps · %@";
