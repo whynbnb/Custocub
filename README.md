@@ -25,6 +25,7 @@ Custocub is a native macOS app inventory and snapshot manager built with Swift 6
 - **Snapshot icon history** — icons are captured with snapshots; the Gallery and detail pane only show snapshots where an app's icon actually changed.
 - **Deep Homebrew support** — a dedicated Homebrew screen for formulae and casks, an upgrade center, SOCKS5/HTTP proxy support, standalone Homebrew snapshots, Brewfile export, and a live command log.
 - **Explore the whole repository** — browse every available Formula and Cask ranked by real download counts from the last 30 days (switchable to 90 or 365), with full search across names, aliases, and descriptions.
+- **Snapshot time machine** — scrub the Gallery back through saved snapshots to see exactly which apps, versions, and icons existed on that date.
 - **Gallery** — browse installed apps and apps that have been uninstalled but still exist in historical snapshots, with multi-select filters for status, source, platform, and type.
 - **Native macOS experience** — native table virtualization, scrollbars, resizable columns, and system selection behavior.
 - **Remembered layout** — the sidebar width and window width are remembered separately for the app inventory and the Homebrew screen. The app detail pane is collapsed by default, opens on demand, and remembers its width.
@@ -298,6 +299,7 @@ The Gallery is an icon-grid view of your software collection:
 
 - Installed apps come from the latest live scan.
 - **Uninstalled apps** come from historical snapshots. Even after the app bundle is deleted, Custocub can keep showing its icon and last-known metadata.
+- **Snapshot timeline** at the top: choose **Today** or any saved snapshot to view the collection as it existed at that moment. Apps installed later disappear, apps uninstalled later stay visible, and the header counts reflect that snapshot.
 - Multi-select filters for installed/uninstalled status, source, platform, and system/third-party type.
 - The summary chips at the top are also filters: click **Installed**, **Uninstalled**, **System**, or **Third-party** to toggle them.
 - The toolbar shows how many apps are currently visible.

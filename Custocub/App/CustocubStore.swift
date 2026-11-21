@@ -61,7 +61,12 @@ private struct SidebarCache: Codable {
 final class CustocubStore: ObservableObject {
     @Published private(set) var apps: [AppRecord] = []
     @Published private(set) var snapshots: [AppSnapshot] = [] {
-        didSet { iconHistoryCache.removeAll() }
+        didSet {
+            iconHistoryCache.removeAll()
+            if let id = gallerySnapshotID, !snapshots.contains(where: { $0.id == id }) {
+                gallerySnapshotID = nil
+            }
+        }
     }
     /// 图标历史按应用缓存；快照列表变化时清空。
     private var iconHistoryCache: [String: [AppIconHistoryEntry]] = [:]
@@ -88,6 +93,8 @@ final class CustocubStore: ObservableObject {
     @Published var galleryPlatformFilters: Set<AppPlatform> = []
     @Published var galleryTypeFilters: Set<AppTypeFilter> = []
     @Published var galleryStatusFilters: Set<GalleryItem.Status> = []
+    /// 展示框时间机器：nil 表示今天，否则查看指定历史快照。
+    @Published var gallerySnapshotID: UUID?
 
     private let repository: SnapshotRepository
     private let scanner: AppScanner
@@ -242,10 +249,11 @@ final class CustocubStore: ObservableObject {
             return nil
 
         case .gallery:
-            if let item = galleryItems.first(where: { $0.app.id == selectedAppID }) {
+            if let item = galleryDisplayItems.first(where: { $0.app.id == selectedAppID }) {
                 return SelectedAppContext(app: item.app, galleryItem: item, snapshot: nil)
             }
-            guard let app = apps.first(where: { $0.id == selectedAppID }) else { return nil }
+            guard gallerySnapshot == nil,
+                  let app = apps.first(where: { $0.id == selectedAppID }) else { return nil }
             return SelectedAppContext(app: app, galleryItem: nil, snapshot: nil)
 
         case .snapshot(let id):
@@ -302,6 +310,34 @@ final class CustocubStore: ObservableObject {
         }
 
         return items.sorted {
+            if $0.status != $1.status {
+                return $0.status == .installed
+            }
+            return $0.app.name.localizedStandardCompare($1.app.name) == .orderedAscending
+        }
+    }
+
+    /// 时间机器当前选中的历史快照。
+    var gallerySnapshot: AppSnapshot? {
+        guard let gallerySnapshotID else { return nil }
+        return snapshots.first { $0.id == gallerySnapshotID }
+    }
+
+    /// 展示框实际显示的内容：今天或某个历史快照。
+    var galleryDisplayItems: [GalleryItem] {
+        guard let snapshot = gallerySnapshot else { return galleryItems }
+
+        let liveKeys = Set(apps.map { comparisonKey(for: $0) })
+        return snapshot.apps.map { app in
+            GalleryItem(
+                id: app.path,
+                app: app,
+                status: liveKeys.contains(comparisonKey(for: app)) ? .installed : .uninstalled,
+                lastSeenAt: snapshot.createdAt,
+                snapshotName: snapshot.name
+            )
+        }
+        .sorted {
             if $0.status != $1.status {
                 return $0.status == .installed
             }

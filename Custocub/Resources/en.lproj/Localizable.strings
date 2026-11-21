@@ -806,3 +806,10 @@
 "图标变化" = "Icon change";
 "已选 %d 项" = "%d selected";
 "点击筛选" = "Click to filter";
+"快照时间轴" = "Snapshot timeline";
+"今天" = "Today";
+"回到今天" = "Back to Today";
+"正在查看快照「%@」" = "Viewing snapshot “%@”";
+"这个快照没有应用" = "No apps in this snapshot";
+"这个快照没有记录任何应用。" = "This snapshot did not record any apps.";
+"保存快照后可回看历史" = "Save a snapshot to browse history";

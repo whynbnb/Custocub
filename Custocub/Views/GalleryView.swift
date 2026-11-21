@@ -16,20 +16,25 @@ struct GalleryView: View {
                 VStack(spacing: 0) {
                     header
                     Divider()
-                    let items = store.filteredGalleryItems(store.galleryItems)
+                    galleryTimeline
+                    Divider()
+
+                    let baseItems = store.galleryDisplayItems
+                    let items = store.filteredGalleryItems(baseItems)
+
                     GalleryFilterBar(
                         visibleCount: items.count,
-                        totalCount: store.galleryItems.count
+                        totalCount: baseItems.count
                     )
                     Divider()
 
                     if items.isEmpty {
                         ContentUnavailableView(
-                            store.galleryItems.isEmpty ? L.t("展示框还是空的") : L.t("没有符合条件的应用"),
-                            systemImage: store.galleryItems.isEmpty ? "rectangle.grid.2x2" : "line.3.horizontal.decrease.circle",
-                            description: Text(store.galleryItems.isEmpty
-                                ? L.t("保存一个快照后，这里会像收藏柜一样展示软件；已卸载的软件也会被保留。")
-                                : L.t("请调整搜索内容或筛选条件。"))
+                            emptyTitle(baseItems: baseItems),
+                            systemImage: baseItems.isEmpty
+                                ? "rectangle.grid.2x2"
+                                : "line.3.horizontal.decrease.circle",
+                            description: Text(emptyDescription(baseItems: baseItems))
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
@@ -71,7 +76,8 @@ struct GalleryView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let items = store.galleryDisplayItems
+        return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
                 HStack(spacing: 7) {
                     Text("展示框")
@@ -91,7 +97,7 @@ struct GalleryView: View {
                 } label: {
                     MetricChip(
                         title: "已安装",
-                        value: "\(store.galleryItems.count { $0.status == .installed })",
+                        value: "\(items.count { $0.status == .installed })",
                         symbol: "checkmark.circle",
                         color: .green,
                         isActive: store.galleryStatusFilters.contains(.installed)
@@ -105,7 +111,7 @@ struct GalleryView: View {
                 } label: {
                     MetricChip(
                         title: "已卸载",
-                        value: "\(store.uninstalledCount)",
+                        value: "\(items.count { $0.status == .uninstalled })",
                         symbol: "archivebox",
                         color: .red,
                         isActive: store.galleryStatusFilters.contains(.uninstalled)
@@ -119,7 +125,7 @@ struct GalleryView: View {
                 } label: {
                     MetricChip(
                         title: "系统",
-                        value: "\(store.galleryItems.count { $0.app.isSystemApp })",
+                        value: "\(items.count { $0.app.isSystemApp })",
                         symbol: "apple.logo",
                         color: .secondary,
                         isActive: store.galleryTypeFilters.contains(.system)
@@ -133,7 +139,7 @@ struct GalleryView: View {
                 } label: {
                     MetricChip(
                         title: "第三方",
-                        value: "\(store.galleryItems.count { !$0.app.isSystemApp })",
+                        value: "\(items.count { !$0.app.isSystemApp })",
                         symbol: "shippingbox",
                         color: .green,
                         isActive: store.galleryTypeFilters.contains(.thirdParty)
@@ -143,7 +149,11 @@ struct GalleryView: View {
                 .help(Text(L.t("点击筛选")))
 
                 Spacer()
-                if store.uninstalledCount > 0 {
+                if let snapshot = store.gallerySnapshot {
+                    Text(L.t("正在查看快照「%@」", snapshot.name))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if items.contains(where: { $0.status == .uninstalled }) {
                     Text("已卸载条目来自历史快照")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
@@ -152,6 +162,116 @@ struct GalleryView: View {
         }
         .padding(16)
         .background(.background)
+    }
+
+    private var galleryTimeline: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "clock.arrow.circlepath")
+                .foregroundStyle(.secondary)
+
+            Text("快照时间轴")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    timelineNode(
+                        title: L.t("今天"),
+                        count: store.apps.count,
+                        snapshotID: nil,
+                        symbol: "sparkles"
+                    )
+
+                    ForEach(store.snapshots) { snapshot in
+                        timelineNode(
+                            title: snapshot.name,
+                            count: snapshot.apps.count,
+                            snapshotID: snapshot.id,
+                            symbol: "camera"
+                        )
+                    }
+                }
+                .padding(.vertical, 1)
+            }
+
+            if store.snapshots.isEmpty {
+                Text(L.t("保存快照后可回看历史"))
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .fixedSize()
+            }
+
+            if store.gallerySnapshotID != nil {
+                Button(L.t("回到今天")) {
+                    store.gallerySnapshotID = nil
+                    store.selectedAppID = nil
+                }
+                .buttonStyle(.plain)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(Color.accentColor)
+            }
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 40)
+        .background(.bar)
+    }
+
+    private func timelineNode(
+        title: String,
+        count: Int,
+        snapshotID: UUID?,
+        symbol: String
+    ) -> some View {
+        let isSelected = store.gallerySnapshotID == snapshotID
+
+        return Button {
+            store.gallerySnapshotID = snapshotID
+            store.selectedAppID = nil
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: symbol)
+                    .font(.caption2)
+                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(title)
+                        .font(.caption.weight(.medium))
+                        .lineLimit(1)
+                    Text(L.t("%d 个应用", count))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(
+                isSelected ? Color.accentColor.opacity(0.16) : Color.primary.opacity(0.05),
+                in: RoundedRectangle(cornerRadius: 7)
+            )
+            .overlay {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 7)
+                        .strokeBorder(Color.accentColor.opacity(0.35), lineWidth: 1)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func emptyTitle(baseItems: [GalleryItem]) -> String {
+        if baseItems.isEmpty {
+            return store.gallerySnapshot != nil ? L.t("这个快照没有应用") : L.t("展示框还是空的")
+        }
+        return L.t("没有符合条件的应用")
+    }
+
+    private func emptyDescription(baseItems: [GalleryItem]) -> String {
+        if !baseItems.isEmpty {
+            return L.t("请调整搜索内容或筛选条件。")
+        }
+        if store.gallerySnapshot != nil {
+            return L.t("这个快照没有记录任何应用。")
+        }
+        return L.t("保存一个快照后，这里会像收藏柜一样展示软件；已卸载的软件也会被保留。")
     }
 
     private func toggleStatus(_ status: GalleryItem.Status) {

@@ -59,6 +59,7 @@ struct AppDetailView: View {
                     if (store.activeSelection == .installed || store.activeSelection == .own), isInstalled {
                         Button {
                             store.sidebarSelection = .gallery
+                            store.gallerySnapshotID = nil
                             store.searchText = ""
                             store.gallerySourceFilters = []
                             store.galleryPlatformFilters = []
