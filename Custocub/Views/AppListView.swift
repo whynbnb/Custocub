@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct InstalledAppsView: View {
@@ -717,6 +718,9 @@ private struct AppTable: View {
         }
         .animation(nil, value: filtered)
         .scrollIndicators(.visible)
+        .contextMenu(forSelectionType: String.self) { ids in
+            appContextMenu(for: ids)
+        }
         .onChange(of: selection) { _, newValue in
             if store.selectedAppID != newValue {
                 store.selectedAppID = newValue
@@ -725,6 +729,38 @@ private struct AppTable: View {
         .onChange(of: store.selectedAppID) { _, newValue in
             if selection != newValue {
                 selection = newValue
+            }
+        }
+    }
+
+    /// 应用列表右键菜单：打开、在访达中显示、复制标识。
+    @ViewBuilder
+    private func appContextMenu(for ids: Set<String>) -> some View {
+        let selected = filtered.filter { ids.contains($0.id) }
+        let existing = selected.filter { FileManager.default.fileExists(atPath: $0.path) }
+
+        if !selected.isEmpty {
+            if selected.count == 1, let app = selected.first, existing.count == 1 {
+                Button(L.t("打开应用")) {
+                    NSWorkspace.shared.open(URL(fileURLWithPath: app.path))
+                }
+            }
+
+            Button(L.t("在访达中显示")) {
+                NSWorkspace.shared.activateFileViewerSelecting(
+                    existing.map { URL(fileURLWithPath: $0.path) }
+                )
+            }
+            .disabled(existing.isEmpty)
+
+            if selected.count == 1, let app = selected.first {
+                Divider()
+
+                Button(L.t("复制 Bundle ID")) {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(app.displayBundleIdentifier, forType: .string)
+                }
+                .disabled(app.bundleIdentifier == nil)
             }
         }
     }
