@@ -181,6 +181,7 @@ struct DetailRow: View {
 
 struct SectionCard<Content: View>: View {
     let title: String
+    var minHeight: CGFloat? = nil
     @ViewBuilder var content: Content
 
     var body: some View {
@@ -190,7 +191,7 @@ struct SectionCard<Content: View>: View {
             content
         }
         .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: minHeight ?? 0, alignment: .topLeading)
         .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 12))
         .overlay {
             RoundedRectangle(cornerRadius: 12)

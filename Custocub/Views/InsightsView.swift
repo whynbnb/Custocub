@@ -4,6 +4,10 @@ import SwiftUI
 struct InsightsView: View {
     @EnvironmentObject private var store: CustocubStore
 
+    private let chartCardHeight: CGFloat = 250
+    private let distributionCardHeight: CGFloat = 240
+    private let listCardHeight: CGFloat = 290
+
     private struct TimelinePoint: Identifiable {
         let id: String
         let date: Date
@@ -38,16 +42,19 @@ struct InsightsView: View {
                     )
                     .frame(maxWidth: .infinity, minHeight: 360)
                 } else {
-                    LazyVGrid(
-                        columns: [GridItem(.adaptive(minimum: 380), spacing: 16)],
-                        spacing: 16
-                    ) {
-                        timelineCard
-                        sizeCard
-                        sourceCard
-                        platformCard
-                        largestCard
-                        oldestCard
+                    VStack(spacing: 16) {
+                        HStack(alignment: .top, spacing: 16) {
+                            timelineCard
+                            sizeCard
+                        }
+                        HStack(alignment: .top, spacing: 16) {
+                            sourceCard
+                            platformCard
+                        }
+                        HStack(alignment: .top, spacing: 16) {
+                            largestCard
+                            oldestCard
+                        }
                     }
                 }
             }
@@ -80,7 +87,7 @@ struct InsightsView: View {
     }
 
     private var timelineCard: some View {
-        SectionCard(title: "应用数量变化") {
+        SectionCard(title: "应用数量变化", minHeight: chartCardHeight) {
             if timeline.count < 2 {
                 Text("保存更多快照后，这里会显示应用数量的变化趋势。")
                     .font(.callout)
@@ -126,7 +133,7 @@ struct InsightsView: View {
     }
 
     private var sizeCard: some View {
-        SectionCard(title: "总体积变化") {
+        SectionCard(title: "总体积变化", minHeight: chartCardHeight) {
             if timeline.count < 2 {
                 Text("保存更多快照后，这里会显示体积的变化趋势。")
                     .font(.callout)
@@ -175,74 +182,32 @@ struct InsightsView: View {
     }
 
     private var sourceCard: some View {
-        SectionCard(title: "来源分布") {
-            Chart(sourceItems) { item in
-                BarMark(
-                    x: .value("应用", item.count),
-                    y: .value("来源", item.name)
-                )
-                .foregroundStyle(item.color)
-                .cornerRadius(4)
-                .annotation(position: .trailing) {
-                    Text("\(item.count)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .chartXAxis(.hidden)
-            .frame(height: CGFloat(max(140, sourceItems.count * 26)))
+        SectionCard(title: "来源分布", minHeight: distributionCardHeight) {
+            distributionRows(sourceItems)
         }
     }
 
     private var platformCard: some View {
-        SectionCard(title: "平台分布") {
-            Chart(platformItems) { item in
-                BarMark(
-                    x: .value("应用", item.count),
-                    y: .value("平台", item.name)
-                )
-                .foregroundStyle(item.color)
-                .cornerRadius(4)
-                .annotation(position: .trailing) {
-                    Text("\(item.count)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .chartXAxis(.hidden)
-            .frame(height: CGFloat(max(140, platformItems.count * 28)))
+        SectionCard(title: "平台分布", minHeight: distributionCardHeight) {
+            distributionRows(platformItems)
         }
     }
 
     private var largestCard: some View {
-        SectionCard(title: "体积最大的应用") {
+        SectionCard(title: "体积最大的应用", minHeight: listCardHeight) {
             if largestApps.isEmpty {
                 Text("还没有测量应用体积。")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .frame(height: 120)
             } else {
-                Chart(largestApps) { item in
-                    BarMark(
-                        x: .value("大小", item.bytes),
-                        y: .value("应用", item.name)
-                    )
-                    .foregroundStyle(Color.blue.gradient)
-                    .cornerRadius(4)
-                    .annotation(position: .trailing) {
-                        Text(item.bytes.formatted(.byteCount(style: .file)))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .chartXAxis(.hidden)
-                .frame(height: CGFloat(max(170, largestApps.count * 26)))
+                largestRows(largestApps)
             }
         }
     }
 
     private var oldestCard: some View {
-        SectionCard(title: "最早安装的应用") {
+        SectionCard(title: "最早安装的应用", minHeight: listCardHeight) {
             if oldestApps.isEmpty {
                 Text("还没有可用的安装时间。")
                     .font(.callout)
@@ -263,12 +228,83 @@ struct InsightsView: View {
                                     .foregroundStyle(.secondary)
                             }
                         }
-                        .padding(.vertical, 6)
+                        .padding(.vertical, 4)
 
                         if index != oldestApps.count - 1 {
                             Divider()
                         }
                     }
+                }
+            }
+        }
+    }
+
+    private func distributionRows(_ items: [CountItem]) -> some View {
+        let maxCount = max(items.map(\.count).max() ?? 1, 1)
+
+        return VStack(spacing: 7) {
+            ForEach(items) { item in
+                HStack(spacing: 8) {
+                    Text(item.name)
+                        .font(.caption)
+                        .lineLimit(1)
+                        .frame(width: 82, alignment: .leading)
+
+                    GeometryReader { proxy in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.primary.opacity(0.06))
+                                .frame(height: 16)
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(item.color)
+                                .frame(
+                                    width: max(4, proxy.size.width * CGFloat(item.count) / CGFloat(maxCount)),
+                                    height: 16
+                                )
+                        }
+                    }
+                    .frame(height: 16)
+
+                    Text("\(item.count)")
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(width: 36, alignment: .trailing)
+                }
+            }
+        }
+    }
+
+    private func largestRows(_ items: [SizeItem]) -> some View {
+        let maxBytes = max(items.map(\.bytes).max() ?? 1, 1)
+
+        return VStack(spacing: 7) {
+            ForEach(items) { item in
+                HStack(spacing: 8) {
+                    Text(item.name)
+                        .font(.caption)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .frame(width: 118, alignment: .leading)
+
+                    GeometryReader { proxy in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.primary.opacity(0.06))
+                                .frame(height: 16)
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.blue.gradient)
+                                .frame(
+                                    width: max(4, proxy.size.width * CGFloat(item.bytes) / CGFloat(maxBytes)),
+                                    height: 16
+                                )
+                        }
+                    }
+                    .frame(height: 16)
+
+                    Text(item.bytes.formatted(.byteCount(style: .file)))
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .frame(width: 64, alignment: .trailing)
                 }
             }
         }
@@ -329,7 +365,7 @@ struct InsightsView: View {
         store.apps
             .filter { $0.installedAt != nil }
             .sorted { ($0.installedAt ?? .distantPast) < ($1.installedAt ?? .distantPast) }
-            .prefix(8)
+            .prefix(6)
             .map { $0 }
     }
 
