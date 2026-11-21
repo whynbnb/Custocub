@@ -527,7 +527,7 @@ private struct DataSettingsTab: View {
 
 private struct AboutSettingsTab: View {
     private var version: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.1"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.2"
     }
 
     private var build: String {
