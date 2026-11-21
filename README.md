@@ -30,6 +30,7 @@ Custocub is a native macOS app inventory and snapshot manager built with Swift 6
 - **Favorites and collections** — star apps or curate custom collections that can include both installed and uninstalled apps.
 - **Visual snapshot comparison** — changed apps appear as an icon wall, with old and new icons side by side when available.
 - **Shareable app cards** — export a polished PNG card with the app's icon, metadata, snapshot history, and icon history.
+- **Presentation mode** — open a dedicated dark icon wall with auto-hiding controls, snapshot switching, and full-screen support.
 - **Gallery** — browse installed apps and apps that have been uninstalled but still exist in historical snapshots, with multi-select filters for status, source, platform, and type.
 - **Native macOS experience** — native table virtualization, scrollbars, resizable columns, and system selection behavior.
 - **Remembered layout** — the sidebar width and window width are remembered separately for the app inventory and the Homebrew screen. The app detail pane is collapsed by default, opens on demand, and remembers its width.
@@ -323,6 +324,15 @@ These views compare against the latest saved snapshot; when no snapshot exists, 
 - Create custom collections such as “Developer Tools” or “Must Have”, and add apps from any context menu.
 - Collections can contain installed and uninstalled apps, and can be browsed with the same snapshot timeline and multi-select filters as the Gallery.
 - Rename or delete collections from the sidebar context menu.
+
+### Presentation mode
+
+From the Gallery, Favorites, or a collection, click **Presentation Mode** (or press ⇧⌘P) to open a dedicated dark icon wall:
+
+- Controls auto-hide after a few seconds and reappear when you move the mouse
+- Switch between Today and saved snapshots without leaving the presentation
+- Enter full screen for screenshots, recordings, or display
+- Press Esc or the close button to return to the main window
 
 ### Shareable app cards
 

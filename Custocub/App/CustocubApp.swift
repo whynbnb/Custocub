@@ -23,6 +23,17 @@ struct CustocubApp: App {
             CustocubCommands(store: store, brew: brew, localization: localization)
         }
 
+        Window("展示模式", id: GalleryPresentation.windowID) {
+            GalleryPresentationView()
+                .environmentObject(store)
+                .environmentObject(brew)
+                .environmentObject(localization)
+                .environment(\.locale, localization.locale)
+                .id(localization.revision)
+        }
+        .windowStyle(.hiddenTitleBar)
+        .defaultSize(width: 1280, height: 820)
+
         Settings {
             SettingsView()
                 .environmentObject(store)

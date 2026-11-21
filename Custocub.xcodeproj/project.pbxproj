@@ -60,6 +60,7 @@
 		DC7B02217750489EB802C9F8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A02C718C475E6C56A81700D /* ContentView.swift */; };
 		DCCAE7D65C4E610674CD154C /* DirectorySize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58FF69E32C98890ED8128E09 /* DirectorySize.swift */; };
 		E57B315E5B667021AA567D83 /* BrewExploreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD5C281BF2C55B183A016BA3 /* BrewExploreView.swift */; };
+		E647B7E17D6DF5857F189E4E /* GalleryPresentationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19126D44D4FF5CDC424E134B /* GalleryPresentationView.swift */; };
 		E7C92538E7FED887FF76C3FF /* SteamDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9F35333C91991D3E58F940 /* SteamDetector.swift */; };
 		E99F49D4BE74E819B6F06FF2 /* BrewCleanupService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CE2A01D9F54D7FD12BAFF2D /* BrewCleanupService.swift */; };
 		EE7436E08B65444A9430C1BA /* SwiftLensIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED8841E2347088BD41A9DC5E /* SwiftLensIntegration.swift */; };
@@ -77,6 +78,7 @@
 		09F29629C132BBF4E5C57E74 /* AppStory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStory.swift; sourceTree = "<group>"; };
 		0D524AEB924A34D1313EDD62 /* BrewUpgradeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewUpgradeView.swift; sourceTree = "<group>"; };
 		10218A4D8E942BF11055040B /* BrewConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewConsoleView.swift; sourceTree = "<group>"; };
+		19126D44D4FF5CDC424E134B /* GalleryPresentationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryPresentationView.swift; sourceTree = "<group>"; };
 		1A104774C7EA14DC7B94A3CD /* BrewServicesService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewServicesService.swift; sourceTree = "<group>"; };
 		1B6743FC8C960368DC89A96B /* WorkspaceLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceLayout.swift; sourceTree = "<group>"; };
 		1D9F35333C91991D3E58F940 /* SteamDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SteamDetector.swift; sourceTree = "<group>"; };
@@ -205,6 +207,7 @@
 				9A2890D4AA064047CFB77010 /* Components.swift */,
 				2A02C718C475E6C56A81700D /* ContentView.swift */,
 				E776D8D8CDDD0D61BC927FC1 /* FileActions.swift */,
+				19126D44D4FF5CDC424E134B /* GalleryPresentationView.swift */,
 				E494F2C5DBAFFD55C067618A /* GalleryView.swift */,
 				3644757FC6B3509B262907AC /* HomebrewView.swift */,
 				A28343E4504771626ACF750C /* IconHistoryView.swift */,
@@ -383,6 +386,7 @@
 				DCCAE7D65C4E610674CD154C /* DirectorySize.swift in Sources */,
 				020D9F0EF618B0DB8AC16A4F /* FileActions.swift in Sources */,
 				0264632A7BD956E10F06318A /* GalleryItem.swift in Sources */,
+				E647B7E17D6DF5857F189E4E /* GalleryPresentationView.swift in Sources */,
 				5D61423B0768E2F287CEBB77 /* GalleryView.swift in Sources */,
 				FE32DC56BBB98A5EE7518D1D /* GitProxyService.swift in Sources */,
 				A6AA667D52C030239A97EC90 /* HomebrewIndex.swift in Sources */,

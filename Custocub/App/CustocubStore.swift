@@ -350,6 +350,43 @@ final class CustocubStore: ObservableObject {
         }
     }
 
+    /// 展示框当前作用域内的应用：展示框、收藏或某个合集。
+    var galleryScopedItems: [GalleryItem] {
+        switch activeSelection {
+        case .favorites:
+            return galleryDisplayItems.filter { isFavorite($0.app) }
+        case .collection(let id):
+            guard let collection = collection(id) else { return [] }
+            return galleryDisplayItems.filter {
+                collection.appKeys.contains(collectionKey(for: $0.app))
+            }
+        default:
+            return galleryDisplayItems
+        }
+    }
+
+    var isGalleryFavorites: Bool {
+        if case .favorites = activeSelection { return true }
+        return false
+    }
+
+    var galleryActiveCollection: AppCollection? {
+        guard case .collection(let id) = activeSelection else { return nil }
+        return collection(id)
+    }
+
+    var galleryScopeTitle: String {
+        if isGalleryFavorites { return L.t("收藏") }
+        if let collection = galleryActiveCollection { return collection.name }
+        return L.t("展示框")
+    }
+
+    var galleryScopeHelp: String {
+        if isGalleryFavorites { return L.t("收藏的应用") }
+        if galleryActiveCollection != nil { return L.t("自定义合集") }
+        return L.t("像收藏柜一样浏览所有软件，包括已经卸载、但仍保存在历史快照中的应用。")
+    }
+
     // MARK: - 收藏与合集
 
     func collectionKey(for app: AppRecord) -> String {
