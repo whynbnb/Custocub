@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct ContentView: View {
@@ -7,6 +8,11 @@ struct ContentView: View {
 
     @AppStorage("autoScanOnLaunch") private var autoScanOnLaunch = true
     @AppStorage("refreshOnActivate") private var refreshOnActivate = true
+    /// 应用详情面板默认收起，展开后可由工具栏按钮再次关闭。
+    @AppStorage("showsAppDetailPane") private var showsAppDetailPane = false
+
+    @State private var detailPaneWidth = DetailPaneWidth.load()
+    @State private var detailDragStartWidth: CGFloat?
 
     @State private var showingComparison = false
     @State private var showingDeleteConfirmation = false
@@ -28,20 +34,7 @@ struct ContentView: View {
                 )
                 .background(SidebarWidthMemory(mode: workspaceMode))
         } detail: {
-            if showsDetailPane {
-                HSplitView {
-                    content
-                        .frame(minWidth: 620, maxWidth: .infinity, maxHeight: .infinity)
-
-                    detailColumn
-                        .frame(minWidth: 300, idealWidth: 350, maxWidth: 430, maxHeight: .infinity)
-                }
-            } else {
-                // 快照、服务、清理和诊断分区自己就是整页内容，
-                // 不需要额外的详情列，直接铺满右侧工作区。
-                content
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
+            detailArea
         }
         .navigationSplitViewStyle(.balanced)
         .background(WindowWidthMemory(mode: workspaceMode))
@@ -109,9 +102,54 @@ struct ContentView: View {
         }
     }
 
+    /// 应用列表与详情之间的分隔条，可拖动调整详情宽度。
+    private var detailPaneDivider: some View {
+        Rectangle()
+            .fill(Color(nsColor: .separatorColor))
+            .frame(width: 1)
+            .frame(width: 9)
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .onHover { hovering in
+                if hovering {
+                    NSCursor.resizeLeftRight.push()
+                } else {
+                    NSCursor.pop()
+                }
+            }
+            .gesture(
+                DragGesture(minimumDistance: 1)
+                    .onChanged { value in
+                        if detailDragStartWidth == nil {
+                            detailDragStartWidth = detailPaneWidth
+                        }
+                        guard let start = detailDragStartWidth else { return }
+                        detailPaneWidth = DetailPaneWidth.clamp(
+                            start - value.translation.width
+                        )
+                    }
+                    .onEnded { _ in
+                        detailDragStartWidth = nil
+                        DetailPaneWidth.save(detailPaneWidth)
+                    }
+            )
+    }
+
     @ToolbarContentBuilder
     private var appToolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    showsAppDetailPane.toggle()
+                }
+            } label: {
+                Label(
+                    L.t(showsAppDetailPane ? "隐藏详情面板" : "显示详情面板"),
+                    systemImage: "rectangle.righthalf.inset.filled"
+                )
+            }
+            .help(Text(L.t(showsAppDetailPane ? "隐藏详情面板" : "显示详情面板")))
+
             Button {
                 showingComparison = true
             } label: {
@@ -155,6 +193,51 @@ struct ContentView: View {
                 Label("更多", systemImage: "ellipsis.circle")
             }
             .help("导入、导出和删除快照")
+        }
+    }
+
+    /// 右侧工作区：列表单独铺满，或按需和详情并排。
+    @ViewBuilder
+    private var detailArea: some View {
+        if showsDetailPane {
+            if store.activeSelection == .brew {
+                brewDetailSplit
+            } else if showsAppDetailPane {
+                appDetailSplit
+            } else {
+                content
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        } else {
+            // 快照、服务、清理和诊断分区自己就是整页内容，
+            // 不需要额外的详情列，直接铺满右侧工作区。
+            content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    /// Homebrew 的列表与详情使用系统分栏。
+    private var brewDetailSplit: some View {
+        HSplitView {
+            content
+                .frame(minWidth: 620, maxWidth: .infinity, maxHeight: .infinity)
+
+            detailColumn
+                .frame(minWidth: 300, idealWidth: 350, maxWidth: 430, maxHeight: .infinity)
+        }
+    }
+
+    /// 应用列表与详情：默认收起详情，展开后宽度可拖动并记住。
+    private var appDetailSplit: some View {
+        HStack(spacing: 0) {
+            content
+                .frame(minWidth: 520, maxWidth: .infinity, maxHeight: .infinity)
+
+            detailPaneDivider
+
+            detailColumn
+                .frame(width: detailPaneWidth)
+                .frame(maxHeight: .infinity)
         }
     }
 

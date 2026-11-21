@@ -754,3 +754,5 @@
 "最近快照之后新安装的应用" = "Apps installed since the latest snapshot";
 "最近一次快照之后新安装的应用" = "Apps installed since the latest snapshot";
 "没有新安装的应用" = "No apps installed since the latest snapshot";
+"显示详情面板" = "Show Details";
+"隐藏详情面板" = "Hide Details";

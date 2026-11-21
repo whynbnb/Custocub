@@ -414,3 +414,32 @@ struct WindowWidthMemory: NSViewRepresentable {
         }
     }
 }
+
+// MARK: - 详情面板宽度
+
+/// 「列表 + 详情」布局里详情面板的宽度。
+///
+/// 详情面板默认收起，展开后用户可以拖动分隔条调整宽度，
+/// 关掉再打开、或者下次启动都会用回上次的宽度。
+enum DetailPaneWidth {
+    static let minWidth: CGFloat = 240
+    static let idealWidth: CGFloat = 300
+    static let maxWidth: CGFloat = 420
+
+    private static let key = "workspace.detailPaneWidth"
+
+    static func load() -> CGFloat {
+        guard let value = UserDefaults.standard.object(forKey: key) as? Double else {
+            return idealWidth
+        }
+        return clamp(CGFloat(value))
+    }
+
+    static func save(_ width: CGFloat) {
+        UserDefaults.standard.set(Double(clamp(width)), forKey: key)
+    }
+
+    static func clamp(_ width: CGFloat) -> CGFloat {
+        min(max(width, minWidth), maxWidth)
+    }
+}
