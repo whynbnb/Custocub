@@ -127,6 +127,12 @@ struct GalleryView: View {
         }
         .disabled(!FileManager.default.fileExists(atPath: app.path))
 
+        if SwiftLensIntegration.isInstalled, FileManager.default.fileExists(atPath: app.path) {
+            Button(L.t("使用 SwiftLens 打开")) {
+                SwiftLensIntegration.open(appPath: app.path, store: store)
+            }
+        }
+
         Button("复制 Bundle ID") {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(app.displayBundleIdentifier, forType: .string)

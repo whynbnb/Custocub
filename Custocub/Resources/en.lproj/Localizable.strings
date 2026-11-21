@@ -787,3 +787,6 @@
 "已导出报告 · %@" = "Report exported · %@";
 "无法导出报告：%@" = "Could not export the report: %@";
 "导入、导出快照与报告" = "Import and export snapshots and reports";
+"使用 SwiftLens 打开" = "Open with SwiftLens";
+"已用 SwiftLens 打开 · %@" = "Opened with SwiftLens · %@";
+"无法使用 SwiftLens 打开：%@" = "Could not open with SwiftLens: %@";

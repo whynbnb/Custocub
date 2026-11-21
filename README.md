@@ -285,6 +285,12 @@ Use **More → Export Report** in the toolbar to share or archive the app invent
 
 When a historical snapshot is selected in the sidebar, the report describes that snapshot. Otherwise it exports the current scan.
 
+### SwiftLens integration
+
+If [SwiftLens](https://github.com/whynbnb/SwiftLens) is installed (`me.whynbnb.SwiftLens`), the app context menu adds **Open with SwiftLens** for installed bundles. Custocub hands the `.app` to SwiftLens through LaunchServices' open-file mechanism, which also grants the sandboxed receiver access to the bundle.
+
+SwiftLens needs to handle opened files (`application(_:open:)`) to load them in its window; its command-line summary mode is separate.
+
 ### Gallery
 
 The Gallery is an icon-grid view of your software collection:

@@ -284,6 +284,12 @@ Custocub 始终使用真实的 `brew` 可执行文件，因此会沿用你的安
 
 侧边栏选中历史快照时，报告描述该快照；否则导出当前扫描结果。
 
+### SwiftLens 集成
+
+如果系统里安装了 SwiftLens（`me.whynbnb.SwiftLens`），应用右键菜单会多出 **使用 SwiftLens 打开** 一项。Custocub 通过 LaunchServices 的“用其他应用打开文件”机制把 `.app` 交给 SwiftLens，系统会同时把文件读取权限授予这个沙盒应用。
+
+SwiftLens 需要处理被打开的文件（`application(_:open:)`），才能在自己的窗口里加载该应用；它的命令行摘要模式是另一条路径。
+
 ### 展示框
 
 「展示框」用图标网格浏览软件收藏：

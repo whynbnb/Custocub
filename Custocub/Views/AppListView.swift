@@ -753,6 +753,13 @@ private struct AppTable: View {
             }
             .disabled(existing.isEmpty)
 
+            if selected.count == 1, let app = selected.first, existing.count == 1,
+               SwiftLensIntegration.isInstalled {
+                Button(L.t("使用 SwiftLens 打开")) {
+                    SwiftLensIntegration.open(appPath: app.path, store: store)
+                }
+            }
+
             if selected.count == 1, let app = selected.first {
                 Divider()
 
