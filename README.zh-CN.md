@@ -25,7 +25,7 @@
 
 Custocub 是一个用 Swift 6 / SwiftUI 编写的原生 macOS 应用清单与快照管理器。它把 Mac 上的应用收进一个清晰的清单里，说明每个应用从哪里来、运行在什么架构上、是系统还是第三方应用，并支持历史快照与快照对比。
 
-- **版本：** 1.2（Build 2）
+- **版本：** 1.3（Build 3）
 - **Bundle ID：** `me.whynbnb.Custocub`
 - **平台：** macOS 15+
 - **界面语言：** 英文 / 简体中文（默认跟随系统）
@@ -474,8 +474,8 @@ swift Tools/GenerateAppIcon.swift
 
 工程设置：
 
-- Marketing Version：`1.2`
-- Current Project Version：`2`
+- Marketing Version：`1.3`
+- Current Project Version：`3`
 - Bundle Identifier：`me.whynbnb.Custocub`
 
 ## 数据位置
