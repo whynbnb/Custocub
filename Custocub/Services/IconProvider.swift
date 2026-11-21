@@ -31,10 +31,21 @@ enum IconDiskCache {
     }
 
     /// 缓存比应用本体新就不必重新生成；应用更新后图标可能变化。
-    static func isFresh(bundleID: String, appPath: String) -> Bool {
+    ///
+    /// 用扫描得到的 `updatedAt`（Info.plist / 可执行文件 / bundle 的
+    /// 最新修改时间）来比较，而不是只看 `.app` 目录本身。很多更新器
+    /// 只替换 bundle 内的文件，目录 mtime 可能不变，旧逻辑会误判为新鲜。
+    static func isFresh(bundleID: String, app: AppRecord) -> Bool {
         guard let cacheDate = modificationDate(of: url(for: bundleID)) else { return false }
-        guard let appDate = modificationDate(of: URL(fileURLWithPath: appPath)) else { return true }
+        if let updatedAt = app.updatedAt {
+            return cacheDate >= updatedAt
+        }
+        guard let appDate = modificationDate(of: URL(fileURLWithPath: app.path)) else { return true }
         return cacheDate >= appDate
+    }
+
+    static func remove(bundleID: String) {
+        try? FileManager.default.removeItem(at: url(for: bundleID))
     }
 
     private static func modificationDate(of url: URL) -> Date? {
@@ -102,11 +113,18 @@ final class IconProvider {
 
     /// 扫描完成后在后台预取图标，并把高清图标写入磁盘缓存。
     ///
-    /// - Parameter forceDiskRewrite: 全量刷新时置为 true，即使磁盘缓存
-    ///   看起来是新的，也重新渲染并覆盖当前应用的图标。
-    func prefetch(apps: [AppRecord], forceDiskRewrite: Bool = false) async {
+    /// - Parameters:
+    ///   - forceDiskRewrite: 全量刷新时置为 true，即使磁盘缓存
+    ///     看起来是新的，也重新渲染并覆盖当前应用的图标。
+    ///   - forcePaths: 本次扫描中发现版本/更新时间变化的应用路径，
+    ///     这些应用必须重新渲染图标。
+    func prefetch(
+        apps: [AppRecord],
+        forceDiskRewrite: Bool = false,
+        forcePaths: Set<String> = []
+    ) async {
         await prefetchIntoMemory(paths: apps.map(\.path))
-        await storeIconsOnDisk(apps: apps, force: forceDiskRewrite)
+        await storeIconsOnDisk(apps: apps, force: forceDiskRewrite, forcePaths: forcePaths)
     }
 
     private func prefetchIntoMemory(paths: [String]) async {
@@ -146,10 +164,17 @@ final class IconProvider {
 
     /// 把当前扫描到的应用图标渲染成 192px PNG 写进缓存。
     /// 只处理新增或应用本体有更新的条目，正常启动几乎不做事。
-    private func storeIconsOnDisk(apps: [AppRecord], force: Bool = false) async {
+    private func storeIconsOnDisk(
+        apps: [AppRecord],
+        force: Bool = false,
+        forcePaths: Set<String> = []
+    ) async {
         let targets: [(bundleID: String, path: String)] = apps.compactMap { app in
             guard let bundleID = app.bundleIdentifier, !bundleID.isEmpty else { return nil }
-            if !force, IconDiskCache.isFresh(bundleID: bundleID, appPath: app.path) { return nil }
+            if !force, !forcePaths.contains(app.path),
+               IconDiskCache.isFresh(bundleID: bundleID, app: app) {
+                return nil
+            }
             return (bundleID, app.path)
         }
         guard !targets.isEmpty else { return }
@@ -265,6 +290,17 @@ final class IconProvider {
 
     func invalidate(path: String) {
         cache.removeObject(forKey: path as NSString)
+    }
+
+    /// 应用更新后，清掉按路径和 Bundle ID 缓存的图标，
+    /// 让 SwiftUI 重新从磁盘上的新 bundle 读取图标。
+    func invalidate(apps: [AppRecord]) {
+        for app in apps {
+            cache.removeObject(forKey: app.path as NSString)
+            if let bundleID = app.bundleIdentifier, !bundleID.isEmpty {
+                cache.removeObject(forKey: Self.bundleKey(bundleID))
+            }
+        }
     }
 
     func clear() {

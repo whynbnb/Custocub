@@ -353,6 +353,11 @@ final class CustocubStore: ObservableObject {
     var updatedCount: Int { updatedApps.count }
     var uninstalledSinceLastSnapshotCount: Int { uninstalledSinceLastSnapshot.count }
 
+    private static func iconSignature(for app: AppRecord) -> String {
+        let updated = app.updatedAt?.timeIntervalSince1970 ?? 0
+        return "\(app.version ?? "")|\(app.build ?? "")|\(updated)"
+    }
+
     private static func versionChanged(from old: AppRecord, to new: AppRecord) -> Bool {
         let oldVersion = old.version?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let newVersion = new.version?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -505,6 +510,36 @@ final class CustocubStore: ObservableObject {
             }
         }
 
+        // 应用更新后路径不变，但版本 / 构建号 / 修改时间会变化。
+        // 在把新列表交给界面之前先清掉这些应用的图标缓存，
+        // 否则复用的表格行和内存缓存会继续显示旧图标。
+        let previousByPath = Dictionary(
+            apps.map { ($0.path, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let hadScanned = hasScanned
+        var iconChanges: [AppRecord] = []
+        for app in scannedApps {
+            guard let previous = previousByPath[app.path] else {
+                // 首次扫描时相信磁盘缓存；之后扫描中新出现或重装的应用
+                // 强制重写图标，避免沿用同 Bundle ID 的旧缓存。
+                if hadScanned { iconChanges.append(app) }
+                continue
+            }
+            if Self.iconSignature(for: previous) != Self.iconSignature(for: app) {
+                iconChanges.append(app)
+            }
+        }
+        if !iconChanges.isEmpty {
+            IconProvider.shared.invalidate(apps: iconChanges)
+            for app in iconChanges {
+                if let bundleID = app.bundleIdentifier, !bundleID.isEmpty {
+                    IconDiskCache.remove(bundleID: bundleID)
+                }
+            }
+        }
+        let iconChangePaths = Set(iconChanges.map(\.path))
+
         apps = scannedApps
         hasScanned = true
         lastScanAt = Date()
@@ -516,7 +551,11 @@ final class CustocubStore: ObservableObject {
 
         let iconApps = scannedApps
         iconPrefetchTask = Task {
-            await IconProvider.shared.prefetch(apps: iconApps, forceDiskRewrite: fullRefresh)
+            await IconProvider.shared.prefetch(
+                apps: iconApps,
+                forceDiskRewrite: fullRefresh,
+                forcePaths: iconChangePaths
+            )
         }
 
         // 当前筛选的来源如果已经不存在，自动回到全部来源。

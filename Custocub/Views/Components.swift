@@ -18,6 +18,13 @@ struct AppIconView: View {
         _image = State(initialValue: cached ?? stored)
     }
 
+    /// 应用更新后 path 不变，但版本、构建号或更新时间会变化。
+    /// 把它作为 task 的 id，让复用中的行重新读取新图标。
+    private var iconCacheKey: String {
+        let updated = app.updatedAt?.timeIntervalSince1970 ?? 0
+        return "\(app.path)|\(app.version ?? "")|\(app.build ?? "")|\(updated)"
+    }
+
     var body: some View {
         Group {
             if let image {
@@ -40,7 +47,7 @@ struct AppIconView: View {
             }
         }
         .frame(width: size, height: size)
-        .task(id: app.path) {
+        .task(id: iconCacheKey) {
             if let cached = IconProvider.shared.cachedIcon(forPath: app.path) {
                 image = cached
                 return
