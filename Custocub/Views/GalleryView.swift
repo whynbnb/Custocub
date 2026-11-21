@@ -408,6 +408,14 @@ struct GalleryView: View {
             appStoryApp = app
         }
 
+        Button(L.t("导出分享卡片…")) {
+            FileActions.exportShareCard(
+                app: app,
+                story: store.appStory(for: app),
+                store: store
+            )
+        }
+
         Button("复制 Bundle ID") {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(app.displayBundleIdentifier, forType: .string)

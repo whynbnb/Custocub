@@ -88,6 +88,18 @@ struct AppDetailView: View {
                     .help(Text(L.t("应用档案")))
 
                     Button {
+                        FileActions.exportShareCard(
+                            app: app,
+                            story: store.appStory(for: app),
+                            store: store
+                        )
+                    } label: {
+                        Label("分享卡片", systemImage: "square.and.arrow.up")
+                            .labelStyle(.iconOnly)
+                    }
+                    .help(Text(L.t("分享卡片")))
+
+                    Button {
                         store.toggleFavorite(app)
                     } label: {
                         Label(

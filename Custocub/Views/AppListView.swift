@@ -781,6 +781,14 @@ private struct AppTable: View {
                     storyApp = app
                 }
 
+                Button(L.t("导出分享卡片…")) {
+                    FileActions.exportShareCard(
+                        app: app,
+                        story: store.appStory(for: app),
+                        store: store
+                    )
+                }
+
                 Button(store.isFavorite(app) ? L.t("取消收藏") : L.t("收藏")) {
                     store.toggleFavorite(app)
                 }

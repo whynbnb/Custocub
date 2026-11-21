@@ -58,6 +58,12 @@ struct AppStorySheet: View {
 
             GalleryStatusBadge(status: story.isCurrentlyInstalled ? .installed : .uninstalled)
 
+            Button {
+                FileActions.exportShareCard(app: app, story: story, store: store)
+            } label: {
+                Label("分享卡片", systemImage: "square.and.arrow.up")
+            }
+
             Button("完成") { dismiss() }
                 .keyboardShortcut(.defaultAction)
         }

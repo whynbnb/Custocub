@@ -67,6 +67,37 @@ enum FileActions {
         }
     }
 
+    @MainActor
+    static func exportShareCard(app: AppRecord, story: AppStory, store: CustocubStore) {
+        let renderer = ImageRenderer(content: AppShareCard(app: app, story: story))
+        renderer.scale = 2
+
+        guard let image = renderer.nsImage,
+              let tiff = image.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiff),
+              let png = bitmap.representation(using: .png, properties: [:]) else {
+            store.errorMessage = L.t("无法导出分享卡片：%@", L.t("无法生成图片"))
+            return
+        }
+
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.png]
+        panel.nameFieldStringValue = safeFileName(
+            "Custocub-\(app.name)-\(dateStamp())"
+        ) + ".png"
+        panel.message = L.t("导出应用分享卡片")
+        panel.prompt = L.t("导出")
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        do {
+            try png.write(to: url, options: .atomic)
+            store.statusMessage = L.t("已导出分享卡片 · %@", url.lastPathComponent)
+        } catch {
+            store.errorMessage = L.t("无法导出分享卡片：%@", error.localizedDescription)
+        }
+    }
+
     static func safeFileName(_ name: String) -> String {
         name
             .replacingOccurrences(of: "/", with: "-")
