@@ -73,6 +73,15 @@ struct SidebarView: View {
                 .tag(SidebarSelection.uninstalled)
                 .help(Text(L.t("最近一次快照里记录过、但当前没有安装的应用")))
 
+                SidebarRow(
+                    title: "洞察",
+                    symbol: "chart.xyaxis.line",
+                    count: 0,
+                    tint: .indigo,
+                    isSelected: store.sidebarSelection == .insights
+                )
+                .tag(SidebarSelection.insights)
+                .help(Text(L.t("基于当前扫描和历史快照的只读统计")))
             }
 
             Section("合集") {

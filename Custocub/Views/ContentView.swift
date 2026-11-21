@@ -292,6 +292,8 @@ struct ContentView: View {
             UpdatedAppsView()
         case .uninstalled:
             UninstalledAppsView()
+        case .insights:
+            InsightsView()
         case .brew:
             HomebrewView()
         case .gallery, .favorites, .collection:
@@ -341,6 +343,8 @@ struct ContentView: View {
         case .newlyInstalled, .updated, .uninstalled:
             // 没有快照时整页显示提示，不保留空的详情列。
             return store.latestSnapshot != nil
+        case .insights:
+            return false
         default:
             return true
         }

@@ -6,6 +6,7 @@ enum SidebarSelection: Hashable {
     case newlyInstalled
     case updated
     case uninstalled
+    case insights
     case own
     case gallery
     case favorites
@@ -249,6 +250,9 @@ final class CustocubStore: ObservableObject {
             guard let snapshot = latestSnapshot,
                   let app = snapshot.apps.first(where: { $0.id == selectedAppID }) else { return nil }
             return SelectedAppContext(app: app, galleryItem: nil, snapshot: snapshot)
+
+        case .insights:
+            return nil
 
         case .brew:
             return nil
