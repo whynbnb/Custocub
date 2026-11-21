@@ -76,12 +76,12 @@ final class IconProvider {
     }
 
     /// 把应用图标渲染成固定尺寸 PNG，用于写入快照。
-    func pngData(forPath path: String, pixelSize: CGFloat = 128) -> Data? {
+    func pngData(forPath path: String, pixelSize: CGFloat = 192) -> Data? {
         Self.renderPNG(forPath: path, pixelSize: pixelSize)
     }
 
     /// 并发渲染一批图标。CoreGraphics + ImageIO 可以在后台线程安全执行。
-    nonisolated static func renderPNGs(for paths: [String], pixelSize: CGFloat = 128) async -> [String: Data] {
+    nonisolated static func renderPNGs(for paths: [String], pixelSize: CGFloat = 192) async -> [String: Data] {
         var result: [String: Data] = [:]
         let chunkSize = 8
         var start = 0
@@ -107,11 +107,16 @@ final class IconProvider {
         return result
     }
 
-    nonisolated static func renderPNG(forPath path: String, pixelSize: CGFloat = 128) -> Data? {
+    nonisolated static func renderPNG(forPath path: String, pixelSize: CGFloat = 192) -> Data? {
         guard FileManager.default.fileExists(atPath: path) else { return nil }
 
         let source = NSWorkspace.shared.icon(forFile: path)
-        var proposedRect = NSRect(origin: .zero, size: source.size)
+        // 直接请求目标像素的位图表示。
+        //
+        // 之前用 `source.size`（通常是 32pt）作为建议尺寸，系统只会给出
+        // 64×64 的位图，再放大到 128×128 写进快照——已卸载应用的图标
+        // 因此一直是糊的。按目标尺寸请求可以拿到 256/512 的原始位图。
+        var proposedRect = NSRect(x: 0, y: 0, width: pixelSize, height: pixelSize)
         guard let cgImage = source.cgImage(forProposedRect: &proposedRect, context: nil, hints: nil) else {
             return nil
         }

@@ -643,7 +643,9 @@ final class CustocubStore: ObservableObject {
 
         let missingIconPaths = result.filter { $0.iconData == nil }.map(\.path)
         if !missingIconPaths.isEmpty {
-            let icons = await IconProvider.renderPNGs(for: missingIconPaths, pixelSize: 128)
+            // 快照图标会长期使用（应用卸载后只剩这份数据），
+            // 按 192px 保存，足够在 Retina 列表和详情里清晰显示。
+            let icons = await IconProvider.renderPNGs(for: missingIconPaths, pixelSize: 192)
             for index in result.indices where result[index].iconData == nil {
                 result[index].iconData = icons[result[index].path]
             }
