@@ -1,6 +1,31 @@
 import AppKit
 import SwiftUI
 
+/// 应用图标圆角裁切开关。默认关闭，保持图标原始外观。
+enum AppIconClipPreference {
+    static let key = "clipAppIcons"
+}
+
+private struct AppIconClipModifier: ViewModifier {
+    let cornerRadius: CGFloat
+    @AppStorage(AppIconClipPreference.key) private var clipsIcons = false
+
+    func body(content: Content) -> some View {
+        if clipsIcons {
+            content.clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    /// 仅在用户开启「将应用图标裁切为圆角」时裁切。
+    func clipAppIcon(cornerRadius: CGFloat) -> some View {
+        modifier(AppIconClipModifier(cornerRadius: cornerRadius))
+    }
+}
+
 struct AppIconView: View {
     let app: AppRecord
     var size: CGFloat = 40

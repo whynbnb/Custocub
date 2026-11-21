@@ -28,6 +28,7 @@ struct SettingsView: View {
 private struct GeneralSettingsTab: View {
     @AppStorage("appLanguage") private var appLanguage = AppLanguage.system.rawValue
     @AppStorage("appearanceMode") private var appearanceMode = AppAppearance.system.rawValue
+    @AppStorage(AppIconClipPreference.key) private var clipsAppIcons = false
 
     var body: some View {
         Form {
@@ -51,6 +52,14 @@ private struct GeneralSettingsTab: View {
                     guard let appearance = AppAppearance(rawValue: newValue) else { return }
                     AppAppearance.set(appearance)
                 }
+            }
+
+            Section("图标") {
+                Toggle("将应用图标裁切为圆角", isOn: $clipsAppIcons)
+
+                Text("默认保持图标原始外观。开启后，应用列表、展示框、图标历史、快照对比和分享卡片里的图标会统一裁切为圆角。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section {
@@ -542,7 +551,7 @@ private struct AboutSettingsTab: View {
                         .resizable()
                         .interpolation(.high)
                         .frame(width: 56, height: 56)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .clipAppIcon(cornerRadius: 12)
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Custocub")

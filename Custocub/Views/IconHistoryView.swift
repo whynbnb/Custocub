@@ -180,7 +180,7 @@ struct HistoryIconView: View {
             }
         }
         .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        .clipAppIcon(cornerRadius: cornerRadius)
         .background(
             Color.secondary.opacity(0.1),
             in: RoundedRectangle(cornerRadius: cornerRadius)
