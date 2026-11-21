@@ -47,6 +47,7 @@ struct AppShareCard: View {
                 HStack(alignment: .top, spacing: 28) {
                     iconView
                         .frame(width: 148, height: 148)
+                        .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
                         .padding(18)
                         .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 34))
                         .overlay {
@@ -99,6 +100,7 @@ struct AppShareCard: View {
                                     .interpolation(.high)
                                     .scaledToFit()
                                     .frame(width: 52, height: 52)
+                                    .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
                             }
                         }
                     }

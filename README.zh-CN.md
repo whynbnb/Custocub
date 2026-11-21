@@ -427,7 +427,7 @@ xcodegen generate
 swift Tools/GenerateAppIcon.swift
 ```
 
-脚本会把完整的 AppIcon PNG 写入 `Custocub/Resources/Assets.xcassets/AppIcon.appiconset`。
+脚本会把完整的 AppIcon PNG 写入 `Custocub/Resources/Assets.xcassets/AppIcon.appiconset`。图标内容位于 macOS 标准的圆角矩形内，四周保留透明边距并带一层柔和投影，因此在 Dock、Finder 和软件内部都能保持一致的显示效果。
 
 工程设置：
 

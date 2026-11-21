@@ -428,7 +428,7 @@ The icon is drawn entirely in code. To regenerate all macOS icon sizes:
 swift Tools/GenerateAppIcon.swift
 ```
 
-This writes the full set of AppIcon PNGs into `Custocub/Resources/Assets.xcassets/AppIcon.appiconset`.
+This writes the full set of AppIcon PNGs into `Custocub/Resources/Assets.xcassets/AppIcon.appiconset`. The artwork is placed inside the standard macOS rounded-square icon shape with transparent margins and a soft shadow, so it renders consistently in the Dock, Finder, and inside the app.
 
 Project settings:
 

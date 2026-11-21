@@ -540,7 +540,9 @@ private struct AboutSettingsTab: View {
                 HStack(spacing: 14) {
                     Image(nsImage: NSApplication.shared.applicationIconImage)
                         .resizable()
+                        .interpolation(.high)
                         .frame(width: 56, height: 56)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Custocub")

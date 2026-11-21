@@ -3,8 +3,9 @@
 // 用法（在仓库根目录执行）：
 //   swift Tools/GenerateAppIcon.swift
 //
-// 脚本会绘制 1024×1024 的全幅图标，并生成 macOS AppIcon 所需的
-// 全部 10 个尺寸，直接写入：
+// 脚本会绘制 1024×1024 的图标内容，再套上 macOS 标准的
+// 圆角矩形、透明留白与投影，生成 macOS AppIcon 所需的全部 10 个尺寸，
+// 直接写入：
 //   Custocub/Resources/Assets.xcassets/AppIcon.appiconset
 
 import AppKit
@@ -608,6 +609,71 @@ let sizes: [(name: String, pixels: Int)] = [
 
 let baseImage = ctx.makeImage()!
 
+// MARK: - macOS 图标外形
+//
+// macOS 应用图标不是全幅方形：内容位于 1024 画布中央的 824×824
+// 圆角矩形内，四周留出透明边距，并带一层向下投影。这样在 Finder、
+// Dock、设置页等任何位置显示时都是完整的 macOS 图标外形，而不是
+// 一个没有圆角的方块。
+
+let iconInset: CGFloat = 100
+let iconBodySize: CGFloat = 824
+let iconCornerRadius: CGFloat = 185.4
+let iconBodyRect = CGRect(
+    x: iconInset,
+    y: iconInset,
+    width: iconBodySize,
+    height: iconBodySize
+)
+let iconBodyPath = CGPath(
+    roundedRect: iconBodyRect,
+    cornerWidth: iconCornerRadius,
+    cornerHeight: iconCornerRadius,
+    transform: nil
+)
+
+let iconContext = CGContext(
+    data: nil,
+    width: Int(canvas),
+    height: Int(canvas),
+    bitsPerComponent: 8,
+    bytesPerRow: 0,
+    space: colorSpace,
+    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+)!
+iconContext.interpolationQuality = .high
+iconContext.setAllowsAntialiasing(true)
+iconContext.setShouldAntialias(true)
+
+// 投影：先填充圆角形状，再在同一个绘制状态里把内容叠上去。
+iconContext.saveGState()
+iconContext.setShadow(
+    offset: CGSize(width: 0, height: -12),
+    blur: 26,
+    color: color(0x00152E, 0.28)
+)
+iconContext.addPath(iconBodyPath)
+iconContext.setFillColor(color(0x0B4BA8))
+iconContext.fillPath()
+iconContext.restoreGState()
+
+// 把全幅绘制的内容缩放到 macOS 图标的安全区域内。
+iconContext.saveGState()
+iconContext.addPath(iconBodyPath)
+iconContext.clip()
+iconContext.draw(baseImage, in: iconBodyRect)
+iconContext.restoreGState()
+
+// 一圈很淡的内高光，让圆角边缘在浅色背景上也有轮廓。
+iconContext.saveGState()
+iconContext.addPath(iconBodyPath)
+iconContext.setLineWidth(2)
+iconContext.setStrokeColor(color(0xFFFFFF, 0.18))
+iconContext.strokePath()
+iconContext.restoreGState()
+
+let iconImage = iconContext.makeImage()!
+
 func writePNG(_ image: CGImage, to url: URL) throws {
     guard let destination = CGImageDestinationCreateWithURL(
         url as CFURL,
@@ -639,7 +705,7 @@ for entry in sizes {
     target.interpolationQuality = .high
     target.setAllowsAntialiasing(true)
     target.draw(
-        baseImage,
+        iconImage,
         in: CGRect(x: 0, y: 0, width: CGFloat(pixels), height: CGFloat(pixels))
     )
 
