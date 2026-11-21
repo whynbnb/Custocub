@@ -8,7 +8,7 @@
 
 Custocub 是一个用 Swift 6 / SwiftUI 编写的原生 macOS 应用清单与快照管理器。它把 Mac 上的应用收进一个清晰的清单里，说明每个应用从哪里来、运行在什么架构上、是系统还是第三方应用，并支持历史快照与快照对比。
 
-- **版本：** 1.2
+- **版本：** 1.2（Build 2）
 - **Bundle ID：** `me.whynbnb.Custocub`
 - **平台：** macOS 15+
 - **界面语言：** 英文 / 简体中文（默认跟随系统）
@@ -432,6 +432,7 @@ swift Tools/GenerateAppIcon.swift
 工程设置：
 
 - Marketing Version：`1.2`
+- Current Project Version：`2`
 - Bundle Identifier：`me.whynbnb.Custocub`
 
 ## 数据位置
@@ -454,7 +455,13 @@ Homebrew 快照：
 ~/Library/Application Support/Custocub/size-cache.json
 ```
 
-Custocub 未启用 App Sandbox，只读取应用目录并写入自己的 Application Support 数据，不发送任何网络请求。
+收藏与合集：
+
+```text
+~/Library/Application Support/Custocub/collections.json
+```
+
+Custocub 未启用 App Sandbox，只读取应用目录并写入自己的 Application Support 数据。它不会上传应用清单；只有下载 Homebrew 目录以及执行 Homebrew 命令时才会联网。
 
 ## 快捷键
 
@@ -466,6 +473,8 @@ Custocub 未启用 App Sandbox，只读取应用目录并写入自己的 Applica
 | `⇧⌘E` | 导出当前快照 |
 | `⇧⌘B` | 打开 Homebrew 界面 |
 | `⇧⌘S` | 保存 Homebrew 快照 |
+| `⌘K` | 打开命令面板 |
+| `⇧⌘P` | 打开展示模式（展示框、收藏或合集） |
 | `⌘,` | 打开设置 |
 
 ## 工程结构
@@ -475,17 +484,25 @@ Custocub/
 ├─ App/
 │  ├─ CustocubApp.swift          # App 入口与菜单命令
 │  ├─ CustocubStore.swift        # 扫描、快照、展示框和选择状态
-│  └─ BrewStore.swift            # Homebrew 清单、快照与命令日志
+│  ├─ BrewStore.swift            # Homebrew 清单、快照与命令日志
+│  ├─ AppPreferences.swift       # 持久化偏好键
+│  ├─ BrewProxySettings.swift    # Homebrew 代理设置
+│  ├─ Localization.swift         # 中英文即时切换
+│  └─ WorkspaceLayout.swift      # 侧边栏、窗口与详情面板布局记忆
 ├─ Models/
 │  ├─ AppSource.swift            # 来源与平台枚举
 │  ├─ AppRecord.swift            # 应用记录
 │  ├─ AppSnapshot.swift          # 快照模型
 │  ├─ AppChange.swift            # 快照对比与 Markdown 报告
 │  ├─ GalleryItem.swift          # 展示框条目
+│  ├─ AppCollection.swift        # 收藏与自定义合集
+│  ├─ AppIconHistory.swift       # 基于快照的图标历史
+│  ├─ AppStory.swift             # 应用档案
 │  ├─ BrewPackage.swift          # Homebrew 包记录与 Cask 快照条目
 │  ├─ BrewVersion.swift          # 版本号解析与最低版本限制
 │  ├─ BrewCatalog.swift          # 探索目录条目、下载量统计与筛选条件
-│  └─ BrewSnapshot.swift         # Homebrew 快照模型与 Brewfile 生成
+│  ├─ BrewSnapshot.swift         # Homebrew 快照模型与 Brewfile 生成
+│  └─ BrewUpgradePolicy.swift    # 标准 / 非贪婪 / 贪婪升级策略
 ├─ Services/
 │  ├─ AppScanner.swift           # 目录发现、Info.plist、来源识别
 │  ├─ HomebrewIndex.swift        # Caskroom 索引
@@ -496,12 +513,15 @@ Custocub/
 │  ├─ SizeCache.swift            # 持久化体积缓存
 │  ├─ IconProvider.swift         # 图标加载、预取与快照 PNG
 │  ├─ SnapshotRepository.swift   # 快照持久化
+│  ├─ InventoryReport.swift      # HTML / PDF / CSV 清单报告
+│  ├─ SwiftLensIntegration.swift # SwiftLens 检测与打开文件
 │  ├─ BrewService.swift          # brew 定位、流式执行与 JSON 清单
 │  ├─ BrewSnapshotRepository.swift # Homebrew 快照持久化
 │  ├─ BrewCleanupService.swift   # 清理分析：缓存、旧版本、无用依赖
 │  ├─ BrewHealthService.swift    # brew config / doctor 解析
 │  ├─ BrewServicesService.swift  # brew services 解析
-│  └─ BrewCatalogService.swift   # 探索目录下载、缓存与解析
+│  ├─ BrewCatalogService.swift   # 探索目录下载、缓存与解析
+│  └─ GitProxyService.swift      # 只读 Git 代理检查
 ├─ Views/
 │  ├─ ContentView.swift
 │  ├─ SidebarView.swift
@@ -510,8 +530,15 @@ Custocub/
 │  ├─ AppDetailView.swift
 │  ├─ ComparisonView.swift
 │  ├─ SettingsView.swift
+│  ├─ AppStoryView.swift         # 应用档案页
+│  ├─ AppShareCard.swift         # 1200×760 PNG 分享卡片
+│  ├─ IconHistoryView.swift      # 快照图标历史时间线
+│  ├─ InsightsView.swift         # 只读收藏柜洞察
+│  ├─ CommandPaletteView.swift   # ⌘K 命令面板
+│  ├─ GalleryPresentationView.swift # 独立展示模式窗口
 │  ├─ HomebrewView.swift         # Homebrew 包列表、筛选与安装
 │  ├─ BrewSnapshotListView.swift # Homebrew 快照与 Brewfile 导出
+│  ├─ BrewComparisonView.swift   # Homebrew 快照对比
 │  ├─ BrewPackageDetailView.swift # Formula / Cask 详情与命令
 │  ├─ BrewConsoleView.swift      # 实时命令日志与历史
 │  ├─ BrewCleanupView.swift      # 清理分析与操作

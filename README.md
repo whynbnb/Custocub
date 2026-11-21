@@ -8,7 +8,7 @@
 
 Custocub is a native macOS app inventory and snapshot manager built with Swift 6 and SwiftUI. It gives you a clear view of every app on your Mac: where it came from, which architecture it runs on, whether it is a system or third-party app, and what changed over time.
 
-- **Version:** 1.2
+- **Version:** 1.2 (Build 2)
 - **Bundle ID:** `me.whynbnb.Custocub`
 - **Platform:** macOS 15+
 - **UI language:** English / Simplified Chinese (follows the system by default)
@@ -312,7 +312,7 @@ The Gallery is an icon-grid view of your software collection:
 - The summary chips at the top are also filters: click **Installed**, **Uninstalled**, **System**, or **Third-party** to toggle them.
 - The toolbar shows how many apps are currently visible.
 
-The sidebar also has two snapshot-comparison views:
+The sidebar also has three snapshot-comparison views:
 
 - **New** — apps installed after the most recent snapshot.
 - **Updated** — apps whose version differs from the most recent snapshot.
@@ -433,6 +433,7 @@ This writes the full set of AppIcon PNGs into `Custocub/Resources/Assets.xcasset
 Project settings:
 
 - Marketing version: `1.2`
+- Current version (build): `2`
 - Bundle identifier: `me.whynbnb.Custocub`
 
 ## Data locations
@@ -455,7 +456,13 @@ Size cache:
 ~/Library/Application Support/Custocub/size-cache.json
 ```
 
-Custocub is not sandboxed. It only reads application directories and writes its own Application Support data. It does not send data over the network.
+Favorites and collections:
+
+```text
+~/Library/Application Support/Custocub/collections.json
+```
+
+Custocub is not sandboxed. It only reads application directories and writes its own Application Support data. It never uploads your inventory; network access is used only to download the Homebrew catalog and when you run Homebrew commands.
 
 ## Keyboard shortcuts
 
@@ -467,6 +474,8 @@ Custocub is not sandboxed. It only reads application directories and writes its 
 | `⇧⌘E` | Export the selected snapshot |
 | `⇧⌘B` | Open the Homebrew screen |
 | `⇧⌘S` | Save a Homebrew snapshot |
+| `⌘K` | Open the command palette |
+| `⇧⌘P` | Open Presentation Mode (Gallery, Favorites, or a collection) |
 | `⌘,` | Open Settings |
 
 ## Project structure
@@ -476,17 +485,25 @@ Custocub/
 ├─ App/
 │  ├─ CustocubApp.swift          # App entry point and menu commands
 │  ├─ CustocubStore.swift        # Scan, snapshot, gallery, and selection state
-│  └─ BrewStore.swift            # Homebrew inventory, snapshots, and command log
+│  ├─ BrewStore.swift            # Homebrew inventory, snapshots, and command log
+│  ├─ AppPreferences.swift       # Persisted preference keys
+│  ├─ BrewProxySettings.swift    # Homebrew proxy configuration
+│  ├─ Localization.swift         # Instant English/Chinese switching
+│  └─ WorkspaceLayout.swift      # Sidebar, window, and detail pane layout memory
 ├─ Models/
 │  ├─ AppSource.swift            # Source and platform enums
 │  ├─ AppRecord.swift            # App record
 │  ├─ AppSnapshot.swift          # Snapshot model
 │  ├─ AppChange.swift            # Snapshot comparison and Markdown report
 │  ├─ GalleryItem.swift          # Gallery item model
+│  ├─ AppCollection.swift        # Favorites and custom collections
+│  ├─ AppIconHistory.swift       # Snapshot-derived icon history
+│  ├─ AppStory.swift             # Per-app retrospective
 │  ├─ BrewPackage.swift          # Homebrew formula/cask record and cask snapshot entry
 │  ├─ BrewVersion.swift          # Version parsing and minimum-version check
 │  ├─ BrewCatalog.swift          # Explore catalog entries, download stats, query
-│  └─ BrewSnapshot.swift         # Homebrew snapshot model and Brewfile builder
+│  ├─ BrewSnapshot.swift         # Homebrew snapshot model and Brewfile builder
+│  └─ BrewUpgradePolicy.swift    # Standard / non-greedy / greedy policy
 ├─ Services/
 │  ├─ AppScanner.swift           # Directory discovery, Info.plist, source detection
 │  ├─ HomebrewIndex.swift        # Caskroom index
@@ -497,12 +514,15 @@ Custocub/
 │  ├─ SizeCache.swift            # Persistent size cache
 │  ├─ IconProvider.swift         # Icon loading, prefetching, snapshot PNGs
 │  ├─ SnapshotRepository.swift   # Snapshot persistence
+│  ├─ InventoryReport.swift      # HTML, PDF, and CSV inventory reports
+│  ├─ SwiftLensIntegration.swift # SwiftLens detection and open-file handoff
 │  ├─ BrewService.swift          # brew discovery, streaming execution, JSON inventory
 │  ├─ BrewSnapshotRepository.swift # Homebrew snapshot persistence
 │  ├─ BrewCleanupService.swift   # Cleanup analysis: cache, old kegs, autoremove
 │  ├─ BrewHealthService.swift    # brew config / doctor parsing
 │  ├─ BrewServicesService.swift  # brew services parsing
-│  └─ BrewCatalogService.swift   # Explore catalog download, cache, and decoding
+│  ├─ BrewCatalogService.swift   # Explore catalog download, cache, and decoding
+│  └─ GitProxyService.swift      # Read-only Git proxy inspection
 ├─ Views/
 │  ├─ ContentView.swift
 │  ├─ SidebarView.swift
@@ -511,8 +531,15 @@ Custocub/
 │  ├─ AppDetailView.swift
 │  ├─ ComparisonView.swift
 │  ├─ SettingsView.swift
+│  ├─ AppStoryView.swift         # App Story retrospective sheet
+│  ├─ AppShareCard.swift         # 1200×760 PNG share card
+│  ├─ IconHistoryView.swift      # Snapshot icon history timeline
+│  ├─ InsightsView.swift         # Read-only collection insights
+│  ├─ CommandPaletteView.swift   # ⌘K command palette
+│  ├─ GalleryPresentationView.swift # Dedicated presentation window
 │  ├─ HomebrewView.swift         # Homebrew package list, filters, install sheet
 │  ├─ BrewSnapshotListView.swift # Homebrew snapshots and Brewfile export
+│  ├─ BrewComparisonView.swift   # Homebrew snapshot comparison
 │  ├─ BrewPackageDetailView.swift # Formula/cask detail and commands
 │  ├─ BrewConsoleView.swift      # Live command log and history
 │  ├─ BrewCleanupView.swift      # Cleanup analysis and actions
