@@ -1,6 +1,23 @@
-# Custocub
+<p align="center">
+  <img src="docs/icon.png" width="120" alt="Custocub app icon">
+</p>
 
-[English](README.md) · [简体中文](README.zh-CN.md)
+<h1 align="center">Custocub</h1>
+
+<p align="center">
+  A native macOS app inventory and snapshot manager.
+</p>
+
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a>
+</p>
+
+<p align="center">
+  <img alt="Platform" src="https://img.shields.io/badge/Platform-macOS%2015%2B-blue?style=flat-square">
+  <img alt="Swift" src="https://img.shields.io/badge/Swift-6-orange?style=flat-square">
+  <img alt="Homebrew" src="https://img.shields.io/badge/Homebrew-7.0%2B-yellow?style=flat-square">
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-lightgrey?style=flat-square">
+</p>
 
 > Vibe coded with DeepSeek V4.1 Flash / OpenCode.
 
@@ -13,6 +30,31 @@ Custocub is a native macOS app inventory and snapshot manager built with Swift 6
 - **Platform:** macOS 15+
 - **UI language:** English / Simplified Chinese (follows the system by default)
 - **License:** MIT
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/app-list-en.png" width="100%" alt="Installed apps"><br>
+      <sub>Installed apps</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/gallery-en.png" width="100%" alt="Gallery"><br>
+      <sub>Gallery</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/insights-en.png" width="100%" alt="Insights"><br>
+      <sub>Insights</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/homebrew-en.png" width="100%" alt="Homebrew"><br>
+      <sub>Homebrew packages</sub>
+    </td>
+  </tr>
+</table>
 
 ## Highlights
 

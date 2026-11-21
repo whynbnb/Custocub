@@ -1,6 +1,23 @@
-# Custocub
+<p align="center">
+  <img src="docs/icon.png" width="120" alt="Custocub 应用图标">
+</p>
 
-[English](README.md) · [简体中文](README.zh-CN.md)
+<h1 align="center">Custocub</h1>
+
+<p align="center">
+  原生 macOS 应用清单与快照管理器。
+</p>
+
+<p align="center">
+  <a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a>
+</p>
+
+<p align="center">
+  <img alt="Platform" src="https://img.shields.io/badge/Platform-macOS%2015%2B-blue?style=flat-square">
+  <img alt="Swift" src="https://img.shields.io/badge/Swift-6-orange?style=flat-square">
+  <img alt="Homebrew" src="https://img.shields.io/badge/Homebrew-7.0%2B-yellow?style=flat-square">
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-lightgrey?style=flat-square">
+</p>
 
 > Vibe Coding而成（DeepSeek V4.1 Flash / OpenCode）
 
@@ -13,6 +30,31 @@ Custocub 是一个用 Swift 6 / SwiftUI 编写的原生 macOS 应用清单与快
 - **平台：** macOS 15+
 - **界面语言：** 英文 / 简体中文（默认跟随系统）
 - **许可证：** MIT
+
+## 软件截图
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/app-list-zh.png" width="100%" alt="已安装应用"><br>
+      <sub>已安装应用</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/gallery-zh.png" width="100%" alt="展示框"><br>
+      <sub>展示框</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/insights-zh.png" width="100%" alt="洞察"><br>
+      <sub>洞察</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="docs/screenshots/homebrew-zh.png" width="100%" alt="Homebrew"><br>
+      <sub>Homebrew 包</sub>
+    </td>
+  </tr>
+</table>
 
 ## 核心亮点
 
