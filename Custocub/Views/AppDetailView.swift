@@ -71,6 +71,9 @@ struct AppDetailView: View {
 
                 SectionCard(title: "基本信息") {
                     DetailRow(label: "版本", value: app.displayVersion)
+                    if let previousVersion = context.previousVersion, !previousVersion.isEmpty {
+                        DetailRow(label: "版本变化", value: "\(previousVersion) → \(app.displayVersion)")
+                    }
                     DetailRow(label: "构建号", value: app.build ?? L.t("无"))
                     DetailRow(label: "Bundle ID", value: app.displayBundleIdentifier, monospaced: true)
                     DetailRow(label: "大小", value: app.displaySize)

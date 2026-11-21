@@ -3,6 +3,8 @@ import Foundation
 
 enum SidebarSelection: Hashable {
     case installed
+    case updated
+    case uninstalled
     case own
     case gallery
     case brew
@@ -38,6 +40,8 @@ struct SelectedAppContext {
     let app: AppRecord
     let galleryItem: GalleryItem?
     let snapshot: AppSnapshot?
+    /// 「已更新」列表里，这个应用在最近快照中的旧版本号。
+    var previousVersion: String? = nil
 }
 
 /// 侧边栏计数缓存：启动时先用上一次扫描的结果完整显示，
@@ -211,6 +215,16 @@ final class CustocubStore: ObservableObject {
             guard let app = apps.first(where: { $0.id == selectedAppID }) else { return nil }
             return SelectedAppContext(app: app, galleryItem: nil, snapshot: nil)
 
+        case .updated:
+            guard let app = updatedApps.first(where: { $0.id == selectedAppID }) else { return nil }
+            let oldVersion = latestSnapshot?.apps.first { comparisonKey(for: $0) == comparisonKey(for: app) }?.version
+            return SelectedAppContext(app: app, galleryItem: nil, snapshot: nil, previousVersion: oldVersion)
+
+        case .uninstalled:
+            guard let snapshot = latestSnapshot,
+                  let app = snapshot.apps.first(where: { $0.id == selectedAppID }) else { return nil }
+            return SelectedAppContext(app: app, galleryItem: nil, snapshot: snapshot)
+
         case .brew:
             return nil
 
@@ -288,6 +302,55 @@ final class CustocubStore: ObservableObject {
         return galleryItems.count { $0.status == .uninstalled }
     }
 
+    // MARK: - 与最近快照对比
+
+    /// 最近一次保存的快照。「已更新」「已卸载」都以它为基准。
+    var latestSnapshot: AppSnapshot? {
+        snapshots.first
+    }
+
+    /// 跨快照匹配同一个应用：优先 Bundle ID，其次路径。
+    private func comparisonKey(for app: AppRecord) -> String {
+        if let bundleID = app.bundleIdentifier, !bundleID.isEmpty {
+            return "id:\(bundleID)"
+        }
+        return "path:\(app.path)"
+    }
+
+    /// 最近快照里记录过、版本已经变化、且当前仍在的应用。
+    var updatedApps: [AppRecord] {
+        guard hasScanned, let snapshot = latestSnapshot else { return [] }
+        var previous: [String: AppRecord] = [:]
+        for app in snapshot.apps {
+            previous[comparisonKey(for: app)] = app
+        }
+        return apps.filter { app in
+            guard let old = previous[comparisonKey(for: app)] else { return false }
+            return Self.versionChanged(from: old, to: app)
+        }
+    }
+
+    /// 最近快照里记录过、但当前已经没有安装的应用。
+    var uninstalledSinceLastSnapshot: [AppRecord] {
+        guard hasScanned, let snapshot = latestSnapshot else { return [] }
+        let liveKeys = Set(apps.map { comparisonKey(for: $0) })
+        return snapshot.apps.filter { !liveKeys.contains(comparisonKey(for: $0)) }
+    }
+
+    var updatedCount: Int { updatedApps.count }
+    var uninstalledSinceLastSnapshotCount: Int { uninstalledSinceLastSnapshot.count }
+
+    private static func versionChanged(from old: AppRecord, to new: AppRecord) -> Bool {
+        let oldVersion = old.version?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let newVersion = new.version?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !oldVersion.isEmpty || !newVersion.isEmpty {
+            return oldVersion != newVersion
+        }
+        let oldBuild = old.build?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let newBuild = new.build?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return oldBuild != newBuild
+    }
+
     // MARK: - Filtering
 
     func filteredApps(_ input: [AppRecord], sortOrder: [KeyPathComparator<AppRecord>]) -> [AppRecord] {
@@ -341,7 +404,7 @@ final class CustocubStore: ObservableObject {
         switch activeSelection {
         case .source(let source):
             sourceFilter = source
-        case .installed:
+        case .installed, .updated, .uninstalled:
             sourceFilter = nil
         default:
             break

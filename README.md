@@ -282,6 +282,13 @@ The Gallery is an icon-grid view of your software collection:
 - **Uninstalled apps** come from historical snapshots. Even after the app bundle is deleted, Custocub can keep showing its icon and last-known metadata.
 - Filter by installed/uninstalled, source, platform, and system/third-party type.
 
+The sidebar also has two snapshot-comparison views:
+
+- **Updated** — apps whose version differs from the most recent snapshot.
+- **Uninstalled** — apps recorded in the most recent snapshot that are no longer installed.
+
+Both compare against the latest saved snapshot; when no snapshot exists, the view explains how to create one.
+
 ## Performance notes
 
 - **Size cache** at `~/Library/Application Support/Custocub/size-cache.json`

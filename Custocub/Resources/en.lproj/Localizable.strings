@@ -739,3 +739,14 @@
 "策略同时影响「可更新」数量、升级列表和实际执行的 brew 命令，不受 shell 里 HOMEBREW_* 环境变量的影响。" = "The policy affects the upgradable count, the upgrade list, and the actual brew commands, regardless of HOMEBREW_* variables in your shell.";
 "%d 个可更新的 Formula" = "%d upgradable formulae";
 "%d 个可更新的 Cask" = "%d upgradable casks";
+"已更新" = "Updated";
+"版本与最近快照不同的应用" = "Apps whose version differs from the latest snapshot";
+"最近快照里有、但当前没有安装的应用" = "Apps in the latest snapshot that are no longer installed";
+"对比快照「%@」" = "Compared with “%@”";
+"没有版本变化的应用" = "No apps with version changes";
+"最近快照里的应用都还装着" = "Every app in the latest snapshot is still installed";
+"还没有快照" = "No snapshots yet";
+"保存一个快照后，才能对比出已更新和已卸载的应用。" = "Save a snapshot to see which apps were updated or uninstalled.";
+"版本变化" = "Version change";
+"与最近一次快照对比，版本发生变化的应用" = "Apps whose version changed since the latest snapshot";
+"最近一次快照里记录过、但当前没有安装的应用" = "Apps recorded in the latest snapshot that are no longer installed";

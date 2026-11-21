@@ -163,6 +163,10 @@ struct ContentView: View {
         switch store.activeSelection {
         case .installed, .own, .source:
             InstalledAppsView()
+        case .updated:
+            UpdatedAppsView()
+        case .uninstalled:
+            UninstalledAppsView()
         case .brew:
             HomebrewView()
         case .gallery:
@@ -201,13 +205,19 @@ struct ContentView: View {
     /// Homebrew 的快照、服务分区在视图内部已经有自己的左右分栏，
     /// 清理和诊断则是单页内容，多出来的详情列只会显示一个空状态。
     private var showsDetailPane: Bool {
-        guard store.activeSelection == .brew else { return true }
-
-        switch brew.section {
-        case .packages, .explore, .upgrade:
+        switch store.activeSelection {
+        case .brew:
+            switch brew.section {
+            case .packages, .explore, .upgrade:
+                return true
+            case .snapshots, .services, .cleanup, .health:
+                return false
+            }
+        case .updated, .uninstalled:
+            // 没有快照时整页显示提示，不保留空的详情列。
+            return store.latestSnapshot != nil
+        default:
             return true
-        case .snapshots, .services, .cleanup, .health:
-            return false
         }
     }
 

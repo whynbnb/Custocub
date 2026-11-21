@@ -26,6 +26,114 @@ struct InstalledAppsView: View {
     }
 }
 
+/// 「已更新」：与最近一次快照相比，版本发生变化的应用。
+struct UpdatedAppsView: View {
+    @EnvironmentObject private var store: CustocubStore
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if let snapshot = store.latestSnapshot {
+                ComparisonHeaderView(
+                    title: "已更新",
+                    symbol: "arrow.up.circle.fill",
+                    tint: .blue,
+                    count: store.updatedCount,
+                    summary: "版本与最近快照不同的应用",
+                    snapshot: snapshot
+                )
+                Divider()
+                FilterBar()
+                Divider()
+                AppTable(apps: store.updatedApps, emptyMessage: "没有版本变化的应用")
+            } else {
+                NoSnapshotPrompt()
+            }
+        }
+        .navigationTitle("已更新")
+    }
+}
+
+/// 「已卸载」：最近一次快照里记录过、但当前没有安装的应用。
+struct UninstalledAppsView: View {
+    @EnvironmentObject private var store: CustocubStore
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if let snapshot = store.latestSnapshot {
+                ComparisonHeaderView(
+                    title: "已卸载",
+                    symbol: "archivebox.fill",
+                    tint: .red,
+                    count: store.uninstalledSinceLastSnapshotCount,
+                    summary: "最近快照里有、但当前没有安装的应用",
+                    snapshot: snapshot
+                )
+                Divider()
+                FilterBar()
+                Divider()
+                AppTable(apps: store.uninstalledSinceLastSnapshot, emptyMessage: "最近快照里的应用都还装着")
+            } else {
+                NoSnapshotPrompt()
+            }
+        }
+        .navigationTitle("已卸载")
+    }
+}
+
+/// 「已更新」「已卸载」共用的头部：说明对比基准，避免误解成实时状态。
+private struct ComparisonHeaderView: View {
+    let title: String
+    let symbol: String
+    let tint: Color
+    let count: Int
+    let summary: String
+    let snapshot: AppSnapshot
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
+                Image(systemName: symbol)
+                    .font(.title3)
+                    .foregroundStyle(tint)
+                Text(LocalizedStringKey(title))
+                    .font(.title2.weight(.semibold))
+                Spacer(minLength: 12)
+                Text(L.t("%d 个应用", count))
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 6) {
+                Text(LocalizedStringKey(summary))
+                Text("·")
+                Text(L.t("对比快照「%@」", snapshot.name))
+            }
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+        }
+        .padding(16)
+        .background(.background)
+    }
+}
+
+private struct NoSnapshotPrompt: View {
+    @EnvironmentObject private var store: CustocubStore
+
+    var body: some View {
+        ContentUnavailableView {
+            Label("还没有快照", systemImage: "camera.badge.ellipsis")
+        } description: {
+            Text("保存一个快照后，才能对比出已更新和已卸载的应用。")
+        } actions: {
+            Button("保存快照") {
+                Task { await store.saveSnapshot() }
+            }
+            .disabled(store.isScanning || store.isSavingSnapshot || !store.hasScanned || store.apps.isEmpty)
+        }
+    }
+}
+
 struct SnapshotAppsView: View {
     @EnvironmentObject private var store: CustocubStore
     let snapshot: AppSnapshot

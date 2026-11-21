@@ -35,6 +35,27 @@ struct SidebarView: View {
                     isSelected: store.sidebarSelection == .gallery
                 )
                 .tag(SidebarSelection.gallery)
+                .help(Text(L.t("像收藏柜一样浏览所有软件，包括已经卸载、但仍保存在历史快照中的应用。")))
+
+                SidebarRow(
+                    title: "已更新",
+                    symbol: "arrow.up.circle.fill",
+                    count: store.updatedCount,
+                    tint: .blue,
+                    isSelected: store.sidebarSelection == .updated
+                )
+                .tag(SidebarSelection.updated)
+                .help(Text(L.t("与最近一次快照对比，版本发生变化的应用")))
+
+                SidebarRow(
+                    title: "已卸载",
+                    symbol: "archivebox.fill",
+                    count: store.uninstalledSinceLastSnapshotCount,
+                    tint: .red,
+                    isSelected: store.sidebarSelection == .uninstalled
+                )
+                .tag(SidebarSelection.uninstalled)
+                .help(Text(L.t("最近一次快照里记录过、但当前没有安装的应用")))
 
             }
 
@@ -109,26 +130,6 @@ struct SidebarView: View {
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                         .padding(.vertical, 2)
-                }
-            }
-
-            if store.uninstalledCount > 0 {
-                Section("已卸载") {
-                    Button {
-                        store.sidebarSelection = .gallery
-                        store.galleryStatusFilter = .uninstalled
-                    } label: {
-                        HStack {
-                            Label("已卸载的软件", systemImage: "archivebox")
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text("\(store.uninstalledCount)")
-                                .monospacedDigit()
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .help("在展示框中查看历史快照里记录过、当前已卸载的应用")
                 }
             }
         }
