@@ -285,7 +285,7 @@ struct ContentView: View {
             UninstalledAppsView()
         case .brew:
             HomebrewView()
-        case .gallery:
+        case .gallery, .favorites, .collection:
             GalleryView()
         case .snapshot(let id):
             if let snapshot = store.snapshots.first(where: { $0.id == id }) {

@@ -86,6 +86,48 @@ struct AppDetailView: View {
                             .labelStyle(.iconOnly)
                     }
                     .help(Text(L.t("应用档案")))
+
+                    Button {
+                        store.toggleFavorite(app)
+                    } label: {
+                        Label(
+                            store.isFavorite(app) ? L.t("取消收藏") : L.t("收藏"),
+                            systemImage: store.isFavorite(app) ? "star.fill" : "star"
+                        )
+                        .labelStyle(.iconOnly)
+                        .foregroundStyle(store.isFavorite(app) ? Color.yellow : Color.primary)
+                    }
+                    .help(Text(L.t(store.isFavorite(app) ? "取消收藏" : "收藏")))
+
+                    Menu {
+                        ForEach(store.collections) { collection in
+                            Button {
+                                if store.isInCollection(app, collectionID: collection.id) {
+                                    store.remove(app, fromCollection: collection.id)
+                                } else {
+                                    store.add(app, toCollection: collection.id)
+                                }
+                            } label: {
+                                if store.isInCollection(app, collectionID: collection.id) {
+                                    Label(collection.name, systemImage: "checkmark")
+                                } else {
+                                    Text(collection.name)
+                                }
+                            }
+                        }
+
+                        if !store.collections.isEmpty {
+                            Divider()
+                        }
+
+                        Button(L.t("新建合集并添加")) {
+                            _ = store.createCollection(named: L.t("新合集"), containing: app)
+                        }
+                    } label: {
+                        Label("添加到合集", systemImage: "plus.rectangle.on.folder")
+                            .labelStyle(.iconOnly)
+                    }
+                    .help(Text(L.t("添加到合集")))
                 }
                 .controlSize(.small)
 

@@ -781,6 +781,36 @@ private struct AppTable: View {
                     storyApp = app
                 }
 
+                Button(store.isFavorite(app) ? L.t("取消收藏") : L.t("收藏")) {
+                    store.toggleFavorite(app)
+                }
+
+                Menu(L.t("添加到合集")) {
+                    ForEach(store.collections) { collection in
+                        Button {
+                            if store.isInCollection(app, collectionID: collection.id) {
+                                store.remove(app, fromCollection: collection.id)
+                            } else {
+                                store.add(app, toCollection: collection.id)
+                            }
+                        } label: {
+                            if store.isInCollection(app, collectionID: collection.id) {
+                                Label(collection.name, systemImage: "checkmark")
+                            } else {
+                                Text(collection.name)
+                            }
+                        }
+                    }
+
+                    if !store.collections.isEmpty {
+                        Divider()
+                    }
+
+                    Button(L.t("新建合集并添加")) {
+                        _ = store.createCollection(named: L.t("新合集"), containing: app)
+                    }
+                }
+
                 Divider()
 
                 Button(L.t("复制 Bundle ID")) {

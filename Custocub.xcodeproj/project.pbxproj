@@ -41,6 +41,7 @@
 		9483234C449CDAAB343C5D5B /* AppSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AB50555493B4354CE8877CD /* AppSnapshot.swift */; };
 		9AA8A20CEA0C439C09970C52 /* CustocubApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB55B6C1241B00D36BC70F76 /* CustocubApp.swift */; };
 		9E57412E1D2880829EE98C96 /* JetBrainsToolboxIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB29DD222217857737C23E7C /* JetBrainsToolboxIndex.swift */; };
+		9FBDEF693EC1D8A8F5F4026F /* AppCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7AFBDBEF1948F1A171AED4 /* AppCollection.swift */; };
 		9FE995377D530554C954C8AF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CFF2ABDA02E2B93882C8B1FA /* Assets.xcassets */; };
 		A6AA667D52C030239A97EC90 /* HomebrewIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DD24184BC491E6AB1A21E7D /* HomebrewIndex.swift */; };
 		ADE28FBE2D137BB04BABECC1 /* BrewCatalogService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47E47F09AEC0A916E270F6B1 /* BrewCatalogService.swift */; };
@@ -116,6 +117,7 @@
 		A6D97BB0861124D1642EB69C /* AppListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppListView.swift; sourceTree = "<group>"; };
 		B39C399A3D9459CD90509E43 /* BrewServicesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewServicesView.swift; sourceTree = "<group>"; };
 		B844A82A4A7559A059AEE0E3 /* AppDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDetailView.swift; sourceTree = "<group>"; };
+		BB7AFBDBEF1948F1A171AED4 /* AppCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCollection.swift; sourceTree = "<group>"; };
 		BD2333F60586494596629257 /* GalleryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GalleryItem.swift; sourceTree = "<group>"; };
 		BED4ACC0C504A0B206AB7BFE /* BrewUpgradePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewUpgradePolicy.swift; sourceTree = "<group>"; };
 		C02A3B679698FCFEC104893A /* BrewVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewVersion.swift; sourceTree = "<group>"; };
@@ -155,6 +157,7 @@
 			isa = PBXGroup;
 			children = (
 				7E54E4AC77EF16FC5B78C837 /* AppChange.swift */,
+				BB7AFBDBEF1948F1A171AED4 /* AppCollection.swift */,
 				E125B4B5B596429B41253AE8 /* AppIconHistory.swift */,
 				4DA09AF85222FE4871D4FE0A /* AppRecord.swift */,
 				9AB50555493B4354CE8877CD /* AppSnapshot.swift */,
@@ -334,6 +337,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				70E69DA51CDE753461D2E85C /* AppChange.swift in Sources */,
+				9FBDEF693EC1D8A8F5F4026F /* AppCollection.swift in Sources */,
 				13AABF84A022A67BEE4E77E1 /* AppDetailView.swift in Sources */,
 				285CAD2B1C9538250A028953 /* AppIconHistory.swift in Sources */,
 				33B49897B520BEB8BEE6B6FB /* AppListView.swift in Sources */,

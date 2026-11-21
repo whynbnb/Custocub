@@ -5,6 +5,12 @@ struct SidebarView: View {
     @EnvironmentObject private var brew: BrewStore
     @AppStorage("showDeveloperApps") private var showDeveloperApps = true
 
+    @State private var showingNewCollection = false
+    @State private var newCollectionName = ""
+    @State private var showingRenameCollection = false
+    @State private var renameTargetID: UUID?
+    @State private var renameName = ""
+
     private static let sourceOrder: [AppSource] = [
         .homebrew,
         .appStore,
@@ -67,6 +73,56 @@ struct SidebarView: View {
                 .tag(SidebarSelection.uninstalled)
                 .help(Text(L.t("最近一次快照里记录过、但当前没有安装的应用")))
 
+            }
+
+            Section("合集") {
+                SidebarRow(
+                    title: "收藏",
+                    symbol: "star.fill",
+                    count: store.favoriteCount,
+                    tint: .yellow,
+                    isSelected: store.sidebarSelection == .favorites
+                )
+                .tag(SidebarSelection.favorites)
+                .help(Text(L.t("收藏的应用")))
+
+                ForEach(store.collections) { collection in
+                    SidebarRow(
+                        title: collection.name,
+                        symbol: "square.stack.3d.up.fill",
+                        count: collection.appKeys.count,
+                        tint: .indigo,
+                        isSelected: store.sidebarSelection == .collection(collection.id),
+                        localizesTitle: false
+                    )
+                    .tag(SidebarSelection.collection(collection.id))
+                    .help(Text(L.t("自定义合集")))
+                    .contextMenu {
+                        Button(L.t("重命名合集…")) {
+                            renameTargetID = collection.id
+                            renameName = collection.name
+                            showingRenameCollection = true
+                        }
+                        Button(L.t("删除合集"), role: .destructive) {
+                            store.deleteCollection(id: collection.id)
+                        }
+                    }
+                }
+
+                Button {
+                    newCollectionName = ""
+                    showingNewCollection = true
+                } label: {
+                    HStack(spacing: 9) {
+                        Image(systemName: "plus.circle")
+                            .frame(width: 18)
+                        Text("新建合集…")
+                        Spacer()
+                    }
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 2)
+                }
+                .buttonStyle(.plain)
             }
 
             // 功能关闭或未安装时不显示入口，彻底关闭 Homebrew 相关界面。
@@ -165,6 +221,32 @@ struct SidebarView: View {
                 store.selectedAppID = nil
             }
         }
+        .alert("新建合集", isPresented: $showingNewCollection) {
+            TextField("合集名称", text: $newCollectionName)
+            Button("创建") {
+                let id = store.createCollection(named: newCollectionName)
+                store.sidebarSelection = .collection(id)
+                store.selectedAppID = nil
+                newCollectionName = ""
+            }
+            Button("取消", role: .cancel) {
+                newCollectionName = ""
+            }
+        } message: {
+            Text("给这个合集起一个名字，例如「开发工具」或「必装应用」。")
+        }
+        .alert("重命名合集", isPresented: $showingRenameCollection) {
+            TextField("合集名称", text: $renameName)
+            Button("保存") {
+                if let renameTargetID {
+                    store.renameCollection(id: renameTargetID, name: renameName)
+                }
+                renameTargetID = nil
+            }
+            Button("取消", role: .cancel) {
+                renameTargetID = nil
+            }
+        }
     }
 }
 
@@ -174,6 +256,7 @@ private struct SidebarRow: View {
     let count: Int
     let tint: Color
     var isSelected = false
+    var localizesTitle = true
 
     var body: some View {
         HStack(spacing: 9) {
@@ -184,11 +267,19 @@ private struct SidebarRow: View {
                 .frame(width: 18)
                 .fixedSize()
                 .foregroundStyle(isSelected ? Color.white : tint)
-            Text(LocalizedStringKey(title))
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .foregroundStyle(isSelected ? Color.white : Color.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            if localizesTitle {
+                Text(LocalizedStringKey(title))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .foregroundStyle(isSelected ? Color.white : Color.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Text(verbatim: title)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .foregroundStyle(isSelected ? Color.white : Color.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
             if count > 0 {
                 Text("\(count)")
                     .font(.caption.monospacedDigit())

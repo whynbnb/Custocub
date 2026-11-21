@@ -8,6 +8,8 @@ enum SidebarSelection: Hashable {
     case uninstalled
     case own
     case gallery
+    case favorites
+    case collection(UUID)
     case brew
     case source(AppSource?)
     case snapshot(UUID)
@@ -95,6 +97,8 @@ final class CustocubStore: ObservableObject {
     @Published var galleryStatusFilters: Set<GalleryItem.Status> = []
     /// 展示框时间机器：nil 表示今天，否则查看指定历史快照。
     @Published var gallerySnapshotID: UUID?
+    @Published private(set) var collections: [AppCollection] = []
+    @Published private(set) var favoriteKeys: Set<String> = []
 
     private let repository: SnapshotRepository
     private let scanner: AppScanner
@@ -117,6 +121,7 @@ final class CustocubStore: ObservableObject {
         self.sizeCache = sizeCache
         loadSnapshots()
         loadSidebarCache()
+        loadCollections()
     }
 
 
@@ -248,7 +253,7 @@ final class CustocubStore: ObservableObject {
         case .brew:
             return nil
 
-        case .gallery:
+        case .gallery, .favorites, .collection:
             if let item = galleryDisplayItems.first(where: { $0.app.id == selectedAppID }) {
                 return SelectedAppContext(app: item.app, galleryItem: item, snapshot: nil)
             }
@@ -342,6 +347,125 @@ final class CustocubStore: ObservableObject {
                 return $0.status == .installed
             }
             return $0.app.name.localizedStandardCompare($1.app.name) == .orderedAscending
+        }
+    }
+
+    // MARK: - 收藏与合集
+
+    func collectionKey(for app: AppRecord) -> String {
+        if let bundleID = app.bundleIdentifier, !bundleID.isEmpty {
+            return bundleID
+        }
+        return app.path
+    }
+
+    func isFavorite(_ app: AppRecord) -> Bool {
+        favoriteKeys.contains(collectionKey(for: app))
+    }
+
+    func toggleFavorite(_ app: AppRecord) {
+        let key = collectionKey(for: app)
+        if favoriteKeys.contains(key) {
+            favoriteKeys.remove(key)
+        } else {
+            favoriteKeys.insert(key)
+        }
+        saveCollections()
+    }
+
+    var favoriteCount: Int { favoriteKeys.count }
+
+    @discardableResult
+    func createCollection(named name: String, containing app: AppRecord? = nil) -> UUID {
+        var trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            trimmed = L.t("新合集")
+        }
+
+        var collection = AppCollection(name: trimmed)
+        if let app {
+            collection.appKeys.insert(collectionKey(for: app))
+        }
+        collections.append(collection)
+        saveCollections()
+        return collection.id
+    }
+
+    func renameCollection(id: UUID, name: String) {
+        guard let index = collections.firstIndex(where: { $0.id == id }) else { return }
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        collections[index].name = trimmed
+        saveCollections()
+    }
+
+    func deleteCollection(id: UUID) {
+        collections.removeAll { $0.id == id }
+        if case .collection(let selectedID) = activeSelection, selectedID == id {
+            sidebarSelection = .gallery
+            selectedAppID = nil
+        }
+        saveCollections()
+    }
+
+    func add(_ app: AppRecord, toCollection id: UUID) {
+        guard let index = collections.firstIndex(where: { $0.id == id }) else { return }
+        collections[index].appKeys.insert(collectionKey(for: app))
+        saveCollections()
+    }
+
+    func remove(_ app: AppRecord, fromCollection id: UUID) {
+        guard let index = collections.firstIndex(where: { $0.id == id }) else { return }
+        collections[index].appKeys.remove(collectionKey(for: app))
+        saveCollections()
+    }
+
+    func collection(_ id: UUID) -> AppCollection? {
+        collections.first { $0.id == id }
+    }
+
+    func isInCollection(_ app: AppRecord, collectionID: UUID) -> Bool {
+        guard let collection = collection(collectionID) else { return false }
+        return collection.appKeys.contains(collectionKey(for: app))
+    }
+
+    func collectionItems(_ collection: AppCollection, from items: [GalleryItem]) -> [GalleryItem] {
+        items.filter { collection.appKeys.contains(collectionKey(for: $0.app)) }
+    }
+
+    private static var collectionsFileURL: URL {
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return support
+            .appendingPathComponent("Custocub", isDirectory: true)
+            .appendingPathComponent("collections.json")
+    }
+
+    private struct CollectionsDocument: Codable {
+        var favorites: Set<String> = []
+        var collections: [AppCollection] = []
+    }
+
+    private func loadCollections() {
+        guard let data = try? Data(contentsOf: Self.collectionsFileURL),
+              let document = try? JSONDecoder().decode(CollectionsDocument.self, from: data) else {
+            return
+        }
+        favoriteKeys = document.favorites
+        collections = document.collections
+    }
+
+    private func saveCollections() {
+        do {
+            let url = Self.collectionsFileURL
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            let document = CollectionsDocument(favorites: favoriteKeys, collections: collections)
+            let data = try JSONEncoder().encode(document)
+            try data.write(to: url, options: .atomic)
+        } catch {
+            // 收藏数据写入失败不应影响浏览。
         }
     }
 

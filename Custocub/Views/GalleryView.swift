@@ -20,7 +20,7 @@ struct GalleryView: View {
                     galleryTimeline
                     Divider()
 
-                    let baseItems = store.galleryDisplayItems
+                    let baseItems = scopedItems(store.galleryDisplayItems)
                     let items = store.filteredGalleryItems(baseItems)
 
                     GalleryFilterBar(
@@ -69,7 +69,7 @@ struct GalleryView: View {
                 )
             }
         }
-        .navigationTitle("展示框")
+        .navigationTitle(galleryTitle)
         .sheet(item: $iconHistoryApp) { app in
             IconHistorySheet(app: app)
                 .environmentObject(store)
@@ -81,16 +81,16 @@ struct GalleryView: View {
     }
 
     private var header: some View {
-        let items = store.galleryDisplayItems
+        let items = scopedItems(store.galleryDisplayItems)
         return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
                 HStack(spacing: 7) {
-                    Text("展示框")
+                    Text(galleryTitle)
                         .font(.title2.weight(.semibold))
                     Image(systemName: "info.circle")
                         .font(.callout)
                         .foregroundStyle(.secondary)
-                        .help("像收藏柜一样浏览所有软件，包括已经卸载、但仍保存在历史快照中的应用。")
+                        .help(Text(galleryHelp))
                         .accessibilityLabel("展示框说明")
                 }
                 Spacer()
@@ -263,20 +263,66 @@ struct GalleryView: View {
     }
 
     private func emptyTitle(baseItems: [GalleryItem]) -> String {
-        if baseItems.isEmpty {
-            return store.gallerySnapshot != nil ? L.t("这个快照没有应用") : L.t("展示框还是空的")
+        if !baseItems.isEmpty {
+            return L.t("没有符合条件的应用")
         }
-        return L.t("没有符合条件的应用")
+        if isFavoritesSelection {
+            return L.t("还没有收藏的应用")
+        }
+        if activeCollection != nil {
+            return L.t("这个合集还是空的")
+        }
+        return store.gallerySnapshot != nil ? L.t("这个快照没有应用") : L.t("展示框还是空的")
     }
 
     private func emptyDescription(baseItems: [GalleryItem]) -> String {
         if !baseItems.isEmpty {
             return L.t("请调整搜索内容或筛选条件。")
         }
+        if isFavoritesSelection {
+            return L.t("在应用右键菜单或详情里点击星标收藏。")
+        }
+        if activeCollection != nil {
+            return L.t("在应用右键菜单里添加到合集。")
+        }
         if store.gallerySnapshot != nil {
             return L.t("这个快照没有记录任何应用。")
         }
         return L.t("保存一个快照后，这里会像收藏柜一样展示软件；已卸载的软件也会被保留。")
+    }
+
+    private var isFavoritesSelection: Bool {
+        if case .favorites = store.activeSelection { return true }
+        return false
+    }
+
+    private var activeCollection: AppCollection? {
+        guard case .collection(let id) = store.activeSelection else { return nil }
+        return store.collection(id)
+    }
+
+    private func scopedItems(_ items: [GalleryItem]) -> [GalleryItem] {
+        switch store.activeSelection {
+        case .favorites:
+            return items.filter { store.isFavorite($0.app) }
+        case .collection:
+            guard let collection = activeCollection else { return [] }
+            return store.collectionItems(collection, from: items)
+        default:
+            return items
+        }
+    }
+
+    private var galleryTitle: String {
+        if isFavoritesSelection { return L.t("收藏") }
+        if let collection = activeCollection { return collection.name }
+        return L.t("展示框")
+    }
+
+    private var galleryHelp: String {
+        if isFavoritesSelection { return L.t("收藏的应用") }
+        if activeCollection != nil { return L.t("自定义合集") }
+        return L.t("像收藏柜一样浏览所有软件，包括已经卸载、但仍保存在历史快照中的应用。")
     }
 
     private func toggleStatus(_ status: GalleryItem.Status) {
@@ -313,6 +359,44 @@ struct GalleryView: View {
         if SwiftLensIntegration.isInstalled, FileManager.default.fileExists(atPath: app.path) {
             Button(L.t("使用 SwiftLens 打开")) {
                 SwiftLensIntegration.open(appPath: app.path, store: store)
+            }
+        }
+
+        Button(store.isFavorite(app) ? L.t("取消收藏") : L.t("收藏")) {
+            store.toggleFavorite(app)
+        }
+
+        Menu(L.t("添加到合集")) {
+            ForEach(store.collections) { collection in
+                Button {
+                    if store.isInCollection(app, collectionID: collection.id) {
+                        store.remove(app, fromCollection: collection.id)
+                    } else {
+                        store.add(app, toCollection: collection.id)
+                    }
+                } label: {
+                    if store.isInCollection(app, collectionID: collection.id) {
+                        Label(collection.name, systemImage: "checkmark")
+                    } else {
+                        Text(collection.name)
+                    }
+                }
+            }
+
+            if !store.collections.isEmpty {
+                Divider()
+            }
+
+            Button(L.t("新建合集并添加")) {
+                let id = store.createCollection(named: L.t("新合集"), containing: app)
+                store.sidebarSelection = .collection(id)
+                store.selectedAppID = app.id
+            }
+        }
+
+        if case .collection(let collectionID) = store.activeSelection {
+            Button(L.t("从这个合集移出")) {
+                store.remove(app, fromCollection: collectionID)
             }
         }
 
