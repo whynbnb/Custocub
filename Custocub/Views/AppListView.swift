@@ -26,6 +26,33 @@ struct InstalledAppsView: View {
     }
 }
 
+/// 「新安装」：最近一次快照之后新装的应用。
+struct NewlyInstalledAppsView: View {
+    @EnvironmentObject private var store: CustocubStore
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if let snapshot = store.latestSnapshot {
+                ComparisonHeaderView(
+                    title: "新安装",
+                    symbol: "plus.app.fill",
+                    tint: .teal,
+                    count: store.newlyInstalledCount,
+                    summary: "最近快照之后新安装的应用",
+                    snapshot: snapshot
+                )
+                Divider()
+                FilterBar()
+                Divider()
+                AppTable(apps: store.newlyInstalledApps, emptyMessage: "没有新安装的应用")
+            } else {
+                NoSnapshotPrompt()
+            }
+        }
+        .navigationTitle("新安装")
+    }
+}
+
 /// 「已更新」：与最近一次快照相比，版本发生变化的应用。
 struct UpdatedAppsView: View {
     @EnvironmentObject private var store: CustocubStore

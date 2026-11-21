@@ -163,6 +163,8 @@ struct ContentView: View {
         switch store.activeSelection {
         case .installed, .own, .source:
             InstalledAppsView()
+        case .newlyInstalled:
+            NewlyInstalledAppsView()
         case .updated:
             UpdatedAppsView()
         case .uninstalled:
@@ -213,7 +215,7 @@ struct ContentView: View {
             case .snapshots, .services, .cleanup, .health:
                 return false
             }
-        case .updated, .uninstalled:
+        case .newlyInstalled, .updated, .uninstalled:
             // 没有快照时整页显示提示，不保留空的详情列。
             return store.latestSnapshot != nil
         default:

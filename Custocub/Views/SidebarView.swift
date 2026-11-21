@@ -38,6 +38,16 @@ struct SidebarView: View {
                 .help(Text(L.t("像收藏柜一样浏览所有软件，包括已经卸载、但仍保存在历史快照中的应用。")))
 
                 SidebarRow(
+                    title: "新安装",
+                    symbol: "plus.app.fill",
+                    count: store.newlyInstalledCount,
+                    tint: .teal,
+                    isSelected: store.sidebarSelection == .newlyInstalled
+                )
+                .tag(SidebarSelection.newlyInstalled)
+                .help(Text(L.t("最近一次快照之后新安装的应用")))
+
+                SidebarRow(
                     title: "已更新",
                     symbol: "arrow.up.circle.fill",
                     count: store.updatedCount,

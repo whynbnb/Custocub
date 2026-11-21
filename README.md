@@ -284,6 +284,7 @@ The Gallery is an icon-grid view of your software collection:
 
 The sidebar also has two snapshot-comparison views:
 
+- **New** — apps installed after the most recent snapshot.
 - **Updated** — apps whose version differs from the most recent snapshot.
 - **Uninstalled** — apps recorded in the most recent snapshot that are no longer installed.
 

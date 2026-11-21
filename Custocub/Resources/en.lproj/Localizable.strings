@@ -750,3 +750,7 @@
 "版本变化" = "Version change";
 "与最近一次快照对比，版本发生变化的应用" = "Apps whose version changed since the latest snapshot";
 "最近一次快照里记录过、但当前没有安装的应用" = "Apps recorded in the latest snapshot that are no longer installed";
+"新安装" = "New";
+"最近快照之后新安装的应用" = "Apps installed since the latest snapshot";
+"最近一次快照之后新安装的应用" = "Apps installed since the latest snapshot";
+"没有新安装的应用" = "No apps installed since the latest snapshot";

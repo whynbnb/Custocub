@@ -3,6 +3,7 @@ import Foundation
 
 enum SidebarSelection: Hashable {
     case installed
+    case newlyInstalled
     case updated
     case uninstalled
     case own
@@ -215,6 +216,10 @@ final class CustocubStore: ObservableObject {
             guard let app = apps.first(where: { $0.id == selectedAppID }) else { return nil }
             return SelectedAppContext(app: app, galleryItem: nil, snapshot: nil)
 
+        case .newlyInstalled:
+            guard let app = newlyInstalledApps.first(where: { $0.id == selectedAppID }) else { return nil }
+            return SelectedAppContext(app: app, galleryItem: nil, snapshot: nil)
+
         case .updated:
             guard let app = updatedApps.first(where: { $0.id == selectedAppID }) else { return nil }
             let oldVersion = latestSnapshot?.apps.first { comparisonKey(for: $0) == comparisonKey(for: app) }?.version
@@ -317,6 +322,13 @@ final class CustocubStore: ObservableObject {
         return "path:\(app.path)"
     }
 
+    /// 最近快照之后新安装的应用：当前有、快照里没有。
+    var newlyInstalledApps: [AppRecord] {
+        guard hasScanned, let snapshot = latestSnapshot else { return [] }
+        let snapshotKeys = Set(snapshot.apps.map { comparisonKey(for: $0) })
+        return apps.filter { !snapshotKeys.contains(comparisonKey(for: $0)) }
+    }
+
     /// 最近快照里记录过、版本已经变化、且当前仍在的应用。
     var updatedApps: [AppRecord] {
         guard hasScanned, let snapshot = latestSnapshot else { return [] }
@@ -337,6 +349,7 @@ final class CustocubStore: ObservableObject {
         return snapshot.apps.filter { !liveKeys.contains(comparisonKey(for: $0)) }
     }
 
+    var newlyInstalledCount: Int { newlyInstalledApps.count }
     var updatedCount: Int { updatedApps.count }
     var uninstalledSinceLastSnapshotCount: Int { uninstalledSinceLastSnapshot.count }
 
@@ -404,7 +417,7 @@ final class CustocubStore: ObservableObject {
         switch activeSelection {
         case .source(let source):
             sourceFilter = source
-        case .installed, .updated, .uninstalled:
+        case .installed, .newlyInstalled, .updated, .uninstalled:
             sourceFilter = nil
         default:
             break
