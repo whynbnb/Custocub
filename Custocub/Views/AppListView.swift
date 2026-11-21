@@ -54,7 +54,7 @@ struct NewlyInstalledAppsView: View {
     }
 }
 
-/// 「已更新」：与最近一次快照相比，版本发生变化的应用。
+/// 「已更新」：与最近一次快照相比，版本或图标发生变化的应用。
 struct UpdatedAppsView: View {
     @EnvironmentObject private var store: CustocubStore
 
@@ -66,13 +66,13 @@ struct UpdatedAppsView: View {
                     symbol: "arrow.up.circle.fill",
                     tint: .blue,
                     count: store.updatedCount,
-                    summary: "版本与最近快照不同的应用",
+                    summary: "版本或图标与最近快照不同的应用",
                     snapshot: snapshot
                 )
                 Divider()
                 FilterBar()
                 Divider()
-                AppTable(apps: store.updatedApps, emptyMessage: "没有版本变化的应用")
+                AppTable(apps: store.updatedApps, emptyMessage: "没有版本或图标变化的应用")
             } else {
                 NoSnapshotPrompt()
             }

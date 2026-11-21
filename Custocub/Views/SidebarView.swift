@@ -55,7 +55,7 @@ struct SidebarView: View {
                     isSelected: store.sidebarSelection == .updated
                 )
                 .tag(SidebarSelection.updated)
-                .help(Text(L.t("与最近一次快照对比，版本发生变化的应用")))
+                .help(Text(L.t("与最近一次快照对比，版本或图标发生变化的应用")))
 
                 SidebarRow(
                     title: "已卸载",

@@ -71,6 +71,10 @@ final class CustocubStore: ObservableObject {
     @Published private(set) var enrichmentTotal = 0
     @Published private(set) var lastScanAt: Date?
     @Published private(set) var hasScanned = false
+    /// 每个应用最近一次图标变化时间，键为 Bundle ID（无则路径）。
+    @Published private(set) var iconUpdateDates: [String: Date] = [:]
+    /// 图标历史发生变化时递增，用于让详情里的时间线重新加载。
+    @Published private(set) var iconHistoryRevision = 0
 
     @Published var errorMessage: String?
     @Published var statusMessage = ""
@@ -338,8 +342,17 @@ final class CustocubStore: ObservableObject {
         }
         return apps.filter { app in
             guard let old = previous[comparisonKey(for: app)] else { return false }
-            return Self.versionChanged(from: old, to: app)
+            if Self.versionChanged(from: old, to: app) { return true }
+            guard let iconChangedAt = iconUpdateDates[IconHistoryStore.key(for: app)] else {
+                return false
+            }
+            return iconChangedAt > snapshot.createdAt
         }
+    }
+
+    /// 某个应用最近一次图标变化的时间；从未记录过则为 nil。
+    func latestIconUpdate(for app: AppRecord) -> Date? {
+        iconUpdateDates[IconHistoryStore.key(for: app)]
     }
 
     /// 最近快照里记录过、但当前已经没有安装的应用。
@@ -534,6 +547,14 @@ final class CustocubStore: ObservableObject {
             IconProvider.shared.invalidate(apps: iconChanges)
             for app in iconChanges {
                 if let bundleID = app.bundleIdentifier, !bundleID.isEmpty {
+                    // 先保存旧图标，并关联旧版本信息，然后再覆盖磁盘缓存。
+                    if let previous = previousByPath[app.path],
+                       let oldData = IconDiskCache.loadData(bundleID: bundleID) {
+                        await IconHistoryStore.shared.recordBaselineIfNeeded(
+                            app: previous,
+                            iconData: oldData
+                        )
+                    }
                     IconDiskCache.remove(bundleID: bundleID)
                 }
             }
@@ -556,6 +577,8 @@ final class CustocubStore: ObservableObject {
                 forceDiskRewrite: fullRefresh,
                 forcePaths: iconChangePaths
             )
+            iconUpdateDates = await IconHistoryStore.shared.latestChangeDates()
+            iconHistoryRevision &+= 1
         }
 
         // 当前筛选的来源如果已经不存在，自动回到全部来源。

@@ -25,6 +25,10 @@ enum IconDiskCache {
         return NSImage(data: data)
     }
 
+    static func loadData(bundleID: String) -> Data? {
+        try? Data(contentsOf: url(for: bundleID))
+    }
+
     static func store(_ data: Data, bundleID: String) {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         try? data.write(to: url(for: bundleID), options: .atomic)
@@ -179,6 +183,11 @@ final class IconProvider {
         }
         guard !targets.isEmpty else { return }
 
+        let appsByPath = Dictionary(
+            apps.map { ($0.path, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+
         let chunkSize = 8
         var start = 0
 
@@ -187,16 +196,31 @@ final class IconProvider {
             let end = min(start + chunkSize, targets.count)
             let chunk = Array(targets[start..<end])
 
-            await withTaskGroup(of: (String, Data?).self) { group in
+            await withTaskGroup(of: (String, String, Data?).self) { group in
                 for target in chunk {
                     group.addTask {
-                        (target.bundleID, Self.renderPNG(forPath: target.path, pixelSize: 192))
+                        (
+                            target.bundleID,
+                            target.path,
+                            Self.renderPNG(forPath: target.path, pixelSize: 192)
+                        )
                     }
                 }
-                for await (bundleID, data) in group {
-                    if let data {
+                for await (bundleID, path, data) in group {
+                    guard let data else { continue }
+                    guard let app = appsByPath[path] else {
                         IconDiskCache.store(data, bundleID: bundleID)
+                        continue
                     }
+                    // 全量刷新等场景下旧图标还在，先记入历史再覆盖。
+                    if let oldData = IconDiskCache.loadData(bundleID: bundleID) {
+                        await IconHistoryStore.shared.recordBaselineIfNeeded(
+                            app: app,
+                            iconData: oldData
+                        )
+                    }
+                    IconDiskCache.store(data, bundleID: bundleID)
+                    await IconHistoryStore.shared.record(app: app, iconData: data)
                 }
             }
 
@@ -210,7 +234,58 @@ final class IconProvider {
 
     nonisolated private static func loadIcon(forPath path: String) -> NSImage? {
         guard FileManager.default.fileExists(atPath: path) else { return nil }
+        // 优先直接读取 bundle 里的图标文件。
+        //
+        // NSWorkspace 的图标服务会按路径/Bundle ID 缓存图标，应用更新后
+        // 在同一个进程里可能继续返回旧图。直接读 .icns 可以绕开这层缓存。
+        if let direct = directIcon(forPath: path) {
+            return direct
+        }
         return NSWorkspace.shared.icon(forFile: path)
+    }
+
+    /// 从 `.app` 的 Info.plist 和 Resources 目录查找图标文件。
+    nonisolated static func directIcon(forPath path: String) -> NSImage? {
+        let appURL = URL(fileURLWithPath: path)
+        let resources = appURL.appendingPathComponent("Contents", isDirectory: true)
+            .appendingPathComponent("Resources", isDirectory: true)
+        let fileManager = FileManager.default
+
+        var candidates: [URL] = []
+
+        func appendIcon(_ name: String) {
+            guard !name.isEmpty else { return }
+            let url = URL(fileURLWithPath: name)
+            if url.pathExtension.isEmpty {
+                candidates.append(resources.appendingPathComponent(name).appendingPathExtension("icns"))
+            }
+            candidates.append(resources.appendingPathComponent(name))
+        }
+
+        let infoURL = appURL
+            .appendingPathComponent("Contents", isDirectory: true)
+            .appendingPathComponent("Info.plist")
+        if let info = NSDictionary(contentsOf: infoURL) {
+            if let iconFile = info["CFBundleIconFile"] as? String {
+                appendIcon(iconFile)
+            }
+            if let iconName = info["CFBundleIconName"] as? String {
+                appendIcon(iconName)
+            }
+        }
+
+        // 没有声明图标文件的应用（例如使用 Assets.car 的构建）通常
+        // 仍会留下一个 AppIcon.icns 作为资源。
+        for name in ["AppIcon.icns", "AppIcon.png", "app.icns", "icon.icns"] {
+            candidates.append(resources.appendingPathComponent(name))
+        }
+
+        for candidate in candidates where fileManager.fileExists(atPath: candidate.path) {
+            if let image = NSImage(contentsOf: candidate) {
+                return image
+            }
+        }
+        return nil
     }
 
     /// 把应用图标渲染成固定尺寸 PNG，用于写入快照。
@@ -246,9 +321,7 @@ final class IconProvider {
     }
 
     nonisolated static func renderPNG(forPath path: String, pixelSize: CGFloat = 192) -> Data? {
-        guard FileManager.default.fileExists(atPath: path) else { return nil }
-
-        let source = NSWorkspace.shared.icon(forFile: path)
+        guard let source = loadIcon(forPath: path) else { return nil }
         // 直接请求目标像素的位图表示。
         //
         // 之前用 `source.size`（通常是 32pt）作为建议尺寸，系统只会给出

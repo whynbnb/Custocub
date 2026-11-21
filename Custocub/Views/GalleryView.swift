@@ -4,6 +4,8 @@ import SwiftUI
 struct GalleryView: View {
     @EnvironmentObject private var store: CustocubStore
 
+    @State private var iconHistoryApp: AppRecord?
+
     private let columns = [
         GridItem(.adaptive(minimum: 172, maximum: 230), spacing: 14)
     ]
@@ -35,7 +37,9 @@ struct GalleryView: View {
                                     GalleryCard(
                                         item: item,
                                         isSelected: store.selectedAppID == item.app.id,
-                                        isManager: store.isManagerNode(item.app)
+                                        isManager: store.isManagerNode(item.app),
+                                        hasIconHistory: store.latestIconUpdate(for: item.app) != nil,
+                                        onShowIconHistory: { iconHistoryApp = item.app }
                                     )
                                     .onTapGesture {
                                         store.selectedAppID = item.app.id
@@ -58,6 +62,9 @@ struct GalleryView: View {
             }
         }
         .navigationTitle("展示框")
+        .sheet(item: $iconHistoryApp) { app in
+            IconHistorySheet(app: app)
+        }
     }
 
     private var header: some View {
@@ -133,6 +140,10 @@ struct GalleryView: View {
             }
         }
 
+        Button(L.t("查看图标历史…")) {
+            iconHistoryApp = app
+        }
+
         Button("复制 Bundle ID") {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(app.displayBundleIdentifier, forType: .string)
@@ -150,6 +161,8 @@ private struct GalleryCard: View {
     let item: GalleryItem
     let isSelected: Bool
     var isManager = false
+    var hasIconHistory = false
+    var onShowIconHistory: (() -> Void)? = nil
 
     private var app: AppRecord { item.app }
 
@@ -161,6 +174,15 @@ private struct GalleryCard: View {
                     ManagerBadge()
                 }
                 Spacer(minLength: 0)
+                if hasIconHistory, let onShowIconHistory {
+                    Button(action: onShowIconHistory) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.orange)
+                    }
+                    .buttonStyle(.plain)
+                    .help(Text(L.t("查看图标历史")))
+                }
                 PlatformBadge(platform: app.platform)
             }
 

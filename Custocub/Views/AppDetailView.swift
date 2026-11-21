@@ -5,6 +5,8 @@ struct AppDetailView: View {
     @EnvironmentObject private var store: CustocubStore
     let context: SelectedAppContext?
 
+    @State private var iconHistoryEntries: [IconHistoryEntry] = []
+
     var body: some View {
         Group {
             if let context {
@@ -18,6 +20,27 @@ struct AppDetailView: View {
             }
         }
         .navigationTitle("应用详情")
+        .task(id: iconHistoryTaskKey) {
+            await loadIconHistory()
+        }
+    }
+
+    private var iconHistoryTaskKey: String {
+        guard let app = context?.app else { return "" }
+        let updated = app.updatedAt?.timeIntervalSince1970 ?? 0
+        return "\(IconHistoryStore.key(for: app))|\(app.version ?? "")|\(app.build ?? "")|\(updated)|\(store.iconHistoryRevision)"
+    }
+
+    private func loadIconHistory() async {
+        guard let app = context?.app else {
+            iconHistoryEntries = []
+            return
+        }
+        let entries = await IconHistoryStore.shared.entries(
+            forKey: IconHistoryStore.key(for: app)
+        )
+        guard !Task.isCancelled else { return }
+        iconHistoryEntries = entries
     }
 
     private func detail(for context: SelectedAppContext) -> some View {
@@ -69,10 +92,20 @@ struct AppDetailView: View {
                 }
                 .controlSize(.small)
 
+                if iconHistoryEntries.count > 1 {
+                    IconHistoryStrip(app: app, entries: iconHistoryEntries)
+                }
+
                 SectionCard(title: "基本信息") {
                     DetailRow(label: "版本", value: app.displayVersion)
                     if let previousVersion = context.previousVersion, !previousVersion.isEmpty {
                         DetailRow(label: "版本变化", value: "\(previousVersion) → \(app.displayVersion)")
+                    }
+                    if let iconUpdatedAt = store.latestIconUpdate(for: app) {
+                        DetailRow(
+                            label: "图标更新",
+                            value: iconUpdatedAt.formatted(date: .abbreviated, time: .shortened)
+                        )
                     }
                     DetailRow(label: "构建号", value: app.build ?? L.t("无"))
                     DetailRow(label: "Bundle ID", value: app.displayBundleIdentifier, monospaced: true)

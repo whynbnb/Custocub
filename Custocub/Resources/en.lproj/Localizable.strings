@@ -790,3 +790,16 @@
 "使用 SwiftLens 打开" = "Open with SwiftLens";
 "已用 SwiftLens 打开 · %@" = "Opened with SwiftLens · %@";
 "无法使用 SwiftLens 打开：%@" = "Could not open with SwiftLens: %@";
+"图标历史" = "Icon History";
+"查看图标历史…" = "View Icon History…";
+"查看图标历史" = "View Icon History";
+"还没有图标更新记录" = "No icon updates recorded yet";
+"当检测到图标变化时，旧图标会保留在这里。" = "When an icon changes, the previous icon is kept here.";
+"初始图标" = "Original icon";
+"图标更新" = "Icon update";
+"当前" = "Current";
+"共 %d 个图标版本" = "%d icon versions";
+"构建号 %@" = "Build %@";
+"版本或图标与最近快照不同的应用" = "Apps whose version or icon differs from the latest snapshot";
+"没有版本或图标变化的应用" = "No apps with version or icon changes";
+"与最近一次快照对比，版本或图标发生变化的应用" = "Apps whose version or icon changed since the latest snapshot";
