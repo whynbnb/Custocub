@@ -425,9 +425,9 @@ final class CustocubStore: ObservableObject {
             : L.t("已找到 %d 个应用", scannedApps.count)
         saveSidebarCache()
 
-        let iconPaths = scannedApps.map(\.path)
+        let iconApps = scannedApps
         iconPrefetchTask = Task {
-            await IconProvider.shared.prefetch(paths: iconPaths)
+            await IconProvider.shared.prefetch(apps: iconApps)
         }
 
         // 当前筛选的来源如果已经不存在，自动回到全部来源。

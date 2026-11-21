@@ -13,6 +13,7 @@ struct AppIconView: View {
         self.size = size
         self.cornerRadius = cornerRadius
         let cached = IconProvider.shared.cachedIcon(forPath: app.path)
+            ?? app.bundleIdentifier.flatMap { IconProvider.shared.cachedIcon(forBundleID: $0) }
         let stored = app.iconData.flatMap { NSImage(data: $0) }
         _image = State(initialValue: cached ?? stored)
     }
@@ -40,19 +41,27 @@ struct AppIconView: View {
         }
         .frame(width: size, height: size)
         .task(id: app.path) {
-            if image != nil { return }
             if let cached = IconProvider.shared.cachedIcon(forPath: app.path) {
                 image = cached
                 return
             }
             if let loaded = await IconProvider.shared.iconAsync(forPath: app.path) {
                 image = loaded
-            } else if let iconData = app.iconData, let stored = NSImage(data: iconData) {
+                return
+            }
+            // 应用已卸载：先用扫描时缓存的图标，再退回快照里存的那份。
+            if let bundleID = app.bundleIdentifier, !bundleID.isEmpty,
+               let cached = await IconProvider.shared.iconAsync(forBundleID: bundleID) {
+                image = cached
+                return
+            }
+            if image == nil, let iconData = app.iconData, let stored = NSImage(data: iconData) {
                 image = stored
             }
         }
         .onChange(of: app.path) {
             image = IconProvider.shared.cachedIcon(forPath: app.path)
+                ?? app.bundleIdentifier.flatMap { IconProvider.shared.cachedIcon(forBundleID: $0) }
                 ?? app.iconData.flatMap { NSImage(data: $0) }
         }
     }
