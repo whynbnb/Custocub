@@ -758,3 +758,5 @@
 "隐藏详情面板" = "Hide Details";
 "正在全量刷新应用…" = "Refreshing all apps…";
 "重新扫描这台 Mac 上的应用（按住 ⌥ 全量刷新图标和体积）" = "Rescan apps on this Mac (hold ⌥ to refresh every icon and size)";
+"全量刷新" = "Full Refresh";
+"全量刷新所有应用图标和体积" = "Re-render every app icon and re-measure every app size";

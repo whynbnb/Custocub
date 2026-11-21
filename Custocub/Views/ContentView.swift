@@ -14,6 +14,9 @@ struct ContentView: View {
     @State private var detailPaneWidth = DetailPaneWidth.load()
     @State private var detailDragStartWidth: CGFloat?
 
+    /// 按住 ⌥ 时刷新按钮切换成「全量刷新」样式，给用户明确反馈。
+    @State private var optionHeld = false
+
     @State private var showingComparison = false
     @State private var showingDeleteConfirmation = false
     @State private var showingBrewConsole = false
@@ -57,8 +60,14 @@ struct ContentView: View {
             showingBrewConsole = true
         }
         .onChange(of: scenePhase) { _, phase in
+            if phase != .active {
+                optionHeld = false
+            }
             guard phase == .active, refreshOnActivate else { return }
             Task { await store.refreshIfStale() }
+        }
+        .onModifierKeysChanged(mask: .option) { _, modifiers in
+            optionHeld = modifiers.contains(.option)
         }
         .onChange(of: store.sidebarSelection) { _, selection in
             guard selection == .own else { return }
@@ -160,12 +169,18 @@ struct ContentView: View {
 
             Button {
                 // 按住 ⌥ 点击时做全量刷新：图标和体积都重新生成。
-                let fullRefresh = NSEvent.modifierFlags.contains(.option)
+                let fullRefresh = optionHeld || NSEvent.modifierFlags.contains(.option)
                 Task { await store.refresh(ignoreRecentScan: true, fullRefresh: fullRefresh) }
             } label: {
-                Label("扫描应用", systemImage: "arrow.clockwise")
+                Label(
+                    L.t(optionHeld ? "全量刷新" : "扫描应用"),
+                    systemImage: optionHeld ? "arrow.triangle.2.circlepath.circle.fill" : "arrow.clockwise"
+                )
+                .foregroundStyle(optionHeld ? Color.orange : Color.primary)
             }
-            .help(Text(L.t("重新扫描这台 Mac 上的应用（按住 ⌥ 全量刷新图标和体积）")))
+            .help(Text(L.t(optionHeld
+                ? "全量刷新所有应用图标和体积"
+                : "重新扫描这台 Mac 上的应用（按住 ⌥ 全量刷新图标和体积）")))
             .disabled(store.isScanning || store.isSavingSnapshot)
 
             Button {
