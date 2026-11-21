@@ -161,8 +161,8 @@ private struct InstalledHeader: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // 总数、系统、第三方三个关键数字放在标题行右侧，
-            // 下面的指标行只保留分来源的细分数字。
+            // 总数、系统、第三方是整体统计，用无底色的数字组呈现；
+            // 下面的指标行是分来源明细，继续用彩色胶囊。两种样式区分层级。
             HStack(alignment: .center, spacing: 12) {
                 HStack(spacing: 7) {
                     Text("已安装应用")
@@ -177,10 +177,12 @@ private struct InstalledHeader: View {
 
                 Spacer(minLength: 12)
 
-                HStack(spacing: 10) {
-                    MetricChip(title: "应用", value: "\(store.installedCount)", symbol: "square.grid.2x2", color: .accentColor)
-                    MetricChip(title: "系统", value: "\(store.systemCount)", symbol: "apple.logo", color: .secondary)
-                    MetricChip(title: "第三方", value: "\(store.thirdPartyCount)", symbol: "shippingbox", color: .green)
+                HStack(spacing: 0) {
+                    HeaderStat(title: "应用", value: store.installedCount, symbol: "square.grid.2x2", color: .accentColor)
+                    HeaderStatDivider()
+                    HeaderStat(title: "系统", value: store.systemCount, symbol: "apple.logo", color: .secondary)
+                    HeaderStatDivider()
+                    HeaderStat(title: "第三方", value: store.thirdPartyCount, symbol: "shippingbox", color: .green)
                 }
                 .fixedSize()
             }
@@ -442,6 +444,40 @@ private struct MetricChipRow<Content: View>: View {
             }
             .padding(.vertical, 1)
         }
+    }
+}
+
+/// 标题行里的总体统计，不带底色，与下方的来源胶囊区分层级。
+private struct HeaderStat: View {
+    let title: String
+    let value: Int
+    let symbol: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: symbol)
+                .font(.caption)
+                .foregroundStyle(color)
+            Text("\(value)")
+                .font(.title3.weight(.semibold))
+                .monospacedDigit()
+                .contentTransition(.numericText())
+            Text(LocalizedStringKey(title))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 10)
+        .help(Text("\(L.t(title)): \(value)"))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct HeaderStatDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(.quaternary)
+            .frame(width: 1, height: 16)
     }
 }
 
