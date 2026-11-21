@@ -76,7 +76,10 @@ struct ContentView: View {
             store.sourceFilter = nil
             store.platformFilter = nil
             store.typeFilter = .all
-            store.galleryStatusFilter = nil
+            store.gallerySourceFilters = []
+            store.galleryPlatformFilters = []
+            store.galleryTypeFilters = []
+            store.galleryStatusFilters = []
         }
         .sheet(isPresented: $showingComparison) {
             ComparisonView()

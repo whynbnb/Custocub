@@ -804,3 +804,5 @@
 "快照「%@」" = "Snapshot “%@”";
 "快照「%@」· %@" = "Snapshot “%@” · %@";
 "图标变化" = "Icon change";
+"已选 %d 项" = "%d selected";
+"点击筛选" = "Click to filter";

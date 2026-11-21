@@ -548,6 +548,8 @@ struct MetricChip: View {
     let color: Color
     /// 空间不足时只显示图标与数值，标题放进悬停提示。
     var showsTitle = true
+    /// 作为快捷筛选时，标记当前是否生效。
+    var isActive = false
 
     var body: some View {
         HStack(spacing: 6) {
@@ -564,7 +566,16 @@ struct MetricChip: View {
         .font(.caption)
         .padding(.horizontal, 9)
         .frame(height: 25)
-        .background(color.opacity(0.08), in: RoundedRectangle(cornerRadius: 7))
+        .background(
+            color.opacity(isActive ? 0.18 : 0.08),
+            in: RoundedRectangle(cornerRadius: 7)
+        )
+        .overlay {
+            if isActive {
+                RoundedRectangle(cornerRadius: 7)
+                    .strokeBorder(color.opacity(0.55), lineWidth: 1)
+            }
+        }
         .fixedSize(horizontal: true, vertical: false)
         .help(Text("\(L.t(title)): \(value)"))
     }

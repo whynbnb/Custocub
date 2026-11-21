@@ -59,7 +59,11 @@ struct AppDetailView: View {
                     if (store.activeSelection == .installed || store.activeSelection == .own), isInstalled {
                         Button {
                             store.sidebarSelection = .gallery
-                            store.galleryStatusFilter = nil
+                            store.searchText = ""
+                            store.gallerySourceFilters = []
+                            store.galleryPlatformFilters = []
+                            store.galleryTypeFilters = []
+                            store.galleryStatusFilters = []
                             store.selectedAppID = app.id
                         } label: {
                             Label("在展示框中查看", systemImage: "rectangle.grid.2x2")

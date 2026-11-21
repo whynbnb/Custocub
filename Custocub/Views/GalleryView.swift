@@ -16,10 +16,12 @@ struct GalleryView: View {
                 VStack(spacing: 0) {
                     header
                     Divider()
-                    FilterBar(showsStatusFilter: true)
-                    Divider()
-
                     let items = store.filteredGalleryItems(store.galleryItems)
+                    GalleryFilterBar(
+                        visibleCount: items.count,
+                        totalCount: store.galleryItems.count
+                    )
+                    Divider()
 
                     if items.isEmpty {
                         ContentUnavailableView(
@@ -84,30 +86,62 @@ struct GalleryView: View {
             }
 
             HStack(spacing: 10) {
-                MetricChip(
-                    title: "已安装",
-                    value: "\(store.galleryItems.count { $0.status == .installed })",
-                    symbol: "checkmark.circle",
-                    color: .green
-                )
-                MetricChip(
-                    title: "已卸载",
-                    value: "\(store.uninstalledCount)",
-                    symbol: "archivebox",
-                    color: .red
-                )
-                MetricChip(
-                    title: "系统",
-                    value: "\(store.galleryItems.count { $0.app.isSystemApp })",
-                    symbol: "apple.logo",
-                    color: .secondary
-                )
-                MetricChip(
-                    title: "第三方",
-                    value: "\(store.galleryItems.count { !$0.app.isSystemApp })",
-                    symbol: "shippingbox",
-                    color: .green
-                )
+                Button {
+                    toggleStatus(.installed)
+                } label: {
+                    MetricChip(
+                        title: "已安装",
+                        value: "\(store.galleryItems.count { $0.status == .installed })",
+                        symbol: "checkmark.circle",
+                        color: .green,
+                        isActive: store.galleryStatusFilters.contains(.installed)
+                    )
+                }
+                .buttonStyle(.plain)
+                .help(Text(L.t("点击筛选")))
+
+                Button {
+                    toggleStatus(.uninstalled)
+                } label: {
+                    MetricChip(
+                        title: "已卸载",
+                        value: "\(store.uninstalledCount)",
+                        symbol: "archivebox",
+                        color: .red,
+                        isActive: store.galleryStatusFilters.contains(.uninstalled)
+                    )
+                }
+                .buttonStyle(.plain)
+                .help(Text(L.t("点击筛选")))
+
+                Button {
+                    toggleType(.system)
+                } label: {
+                    MetricChip(
+                        title: "系统",
+                        value: "\(store.galleryItems.count { $0.app.isSystemApp })",
+                        symbol: "apple.logo",
+                        color: .secondary,
+                        isActive: store.galleryTypeFilters.contains(.system)
+                    )
+                }
+                .buttonStyle(.plain)
+                .help(Text(L.t("点击筛选")))
+
+                Button {
+                    toggleType(.thirdParty)
+                } label: {
+                    MetricChip(
+                        title: "第三方",
+                        value: "\(store.galleryItems.count { !$0.app.isSystemApp })",
+                        symbol: "shippingbox",
+                        color: .green,
+                        isActive: store.galleryTypeFilters.contains(.thirdParty)
+                    )
+                }
+                .buttonStyle(.plain)
+                .help(Text(L.t("点击筛选")))
+
                 Spacer()
                 if store.uninstalledCount > 0 {
                     Text("已卸载条目来自历史快照")
@@ -118,6 +152,22 @@ struct GalleryView: View {
         }
         .padding(16)
         .background(.background)
+    }
+
+    private func toggleStatus(_ status: GalleryItem.Status) {
+        if store.galleryStatusFilters.contains(status) {
+            store.galleryStatusFilters.remove(status)
+        } else {
+            store.galleryStatusFilters.insert(status)
+        }
+    }
+
+    private func toggleType(_ type: AppTypeFilter) {
+        if store.galleryTypeFilters.contains(type) {
+            store.galleryTypeFilters.remove(type)
+        } else {
+            store.galleryTypeFilters.insert(type)
+        }
     }
 
     @ViewBuilder
@@ -244,5 +294,221 @@ private struct GalleryCard: View {
         .contentShape(RoundedRectangle(cornerRadius: 14))
         .opacity(item.status == .uninstalled ? 0.92 : 1)
         .help("\(app.name)\n\(app.path)")
+    }
+}
+
+// MARK: - 展示框筛选
+
+private struct GalleryFilterBar: View {
+    @EnvironmentObject private var store: CustocubStore
+    let visibleCount: Int
+    let totalCount: Int
+
+    private var hasActiveFilters: Bool {
+        !store.searchText.isEmpty
+            || !store.gallerySourceFilters.isEmpty
+            || !store.galleryPlatformFilters.isEmpty
+            || !store.galleryTypeFilters.isEmpty
+            || !store.galleryStatusFilters.isEmpty
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+
+            TextField("搜索应用、Bundle ID 或路径", text: $store.searchText)
+                .textFieldStyle(.plain)
+                .frame(maxWidth: .infinity)
+
+            if !store.searchText.isEmpty {
+                Button {
+                    store.searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .help("清除搜索")
+            }
+
+            Divider().frame(height: 18)
+
+            MultiSelectFilterButton(
+                allTitle: "全部来源",
+                width: 150,
+                options: AppSource.allCases.map {
+                    MultiSelectOption(value: $0, title: $0.title, symbol: $0.symbol)
+                },
+                selection: $store.gallerySourceFilters
+            )
+
+            MultiSelectFilterButton(
+                allTitle: "全部平台",
+                width: 118,
+                options: AppPlatform.allCases.map {
+                    MultiSelectOption(value: $0, title: $0.title, symbol: $0.symbol)
+                },
+                selection: $store.galleryPlatformFilters
+            )
+
+            MultiSelectFilterButton(
+                allTitle: "全部类型",
+                width: 112,
+                options: [
+                    MultiSelectOption(value: AppTypeFilter.system, title: AppTypeFilter.system.title, symbol: "apple.logo"),
+                    MultiSelectOption(value: AppTypeFilter.thirdParty, title: AppTypeFilter.thirdParty.title, symbol: "shippingbox")
+                ],
+                selection: $store.galleryTypeFilters
+            )
+
+            MultiSelectFilterButton(
+                allTitle: "全部状态",
+                width: 112,
+                options: GalleryItem.Status.allCases.map {
+                    MultiSelectOption(value: $0, title: $0.title, symbol: $0.symbol)
+                },
+                selection: $store.galleryStatusFilters
+            )
+
+            if hasActiveFilters {
+                Button {
+                    store.resetFilters()
+                } label: {
+                    Image(systemName: "line.3.horizontal.decrease.circle.fill")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .help("清除筛选")
+            }
+
+            Text(L.t("显示 %d / %d", visibleCount, totalCount))
+                .font(.caption)
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+                .fixedSize()
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 44)
+        .background(.bar)
+    }
+}
+
+private struct MultiSelectOption<Option: Hashable & Identifiable>: Identifiable {
+    let value: Option
+    let title: String
+    let symbol: String?
+
+    var id: Option.ID { value.id }
+}
+
+private struct MultiSelectFilterButton<Option: Hashable & Identifiable>: View {
+    let allTitle: String
+    let width: CGFloat
+    let options: [MultiSelectOption<Option>]
+    @Binding var selection: Set<Option>
+
+    @State private var showing = false
+
+    private var labelText: String {
+        if selection.isEmpty || selection.count == options.count {
+            return L.t(allTitle)
+        }
+        if selection.count == 1,
+           let option = options.first(where: { selection.contains($0.value) }) {
+            return option.title
+        }
+        return L.t("已选 %d 项", selection.count)
+    }
+
+    private var isActive: Bool {
+        !selection.isEmpty && selection.count < options.count
+    }
+
+    var body: some View {
+        Button {
+            showing.toggle()
+        } label: {
+            HStack(spacing: 5) {
+                Text(labelText)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.down")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 9)
+            .frame(width: width, height: 26)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .background(
+            isActive ? Color.accentColor.opacity(0.14) : Color.primary.opacity(0.06),
+            in: RoundedRectangle(cornerRadius: 6)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 6)
+                .strokeBorder(
+                    isActive ? Color.accentColor.opacity(0.35) : Color.primary.opacity(0.08),
+                    lineWidth: 1
+                )
+        }
+        .popover(isPresented: $showing, arrowEdge: .bottom) {
+            VStack(alignment: .leading, spacing: 2) {
+                filterRow(
+                    title: L.t(allTitle),
+                    selected: selection.isEmpty,
+                    symbol: nil
+                ) {
+                    selection.removeAll()
+                }
+
+                Divider()
+                    .padding(.vertical, 3)
+
+                ForEach(options) { option in
+                    filterRow(
+                        title: option.title,
+                        selected: selection.contains(option.value),
+                        symbol: option.symbol
+                    ) {
+                        if selection.contains(option.value) {
+                            selection.remove(option.value)
+                        } else {
+                            selection.insert(option.value)
+                        }
+                    }
+                }
+            }
+            .padding(10)
+            .frame(width: 230)
+        }
+    }
+
+    private func filterRow(
+        title: String,
+        selected: Bool,
+        symbol: String?,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark")
+                    .opacity(selected ? 1 : 0)
+                    .frame(width: 12)
+                if let symbol {
+                    Image(systemName: symbol)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 16)
+                }
+                Text(title)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 3)
     }
 }

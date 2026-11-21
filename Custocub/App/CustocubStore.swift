@@ -83,7 +83,11 @@ final class CustocubStore: ObservableObject {
     @Published var sourceFilter: AppSource?
     @Published var platformFilter: AppPlatform?
     @Published var typeFilter: AppTypeFilter = .all
-    @Published var galleryStatusFilter: GalleryItem.Status?
+    /// 展示框专用筛选，支持多选。空集合表示「全部」。
+    @Published var gallerySourceFilters: Set<AppSource> = []
+    @Published var galleryPlatformFilters: Set<AppPlatform> = []
+    @Published var galleryTypeFilters: Set<AppTypeFilter> = []
+    @Published var galleryStatusFilters: Set<GalleryItem.Status> = []
 
     private let repository: SnapshotRepository
     private let scanner: AppScanner
@@ -439,12 +443,17 @@ final class CustocubStore: ObservableObject {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         return input.filter { item in
-            let matchesStatus = galleryStatusFilter == nil || item.status == galleryStatusFilter
-            let matchesSource = sourceFilter == nil
-                || (item.app.source == sourceFilter && !(sourceFilter == .manual && item.app.isOwn))
-                || (sourceFilter == item.app.managerSource && item.app.source != sourceFilter)
-            let matchesPlatform = platformFilter == nil || item.app.platform == platformFilter
-            let matchesType = typeFilter.matches(item.app)
+            let matchesStatus = galleryStatusFilters.isEmpty
+                || galleryStatusFilters.contains(item.status)
+            let matchesSource = gallerySourceFilters.isEmpty
+                || gallerySourceFilters.contains { source in
+                    (item.app.source == source && !(source == .manual && item.app.isOwn))
+                        || (source == item.app.managerSource && item.app.source != source)
+                }
+            let matchesPlatform = galleryPlatformFilters.isEmpty
+                || galleryPlatformFilters.contains(item.app.platform)
+            let matchesType = galleryTypeFilters.isEmpty
+                || galleryTypeFilters.contains { $0.matches(item.app) }
             let matchesSearch = query.isEmpty
                 || item.app.name.localizedCaseInsensitiveContains(query)
                 || item.app.bundleIdentifier?.localizedCaseInsensitiveContains(query) == true
@@ -459,7 +468,10 @@ final class CustocubStore: ObservableObject {
         sourceFilter = nil
         platformFilter = nil
         typeFilter = .all
-        galleryStatusFilter = nil
+        gallerySourceFilters = []
+        galleryPlatformFilters = []
+        galleryTypeFilters = []
+        galleryStatusFilters = []
     }
 
     func syncSourceFilterForSelection() {

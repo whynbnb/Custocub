@@ -214,7 +214,11 @@ final class IconProvider {
         //
         // NSWorkspace 的图标服务会按路径/Bundle ID 缓存图标，应用更新后
         // 在同一个进程里可能继续返回旧图。直接读 .icns 可以绕开这层缓存。
-        if let direct = directIcon(forPath: path) {
+        //
+        // 系统应用例外：它们大量使用 Assets.car，目录里的 .icns 往往只是
+        // 空白占位图，直接读取会得到白块，所以系统应用仍交给 NSWorkspace。
+        if !path.hasPrefix("/System/"),
+           let direct = directIcon(forPath: path) {
             return direct
         }
         return NSWorkspace.shared.icon(forFile: path)

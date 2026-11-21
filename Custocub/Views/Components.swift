@@ -201,7 +201,6 @@ struct SectionCard<Content: View>: View {
 
 struct FilterBar: View {
     @EnvironmentObject private var store: CustocubStore
-    var showsStatusFilter = false
 
     private var sourcePickerSelection: Binding<AppSource?> {
         Binding(
@@ -267,20 +266,8 @@ struct FilterBar: View {
             .labelsHidden()
             .frame(width: 118)
 
-            if showsStatusFilter {
-                Picker("状态", selection: $store.galleryStatusFilter) {
-                    Text("全部状态").tag(GalleryItem.Status?.none)
-                    ForEach(GalleryItem.Status.allCases) { status in
-                        Text(status.title).tag(Optional(status))
-                    }
-                }
-                .labelsHidden()
-                .frame(width: 110)
-            }
-
             if store.sourceFilter != nil || store.platformFilter != nil
-                || store.typeFilter != .all || !store.searchText.isEmpty
-                || (showsStatusFilter && store.galleryStatusFilter != nil) {
+                || store.typeFilter != .all || !store.searchText.isEmpty {
                 Button {
                     store.resetFilters()
                 } label: {
