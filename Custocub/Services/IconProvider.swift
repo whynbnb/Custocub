@@ -335,47 +335,51 @@ final class IconProvider {
     }
 
     nonisolated static func renderPNG(forPath path: String, pixelSize: CGFloat = 192) -> Data? {
-        // 快照和磁盘缓存按 192px 保存；读取时先拿 2 倍左右的源图，
-        // 再缩放到目标尺寸，避免缩略图二次缩放后发虚。
-        let sourcePixelSize = max(pixelSize * 2, 384)
-        guard let source = loadIcon(forPath: path, maxPixelSize: sourcePixelSize) else { return nil }
-        // 直接请求目标像素的位图表示。
-        //
-        // 之前用 `source.size`（通常是 32pt）作为建议尺寸，系统只会给出
-        // 64×64 的位图，再放大到目标尺寸就会发虚。按目标尺寸请求可以
-        // 拿到 256/512 的原始位图，重采样后边缘是清晰的。
-        var proposedRect = NSRect(x: 0, y: 0, width: pixelSize, height: pixelSize)
-        guard let cgImage = source.cgImage(forProposedRect: &proposedRect, context: nil, hints: nil) else {
-            return nil
+        // 图标解码、缩放和 PNG 编码都在后台批量执行，逐张放进自动释放池，
+        // 避免 NSImage / ImageIO 的临时对象在整批任务里累积。
+        autoreleasepool {
+            // 快照和磁盘缓存按 192px 保存；读取时先拿 2 倍左右的源图，
+            // 再缩放到目标尺寸，避免缩略图二次缩放后发虚。
+            let sourcePixelSize = max(pixelSize * 2, 384)
+            guard let source = loadIcon(forPath: path, maxPixelSize: sourcePixelSize) else { return nil }
+            // 直接请求目标像素的位图表示。
+            //
+            // 之前用 `source.size`（通常是 32pt）作为建议尺寸，系统只会给出
+            // 64×64 的位图，再放大到目标尺寸就会发虚。按目标尺寸请求可以
+            // 拿到 256/512 的原始位图，重采样后边缘是清晰的。
+            var proposedRect = NSRect(x: 0, y: 0, width: pixelSize, height: pixelSize)
+            guard let cgImage = source.cgImage(forProposedRect: &proposedRect, context: nil, hints: nil) else {
+                return nil
+            }
+
+            let pixelWidth = Int(pixelSize)
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            guard let context = CGContext(
+                data: nil,
+                width: pixelWidth,
+                height: pixelWidth,
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: colorSpace,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ) else { return nil }
+
+            context.interpolationQuality = .high
+            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: pixelWidth, height: pixelWidth))
+
+            guard let scaled = context.makeImage() else { return nil }
+            let data = NSMutableData()
+            guard let destination = CGImageDestinationCreateWithData(
+                data,
+                UTType.png.identifier as CFString,
+                1,
+                nil
+            ) else { return nil }
+
+            CGImageDestinationAddImage(destination, scaled, nil)
+            guard CGImageDestinationFinalize(destination) else { return nil }
+            return data as Data
         }
-
-        let pixelWidth = Int(pixelSize)
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        guard let context = CGContext(
-            data: nil,
-            width: pixelWidth,
-            height: pixelWidth,
-            bitsPerComponent: 8,
-            bytesPerRow: 0,
-            space: colorSpace,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-        ) else { return nil }
-
-        context.interpolationQuality = .high
-        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: pixelWidth, height: pixelWidth))
-
-        guard let scaled = context.makeImage() else { return nil }
-        let data = NSMutableData()
-        guard let destination = CGImageDestinationCreateWithData(
-            data,
-            UTType.png.identifier as CFString,
-            1,
-            nil
-        ) else { return nil }
-
-        CGImageDestinationAddImage(destination, scaled, nil)
-        guard CGImageDestinationFinalize(destination) else { return nil }
-        return data as Data
     }
 
     func invalidate(path: String) {

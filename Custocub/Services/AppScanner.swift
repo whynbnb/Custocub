@@ -22,16 +22,20 @@ struct AppScanner: Sendable {
         records.reserveCapacity(discovered.count)
 
         for item in discovered {
-            if let record = makeRecord(
-                appURL: item.url,
-                resolvedURL: item.resolvedURL,
-                brewIndex: brewIndex,
-                steamIndex: steamIndex,
-                toolboxIndex: toolboxIndex,
-                ownBundlePrefix: ownBundlePrefix,
-                now: now
-            ) {
-                records.append(record)
+            // 每个应用解析都会产生 Info.plist 字典、URL 和字符串等临时对象；
+            // 整个扫描在同一个后台任务里，若不逐个释放，峰值会多出几十 MB。
+            autoreleasepool {
+                if let record = makeRecord(
+                    appURL: item.url,
+                    resolvedURL: item.resolvedURL,
+                    brewIndex: brewIndex,
+                    steamIndex: steamIndex,
+                    toolboxIndex: toolboxIndex,
+                    ownBundlePrefix: ownBundlePrefix,
+                    now: now
+                ) {
+                    records.append(record)
+                }
             }
         }
 
