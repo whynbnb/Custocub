@@ -92,7 +92,7 @@ private struct AppsSettingsTab: View {
     @AppStorage("autoScanOnLaunch") private var autoScanOnLaunch = true
     @AppStorage("refreshOnActivate") private var refreshOnActivate = true
     @AppStorage("computeSizes") private var computeSizes = true
-    @AppStorage("showDeveloperApps") private var showDeveloperApps = true
+    @AppStorage(AppPreferenceKey.showDeveloperApps) private var showDeveloperApps = true
 
     var body: some View {
         Form {

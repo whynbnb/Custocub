@@ -16,6 +16,11 @@ enum AppConstants {
     ]
 }
 
+/// 多个视图和报告共用的偏好键，避免字符串散落。
+enum AppPreferenceKey {
+    static let showDeveloperApps = "showDeveloperApps"
+}
+
 /// 应用语言。`.system` 跟随 macOS 的语言设置。
 enum AppLanguage: String, CaseIterable, Identifiable {
     case system

@@ -223,8 +223,13 @@ final class CustocubStore: ObservableObject {
             return counts
         }
         var counts = Dictionary(grouping: apps, by: \.source).mapValues(\.count)
-        // 开发者的应用从「手动安装」中分离，单独归入「开发者的应用」。
-        counts[.manual] = apps.count { $0.source == .manual && !$0.isOwn }
+        // 开启「开发者的应用」时，手动安装的开发者应用从「手动安装」
+        // 中分离出来单独统计；关闭后仍按真实来源计入手动安装。
+        let showsDeveloperApps = UserDefaults.standard
+            .object(forKey: AppPreferenceKey.showDeveloperApps) as? Bool ?? true
+        counts[.manual] = apps.count {
+            $0.source == .manual && !(showsDeveloperApps && $0.isOwn)
+        }
         return counts
     }
 

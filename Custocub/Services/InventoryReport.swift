@@ -84,7 +84,8 @@ enum InventoryReport {
         let thirdParty: Int
         let measuredBytes: Int64
         let missingSizes: Int
-        let sources: [(source: AppSource, count: Int)]
+        /// 来源名称直接存字符串，便于插入「开发者的应用」这个非 AppSource 分类。
+        let sources: [(title: String, count: Int)]
 
         var totalSizeText: String {
             measuredBytes.formatted(.byteCount(style: .file))
@@ -93,7 +94,7 @@ enum InventoryReport {
         var sourceText: String {
             sources
                 .filter { $0.count > 0 }
-                .map { "\($0.source.title) \($0.count)" }
+                .map { "\($0.title) \($0.count)" }
                 .joined(separator: " · ")
         }
     }
@@ -123,9 +124,24 @@ enum InventoryReport {
     private static func summarize(_ apps: [AppRecord]) -> Summary {
         let system = apps.count { $0.isSystemApp }
         let measured = apps.compactMap(\.sizeInBytes)
-        let counts = Dictionary(grouping: apps, by: \.source).mapValues(\.count)
-        let sources = AppSource.allCases.map { source in
-            (source: source, count: counts[source] ?? 0)
+        var counts = Dictionary(grouping: apps, by: \.source).mapValues(\.count)
+
+        // 与侧边栏保持同一口径：开启「开发者的应用」时，手动安装的
+        // 开发者应用从「手动安装」中分离；关闭时仍按真实来源统计。
+        let showsDeveloperApps = UserDefaults.standard
+            .object(forKey: AppPreferenceKey.showDeveloperApps) as? Bool ?? true
+        let developerApps = showsDeveloperApps
+            ? apps.count { $0.isOwn && $0.source == .manual }
+            : 0
+        counts[.manual] = apps.count {
+            $0.source == .manual && !(showsDeveloperApps && $0.isOwn)
+        }
+
+        var sources = AppSource.allCases.map {
+            (title: $0.title, count: counts[$0] ?? 0)
+        }
+        if developerApps > 0 {
+            sources.insert((title: L.t("开发者的应用"), count: developerApps), at: 0)
         }
 
         return Summary(

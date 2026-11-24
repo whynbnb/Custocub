@@ -119,7 +119,7 @@ Developer apps are identified by the fixed Bundle ID prefix `me.whynbnb.`.
 - A **Show Developer Apps** toggle in Settings controls the category; it is on by default.
 - The **Developer Apps** row appears in the Sources section, next to Homebrew, Steam, and the other sources.
 - The category is only shown when more than two apps match.
-- Real sources take priority in the counts: Homebrew, the App Store, Steam, and others keep their apps. Only manually installed developer apps are counted in the Developer Apps row, so source totals are not double-counted.
+- Real sources take priority in the counts: Homebrew, the App Store, Steam, and others keep their apps. Only manually installed developer apps are counted in the Developer Apps row, so source totals are not double-counted. When the toggle is off, they are counted under Manual instead.
 - Selecting the Developer Apps filter still shows every app that matches the Bundle ID prefix, including apps from other sources.
 - It does **not** overwrite the real installation source; source badges and snapshot data stay accurate.
 
@@ -336,7 +336,7 @@ Use **More → Export Report** in the toolbar to share or archive the app invent
 - **PDF** — a paginated A4 report with the same summary and table, suitable for printing or long-term archiving.
 - **CSV** — UTF-8 with BOM for spreadsheet apps, including Bundle ID, build, architecture, raw size in bytes, update time, and install path.
 
-When a historical snapshot is selected in the sidebar, the report describes that snapshot. Otherwise it exports the current scan.
+When a historical snapshot is selected in the sidebar, the report describes that snapshot. Otherwise it exports the current scan. The source breakdown follows the **Show Developer Apps** setting: manually installed developer apps are counted under **Developer Apps** when it is on, and under **Manual** when it is off.
 
 ### SwiftLens integration
 

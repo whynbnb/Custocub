@@ -3,7 +3,7 @@ import SwiftUI
 struct SidebarView: View {
     @EnvironmentObject private var store: CustocubStore
     @EnvironmentObject private var brew: BrewStore
-    @AppStorage("showDeveloperApps") private var showDeveloperApps = true
+    @AppStorage(AppPreferenceKey.showDeveloperApps) private var showDeveloperApps = true
 
     @State private var showingNewCollection = false
     @State private var newCollectionName = ""
@@ -178,7 +178,7 @@ struct SidebarView: View {
                         SidebarRow(
                             title: "开发者的应用",
                             symbol: "chevron.left.forwardslash.chevron.right",
-                            count: store.ownAppCount,
+                            count: store.ownManualCount,
                             tint: .purple,
                             isSelected: store.sidebarSelection == .own
                         )
