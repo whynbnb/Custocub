@@ -18,9 +18,29 @@ enum SwiftLensIntegration {
         applicationURL != nil
     }
 
+    /// 从 1.3 开始 SwiftLens 才响应打开 `.app` 的 Apple Event。
+    /// 旧版本会启动但忽略传入的文件，因此这里需要显式校验版本。
+    static var installedVersion: String? {
+        guard let applicationURL,
+              let bundle = Bundle(url: applicationURL) else { return nil }
+        return bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+    }
+
+    static var supportsOpeningApplications: Bool {
+        guard let installedVersion else { return false }
+        return installedVersion.compare("1.3", options: .numeric) != .orderedAscending
+    }
+
     @MainActor
     static func open(appPath: String, store: CustocubStore) {
-        guard let applicationURL else { return }
+        guard let applicationURL else {
+            store.errorMessage = L.t("找不到 SwiftLens，请确认它已安装。")
+            return
+        }
+        guard supportsOpeningApplications else {
+            store.errorMessage = L.t("SwiftLens 需要 1.3 或更高版本才能打开应用，请先更新 SwiftLens。")
+            return
+        }
 
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = true
