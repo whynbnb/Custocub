@@ -25,7 +25,7 @@
 
 Custocub is a native macOS app inventory and snapshot manager built with Swift 6 and SwiftUI. It gives you a clear view of every app on your Mac: where it came from, which architecture it runs on, whether it is a system or third-party app, and what changed over time.
 
-- **Version:** 1.3 (Build 3)
+- **Version:** 1.4 (Build 4)
 - **Bundle ID:** `me.whynbnb.Custocub`
 - **Platform:** macOS 15+
 - **UI language:** English / Simplified Chinese (follows the system by default)
@@ -487,8 +487,8 @@ This writes the full set of AppIcon PNGs into `Custocub/Resources/Assets.xcasset
 
 Project settings:
 
-- Marketing version: `1.3`
-- Current version (build): `3`
+- Marketing version: `1.4`
+- Current version (build): `4`
 - Bundle identifier: `me.whynbnb.Custocub`
 
 ## Data locations
