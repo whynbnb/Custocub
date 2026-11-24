@@ -587,13 +587,9 @@ private struct ChangeIconView: View {
 
     var body: some View {
         Group {
-            if let app, let data = app.iconData, let image = NSImage(data: data) {
-                Image(nsImage: image)
-                    .resizable()
-                    .interpolation(.high)
-                    .scaledToFit()
-            } else if let app {
-                // 当前状态没有 iconData，但可以从磁盘读取实时图标。
+            if let app {
+                // 快照应用会按 iconSnapshotID 从侧车读取历史图标；
+                // 当前状态没有快照图标时则回退到实时图标。
                 AppIconView(app: app, size: size)
             } else {
                 Image(systemName: "app.fill")

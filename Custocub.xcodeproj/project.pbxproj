@@ -31,6 +31,7 @@
 		50E3190B48056EC716660970 /* BrewCatalogDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E892912C11442B60B80700A /* BrewCatalogDetailView.swift */; };
 		52EEA5C8D0B8C636C61C9132 /* BrewStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 289C498D0E1051A0658A43D6 /* BrewStore.swift */; };
 		5A7200A500EBCB19F9682FC1 /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A0CBB06AE4D79176F21C1A9 /* InsightsView.swift */; };
+		5AB243579974F1142BC8F461 /* SnapshotIconStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 044C113BCF45C45A0DFD04DF /* SnapshotIconStore.swift */; };
 		5D61423B0768E2F287CEBB77 /* GalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E494F2C5DBAFFD55C067618A /* GalleryView.swift */; };
 		5E80DAE89D2319EFA84A6FAE /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06E5DFFFB21F029F94D43D7D /* AppPreferences.swift */; };
 		662C0BF0CF5FE1B8CC79842F /* BrewCleanupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EAE89A7D8689273BD5A94E0 /* BrewCleanupView.swift */; };
@@ -76,6 +77,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		044C113BCF45C45A0DFD04DF /* SnapshotIconStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotIconStore.swift; sourceTree = "<group>"; };
 		06E5DFFFB21F029F94D43D7D /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
 		09F29629C132BBF4E5C57E74 /* AppStory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStory.swift; sourceTree = "<group>"; };
 		0D524AEB924A34D1313EDD62 /* BrewUpgradeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrewUpgradeView.swift; sourceTree = "<group>"; };
@@ -249,6 +251,7 @@
 				CB29DD222217857737C23E7C /* JetBrainsToolboxIndex.swift */,
 				90B5B27E6EE91F5B84801601 /* MachOReader.swift */,
 				3E304477F8D3049D1B72C716 /* SizeCache.swift */,
+				044C113BCF45C45A0DFD04DF /* SnapshotIconStore.swift */,
 				DDEDA7C65BB44C967065B4E2 /* SnapshotRepository.swift */,
 				1D9F35333C91991D3E58F940 /* SteamDetector.swift */,
 				ED8841E2347088BD41A9DC5E /* SwiftLensIntegration.swift */,
@@ -408,6 +411,7 @@
 				4C715978C469DC4F64F992A3 /* SettingsView.swift in Sources */,
 				C7E4BCDAC58B3F81935C7958 /* SidebarView.swift in Sources */,
 				03067CD0CA970901A58A1421 /* SizeCache.swift in Sources */,
+				5AB243579974F1142BC8F461 /* SnapshotIconStore.swift in Sources */,
 				CCBDA4B579BFE87EDB33FD17 /* SnapshotRepository.swift in Sources */,
 				E7C92538E7FED887FF76C3FF /* SteamDetector.swift in Sources */,
 				EE7436E08B65444A9430C1BA /* SwiftLensIntegration.swift in Sources */,

@@ -7,11 +7,16 @@ struct AppShareCard: View {
     let story: AppStory
 
     private var iconImage: NSImage? {
+        if let snapshotID = app.iconSnapshotID,
+           let data = SnapshotIconStore.iconData(snapshotID: snapshotID, app: app),
+           let image = NSImage(data: data) {
+            return image
+        }
+        if let data = app.iconData, let image = NSImage(data: data) {
+            return image
+        }
         if let cached = IconProvider.shared.cachedIcon(forPath: app.path) {
             return cached
-        }
-        if let data = app.iconData {
-            return NSImage(data: data)
         }
         guard FileManager.default.fileExists(atPath: app.path) else { return nil }
         return NSWorkspace.shared.icon(forFile: app.path)

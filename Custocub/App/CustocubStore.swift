@@ -559,15 +559,22 @@ final class CustocubStore: ObservableObject {
         }
 
         var entries: [AppIconHistoryEntry] = []
-        var lastIcon: Data?
+        var lastFingerprint: String?
 
         for snapshot in snapshots.sorted(by: { $0.createdAt < $1.createdAt }) {
-            guard let item = snapshot.apps.first(where: { comparisonKey(for: $0) == key }),
-                  let iconData = item.iconData,
-                  !iconData.isEmpty else {
+            guard let item = snapshot.apps.first(where: { comparisonKey(for: $0) == key }) else {
                 continue
             }
-            if lastIcon == iconData { continue }
+            let fingerprint = item.iconFingerprint
+                ?? item.iconData.map { SnapshotIconStore.fingerprint(for: $0) }
+            guard let fingerprint, !fingerprint.isEmpty else { continue }
+            if lastFingerprint == fingerprint { continue }
+
+            let snapshotID = item.iconSnapshotID ?? snapshot.id
+            guard let iconData = item.iconData ?? SnapshotIconStore.iconData(
+                snapshotID: snapshotID,
+                app: item
+            ) else { continue }
 
             entries.append(
                 AppIconHistoryEntry(
@@ -579,7 +586,7 @@ final class CustocubStore: ObservableObject {
                     iconData: iconData
                 )
             )
-            lastIcon = iconData
+            lastFingerprint = fingerprint
         }
 
         iconHistoryCache[key] = entries
@@ -1066,11 +1073,15 @@ final class CustocubStore: ObservableObject {
             brewVersion: inventory?.brewVersion
         )
 
-        snapshots.insert(snapshot, at: 0)
-        sidebarSelection = .snapshot(snapshot.id)
-        selectedAppID = nil
-        persist(snapshot)
-        statusMessage = L.t("已保存快照 · %@ · %d 个应用", snapshot.name, snapshot.appCount)
+        do {
+            let light = try repository.save(snapshot)
+            snapshots.insert(light, at: 0)
+            sidebarSelection = .snapshot(snapshot.id)
+            selectedAppID = nil
+            statusMessage = L.t("已保存快照 · %@ · %d 个应用", snapshot.name, snapshot.appCount)
+        } catch {
+            errorMessage = L.t("无法保存快照：%@", error.localizedDescription)
+        }
     }
 
     /// 等待后台体积计算完成，补齐所有体积与图标后再写入快照。
@@ -1130,14 +1141,21 @@ final class CustocubStore: ObservableObject {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty,
               let index = snapshots.firstIndex(where: { $0.id == id }) else { return }
-        snapshots[index].name = trimmed
-        persist(snapshots[index])
+        do {
+            snapshots[index] = try repository.updateMetadata(id: id, name: trimmed)
+            iconHistoryCache.removeAll()
+        } catch {
+            errorMessage = L.t("无法保存快照：%@", error.localizedDescription)
+        }
     }
 
     func updateSnapshotNote(id: UUID, note: String) {
         guard let index = snapshots.firstIndex(where: { $0.id == id }) else { return }
-        snapshots[index].note = note
-        persist(snapshots[index])
+        do {
+            snapshots[index] = try repository.updateMetadata(id: id, note: note)
+        } catch {
+            errorMessage = L.t("无法保存快照：%@", error.localizedDescription)
+        }
     }
 
     func importSnapshots(from url: URL) {
@@ -1149,10 +1167,11 @@ final class CustocubStore: ObservableObject {
             }
 
             let incomingIDs = Set(imported.map(\.id))
+            let saved = try repository.save(imported)
             snapshots.removeAll { incomingIDs.contains($0.id) }
-            snapshots.append(contentsOf: imported)
+            snapshots.append(contentsOf: saved)
             snapshots.sort { $0.createdAt > $1.createdAt }
-            try repository.save(imported)
+            iconHistoryCache.removeAll()
 
             if let first = imported.sorted(by: { $0.createdAt > $1.createdAt }).first {
                 sidebarSelection = .snapshot(first.id)
@@ -1178,6 +1197,8 @@ final class CustocubStore: ObservableObject {
     private func loadSnapshots() {
         do {
             var loaded = try repository.load().sorted { $0.createdAt > $1.createdAt }
+            // 缓存正常时 apps 已不带 PNG；只有缓存构建失败回退到原始快照时
+            // 才需要按内容合并图标 Data。
             Self.deduplicateSnapshotIcons(in: &loaded)
             snapshots = loaded
         } catch {
@@ -1203,14 +1224,6 @@ final class CustocubStore: ObservableObject {
                     canonical[data] = data
                 }
             }
-        }
-    }
-
-    private func persist(_ snapshot: AppSnapshot) {
-        do {
-            try repository.save(snapshot)
-        } catch {
-            errorMessage = L.t("无法保存快照：%@", error.localizedDescription)
         }
     }
 }

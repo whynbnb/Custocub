@@ -37,17 +37,24 @@ struct AppIconView: View {
         self.app = app
         self.size = size
         self.cornerRadius = cornerRadius
-        let cached = IconProvider.shared.cachedIcon(forPath: app.path)
-            ?? app.bundleIdentifier.flatMap { IconProvider.shared.cachedIcon(forBundleID: $0) }
-        let stored = app.iconData.flatMap { NSImage(data: $0) }
-        _image = State(initialValue: cached ?? stored)
+        if let snapshotID = app.iconSnapshotID {
+            let snapshotIcon = SnapshotIconStore.cachedIcon(snapshotID: snapshotID, app: app)
+            let stored = app.iconData.flatMap { NSImage(data: $0) }
+            _image = State(initialValue: snapshotIcon ?? stored)
+        } else {
+            let cached = IconProvider.shared.cachedIcon(forPath: app.path)
+                ?? app.bundleIdentifier.flatMap { IconProvider.shared.cachedIcon(forBundleID: $0) }
+            let stored = app.iconData.flatMap { NSImage(data: $0) }
+            _image = State(initialValue: cached ?? stored)
+        }
     }
 
     /// 应用更新后 path 不变，但版本、构建号或更新时间会变化。
     /// 把它作为 task 的 id，让复用中的行重新读取新图标。
     private var iconCacheKey: String {
         let updated = app.updatedAt?.timeIntervalSince1970 ?? 0
-        return "\(app.path)|\(app.version ?? "")|\(app.build ?? "")|\(updated)"
+        let snapshot = app.iconSnapshotID?.uuidString ?? ""
+        return "\(app.path)|\(snapshot)|\(app.iconFingerprint ?? "")|\(app.version ?? "")|\(app.build ?? "")|\(updated)"
     }
 
     var body: some View {
@@ -74,6 +81,14 @@ struct AppIconView: View {
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .task(id: iconCacheKey) {
+            if let snapshotID = app.iconSnapshotID {
+                if let loaded = await SnapshotIconStore.iconAsync(snapshotID: snapshotID, app: app) {
+                    image = loaded
+                } else if image == nil, let stored = app.iconData.flatMap({ NSImage(data: $0) }) {
+                    image = stored
+                }
+                return
+            }
             if let cached = IconProvider.shared.cachedIcon(forPath: app.path) {
                 image = cached
                 return
@@ -93,6 +108,7 @@ struct AppIconView: View {
             }
         }
         .onChange(of: app.path) {
+            guard app.iconSnapshotID == nil else { return }
             image = IconProvider.shared.cachedIcon(forPath: app.path)
                 ?? app.bundleIdentifier.flatMap { IconProvider.shared.cachedIcon(forBundleID: $0) }
                 ?? app.iconData.flatMap { NSImage(data: $0) }

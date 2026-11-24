@@ -102,11 +102,21 @@ struct AppChange: Identifiable, Hashable, Sendable {
     /// 不能因为一边是 nil 就把所有应用都标记成图标变化。
     var iconChanged: Bool {
         guard let before, let after,
-              let oldIcon = before.iconData, !oldIcon.isEmpty,
-              let newIcon = after.iconData, !newIcon.isEmpty else {
+              let oldIcon = Self.iconFingerprint(before),
+              let newIcon = Self.iconFingerprint(after) else {
             return false
         }
         return oldIcon != newIcon
+    }
+
+    private static func iconFingerprint(_ app: AppRecord) -> String? {
+        if let fingerprint = app.iconFingerprint, !fingerprint.isEmpty {
+            return fingerprint
+        }
+        if let data = app.iconData, !data.isEmpty {
+            return SnapshotIconStore.fingerprint(for: data)
+        }
+        return nil
     }
 
     var summary: String {
@@ -129,9 +139,9 @@ struct AppChange: Identifiable, Hashable, Sendable {
     /// 忽略快照比较中的易变字段：lastSeenAt 每次扫描都会变；
     /// 当前状态没有 iconData；体积未测量完成时也不应该算变化。
     private static func hasMaterialChange(before: AppRecord, after: AppRecord) -> Bool {
-        let oldIcon = before.iconData.flatMap { $0.isEmpty ? nil : $0 }
-        let newIcon = after.iconData.flatMap { $0.isEmpty ? nil : $0 }
-        if let oldIcon, let newIcon, oldIcon != newIcon {
+        if let oldIcon = iconFingerprint(before),
+           let newIcon = iconFingerprint(after),
+           oldIcon != newIcon {
             return true
         }
 
@@ -140,6 +150,10 @@ struct AppChange: Identifiable, Hashable, Sendable {
         old.lastSeenAt = new.lastSeenAt
         old.iconData = nil
         new.iconData = nil
+        old.iconFingerprint = nil
+        new.iconFingerprint = nil
+        old.iconSnapshotID = nil
+        new.iconSnapshotID = nil
 
         if old.sizeInBytes == nil || new.sizeInBytes == nil {
             old.sizeInBytes = nil

@@ -424,13 +424,21 @@ There is no separate scan-time icon log. If you want a richer icon history, save
 
 ## Performance notes
 
+**Memory principles**
+
+- Historical snapshots are immutable and remain the source of truth on disk.
+- A derived, disposable cache keeps lightweight metadata in memory. Deleting `SnapshotCache` only triggers a rebuild.
+- Snapshot icons are stored as sidecar PNGs and loaded only when a card, comparison, story, or share card displays them.
+- The native table, 192px snapshot icon resolution, and all existing features are intentionally unchanged.
+- The first launch after upgrading an existing installation builds the cache once; later launches reuse it.
+
 - **Size cache** at `~/Library/Application Support/Custocub/size-cache.json`
   - Entries are invalidated when an app's update or install date changes.
   - Cache entries expire after 7 days.
   - Unchanged apps are not re-walked on every scan.
   - Settings → Data → **Clear Size Cache & Recalculate** forces a full re-measure.
 - **Async icons** are loaded off the main thread on demand as rows appear. Icons are kept as 256px thumbnails with a 48 MB cache cap instead of full-resolution images.
-- **Lean snapshots** are decoded with memory-mapped files, and identical icon data across snapshots is shared in memory.
+- **Lazy snapshot payloads** — immutable snapshot JSON files stay on disk. A derived lightweight cache keeps only metadata in memory, while snapshot icons are stored as sidecar PNGs and read only when a card, comparison, or story actually displays them.
 - **Hold ⌥ while clicking Rescan** to force a full refresh: the button turns orange, every icon is re-rendered and every app size is measured again, bypassing both caches.
 - **Batched size updates** avoid refreshing the whole table for every app.
 - **Native SwiftUI Table** is used for NSTableView-backed virtualization, native scrollbars, and resizable columns.
@@ -498,6 +506,12 @@ Size cache:
 
 ```text
 ~/Library/Application Support/Custocub/size-cache.json
+```
+
+Derived snapshot cache (rebuildable, safe to delete):
+
+```text
+~/Library/Application Support/Custocub/SnapshotCache/
 ```
 
 Favorites and collections:

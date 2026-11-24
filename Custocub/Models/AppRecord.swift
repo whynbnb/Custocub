@@ -19,6 +19,10 @@ struct AppRecord: Identifiable, Codable, Hashable, Sendable {
     var updatedAt: Date?
     var minimumSystemVersion: String?
     var iconData: Data?
+    /// 图标内容指纹。快照缓存用它判断图标是否变化，不必把整张 PNG 留在内存里。
+    var iconFingerprint: String? = nil
+    /// 快照缓存中的图标位置；只在派生缓存里使用，原始快照 JSON 不依赖它。
+    var iconSnapshotID: UUID? = nil
     var lastSeenAt: Date
     var steamAppID: String? = nil
     var isOwnApp: Bool? = nil
