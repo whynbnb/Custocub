@@ -8,10 +8,12 @@ enum GalleryPresentation {
 /// 独立窗口里的沉浸式图标墙。
 struct GalleryPresentationView: View {
     @EnvironmentObject private var store: CustocubStore
+    @EnvironmentObject private var brew: BrewStore
     @Environment(\.dismissWindow) private var dismissWindow
 
     @State private var showsChrome = true
     @State private var hideTask: Task<Void, Never>?
+    @State private var showingCommandPalette = false
 
     private var items: [GalleryItem] {
         store.filteredGalleryItems(store.galleryScopedItems)
@@ -45,6 +47,14 @@ struct GalleryPresentationView: View {
         }
         .onExitCommand {
             close()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .custocubShowCommandPalette)) { _ in
+            showingCommandPalette = true
+        }
+        .sheet(isPresented: $showingCommandPalette) {
+            CommandPaletteView()
+                .environmentObject(store)
+                .environmentObject(brew)
         }
     }
 

@@ -58,6 +58,9 @@ private struct SidebarCache: Codable {
     var uninstalledCount: Int
     var sourceCounts: [String: Int]
     var lastScanAt: Date
+    var systemCount: Int?
+    var thirdPartyCount: Int?
+    var totalSizeBytes: Int64?
 }
 
 @MainActor
@@ -160,8 +163,18 @@ final class CustocubStore: ObservableObject {
         if usesCachedSidebar, let cachedSidebar { return cachedSidebar.installedCount }
         return apps.count
     }
-    var systemCount: Int { apps.count { $0.isSystemApp } }
-    var thirdPartyCount: Int { apps.count { !$0.isSystemApp } }
+    var systemCount: Int {
+        if usesCachedSidebar, let cachedSidebar, let cached = cachedSidebar.systemCount {
+            return cached
+        }
+        return apps.count { $0.isSystemApp }
+    }
+    var thirdPartyCount: Int {
+        if usesCachedSidebar, let cachedSidebar, let cached = cachedSidebar.thirdPartyCount {
+            return cached
+        }
+        return apps.count { !$0.isSystemApp }
+    }
     var ownAppCount: Int {
         if usesCachedSidebar, let cachedSidebar { return cachedSidebar.ownAppCount }
         return apps.count { $0.isOwn }
@@ -216,10 +229,19 @@ final class CustocubStore: ObservableObject {
     }
 
     var totalSize: Int64 {
-        apps.compactMap(\.sizeInBytes).reduce(0, +)
+        if usesCachedSidebar, let cachedSidebar, let cached = cachedSidebar.totalSizeBytes {
+            return cached
+        }
+        return apps.compactMap(\.sizeInBytes).reduce(0, +)
     }
 
     var totalSizeText: String {
+        if usesCachedSidebar, let cachedSidebar {
+            if let cached = cachedSidebar.totalSizeBytes {
+                return cached.formatted(.byteCount(style: .file))
+            }
+            return L.t("计算中…")
+        }
         if apps.contains(where: { $0.sizeInBytes == nil }) {
             return L.t("计算中…")
         }
@@ -438,7 +460,7 @@ final class CustocubStore: ObservableObject {
         saveCollections()
     }
 
-    var favoriteCount: Int { favoriteKeys.count }
+    var favoriteCount: Int { galleryItems.count { isFavorite($0.app) } }
 
     @discardableResult
     func createCollection(named name: String, containing app: AppRecord? = nil) -> UUID {
@@ -496,6 +518,12 @@ final class CustocubStore: ObservableObject {
 
     func collectionItems(_ collection: AppCollection, from items: [GalleryItem]) -> [GalleryItem] {
         items.filter { collection.appKeys.contains(collectionKey(for: $0.app)) }
+    }
+
+    /// 侧边栏合集徽章：按实际能展示的应用计数，避免同一个 Bundle ID
+    /// 对应多份应用时出现“徽章 1、网格 2”的不一致。
+    func collectionItemCount(_ collection: AppCollection) -> Int {
+        galleryItems.count { collection.appKeys.contains(collectionKey(for: $0.app)) }
     }
 
     private static var collectionsFileURL: URL {
@@ -839,6 +867,7 @@ final class CustocubStore: ObservableObject {
         guard let lastScanAt else { return }
 
         let gallery = galleryItems
+        let sizesComplete = !apps.contains(where: { $0.sizeInBytes == nil })
         let cache = SidebarCache(
             installedCount: apps.count,
             ownAppCount: apps.count { $0.isOwn },
@@ -847,7 +876,12 @@ final class CustocubStore: ObservableObject {
             uninstalledCount: gallery.count { $0.status == .uninstalled },
             sourceCounts: Dictionary(uniqueKeysWithValues: sourceCounts
                 .map { ($0.key.rawValue, $0.value) }),
-            lastScanAt: lastScanAt
+            lastScanAt: lastScanAt,
+            systemCount: apps.count { $0.isSystemApp },
+            thirdPartyCount: apps.count { !$0.isSystemApp },
+            // 扫描刚结束时体积可能还在后台计算，沿用上次完整的值，
+            // 避免下次启动先显示 0 字节。
+            totalSizeBytes: sizesComplete ? totalSize : cachedSidebar?.totalSizeBytes
         )
 
         if let data = try? JSONEncoder().encode(cache) {
@@ -862,7 +896,7 @@ final class CustocubStore: ObservableObject {
     /// - Parameter fullRefresh: 按住 ⌥ 点击刷新时使用。会丢掉体积缓存，
     ///   并让内存图标缓存失效、重写所有已安装应用的磁盘图标，
     ///   让所有图标和体积重新生成，而不是沿用旧数据。
-    func refresh(ignoreRecentScan: Bool = false, fullRefresh: Bool = false) async {
+    func refresh(ignoreRecentScan: Bool = false, fullRefresh: Bool = false, forceSizeComputation: Bool = false) async {
         guard !isScanning, !isSavingSnapshot else { return }
 
         if !ignoreRecentScan,
@@ -949,6 +983,12 @@ final class CustocubStore: ObservableObject {
         // 当前筛选的来源如果已经不存在，自动回到全部来源。
         if let sourceFilter, (sourceCounts[sourceFilter] ?? 0) == 0 {
             self.sourceFilter = nil
+            // 侧边栏还停在已消失的来源页时，回到已安装列表，
+            // 避免出现“来源行仍选中、列表却显示全部应用”的状态。
+            if case .source(let selectedSource) = activeSelection, selectedSource == sourceFilter {
+                sidebarSelection = .installed
+                selectedAppID = nil
+            }
         }
 
         // 「开发者的应用」分类只在 3 个及以上匹配应用时显示。
@@ -962,7 +1002,7 @@ final class CustocubStore: ObservableObject {
             self.selectedAppID = nil
         }
 
-        beginSizeEnrichment()
+        beginSizeEnrichment(force: forceSizeComputation)
     }
 
     func refreshIfStale() async {
@@ -974,15 +1014,16 @@ final class CustocubStore: ObservableObject {
     func clearSizeCacheAndRefresh() async {
         sizeCache.removeFile()
         sizeCache = SizeCache(fileURL: SizeCache.defaultFileURL)
-        await refresh(ignoreRecentScan: true)
+        await refresh(ignoreRecentScan: true, forceSizeComputation: true)
     }
 
-    private func beginSizeEnrichment() {
+    private func beginSizeEnrichment(force: Bool = false) {
         enrichmentTask?.cancel()
         let token = UUID()
         enrichmentToken = token
 
-        let computeSizes = UserDefaults.standard.object(forKey: "computeSizes") as? Bool ?? true
+        let computeSizes = force
+            || (UserDefaults.standard.object(forKey: "computeSizes") as? Bool ?? true)
         guard computeSizes else {
             isEnriching = false
             persistSizeCache()
@@ -1053,6 +1094,8 @@ final class CustocubStore: ObservableObject {
             isEnriching = false
             enrichmentTask = nil
             persistSizeCache()
+            // 体积补齐后刷新侧边栏缓存，下次启动可以直接显示总体积。
+            saveSidebarCache()
         }
     }
 
@@ -1160,6 +1203,7 @@ final class CustocubStore: ObservableObject {
             }
             apps = updatedLiveApps
             persistSizeCache()
+            saveSidebarCache()
         }
 
         let missingIconPaths = result.filter { $0.iconData == nil }.map(\.path)

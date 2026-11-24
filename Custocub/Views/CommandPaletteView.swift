@@ -336,6 +336,7 @@ struct CommandPaletteView: View {
 
         case .snapshot(let snapshot):
             store.resetFilters()
+            store.selectedAppID = nil
             store.sidebarSelection = .snapshot(snapshot.id)
 
         case .action(let action):
@@ -345,11 +346,14 @@ struct CommandPaletteView: View {
             case .saveSnapshot:
                 Task { await store.saveSnapshot() }
             case .openHomebrew:
+                store.selectedAppID = nil
                 store.sidebarSelection = .brew
                 Task { await brew.load() }
             case .showGallery:
+                store.selectedAppID = nil
                 store.sidebarSelection = .gallery
             case .showFavorites:
+                store.selectedAppID = nil
                 store.sidebarSelection = .favorites
             case .presentation:
                 openWindow(id: GalleryPresentation.windowID)

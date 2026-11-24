@@ -82,7 +82,8 @@ struct AppIconView: View {
             }
         }
         .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        // 圆角裁切由设置里的开关决定；关闭时保留应用图标的原始外观。
+        .clipAppIcon(cornerRadius: cornerRadius)
         .task(id: iconCacheKey) {
             if let stored = app.iconData.flatMap({ NSImage(data: $0) }) {
                 if image == nil {

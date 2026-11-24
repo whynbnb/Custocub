@@ -894,3 +894,9 @@
 "图标" = "Icons";
 "将应用图标裁切为圆角" = "Clip app icons to rounded corners";
 "默认保持图标原始外观。开启后，应用列表、展示框、图标历史、快照对比和分享卡片里的图标会统一裁切为圆角。" = "Icons keep their original shape by default. When enabled, icons in the app list, Gallery, icon history, snapshot comparison, and share cards are clipped to rounded corners.";
+"↑↓ 选择" = "↑↓ Select";
+"↵ 执行" = "↵ Run";
+"esc 关闭" = "esc Close";
+"打开 Homebrew 升级" = "Open Homebrew Upgrade";
+"日期" = "Date";
+"重新读取已安装包与可更新列表。" = "Reload installed packages and available updates.";

@@ -753,6 +753,12 @@ private struct AppTable: View {
                 selection = newValue
             }
         }
+        .onAppear {
+            // 从命令面板返回列表页时，让表格直接高亮命令面板选中的应用。
+            if selection != store.selectedAppID {
+                selection = store.selectedAppID
+            }
+        }
         .sheet(item: $storyApp) { app in
             AppStorySheet(app: app)
                 .environmentObject(store)

@@ -113,7 +113,7 @@ struct SidebarView: View {
                     SidebarRow(
                         title: collection.name,
                         symbol: "square.stack.3d.up.fill",
-                        count: collection.appKeys.count,
+                        count: store.collectionItemCount(collection),
                         tint: .indigo,
                         isSelected: store.sidebarSelection == .collection(collection.id),
                         localizesTitle: false
@@ -178,7 +178,7 @@ struct SidebarView: View {
                         SidebarRow(
                             title: "开发者的应用",
                             symbol: "chevron.left.forwardslash.chevron.right",
-                            count: store.ownManualCount,
+                            count: store.ownAppCount,
                             tint: .purple,
                             isSelected: store.sidebarSelection == .own
                         )

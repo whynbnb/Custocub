@@ -2,6 +2,10 @@ import AppKit
 import SwiftUI
 
 struct SettingsView: View {
+    @EnvironmentObject private var store: CustocubStore
+    @EnvironmentObject private var brew: BrewStore
+    @State private var showingCommandPalette = false
+
     var body: some View {
         TabView {
             GeneralSettingsTab()
@@ -20,6 +24,14 @@ struct SettingsView: View {
                 .tabItem { Label("关于", systemImage: "info.circle") }
         }
         .frame(width: 560, height: 520)
+        .onReceive(NotificationCenter.default.publisher(for: .custocubShowCommandPalette)) { _ in
+            showingCommandPalette = true
+        }
+        .sheet(isPresented: $showingCommandPalette) {
+            CommandPaletteView()
+                .environmentObject(store)
+                .environmentObject(brew)
+        }
     }
 }
 
@@ -454,19 +466,21 @@ private struct HomebrewSettingsTab: View {
 
 private struct DataSettingsTab: View {
     @EnvironmentObject private var store: CustocubStore
+    @EnvironmentObject private var brew: BrewStore
 
     var body: some View {
         Form {
             Section("缓存") {
                 HStack {
                     Button("清除图标缓存") {
-                        IconProvider.shared.clear()
+                        IconProvider.shared.clearAll()
+                        SnapshotIconStore.invalidateMemoryCache()
                     }
 
                     Button("清除体积缓存并重算") {
                         Task { await store.clearSizeCacheAndRefresh() }
                     }
-                    .disabled(store.isScanning)
+                    .disabled(store.isScanning || store.isSavingSnapshot)
 
                     Spacer()
                 }
@@ -480,6 +494,7 @@ private struct DataSettingsTab: View {
                 HStack {
                     Button("清除目录缓存") {
                         BrewCatalogService.clearCache()
+                        brew.clearCatalogCache()
                     }
 
                     Spacer()

@@ -559,6 +559,21 @@ final class BrewStore: ObservableObject {
         await task.value
     }
 
+    /// 清除探索目录的内存缓存。磁盘缓存由设置页单独删除；
+    /// 下次打开「探索」时会重新读取，而不是继续显示旧列表。
+    func clearCatalogCache() {
+        catalog = []
+        catalogRevision &+= 1
+        hasLoadedCatalog = false
+        hasAttemptedCatalogLoad = false
+        lastCatalogLoadedAt = nil
+        popularity = nil
+        lastPopularityLoadedAt = nil
+        hasAttemptedPopularityLoad = false
+        exploreResultsCache = nil
+        selectedCatalogEntryID = nil
+    }
+
     private var catalogLoadedRecently: Bool {
         guard hasLoadedCatalog, let lastCatalogLoadedAt else { return false }
         return Date().timeIntervalSince(lastCatalogLoadedAt) < BrewCatalogService.catalogTTL

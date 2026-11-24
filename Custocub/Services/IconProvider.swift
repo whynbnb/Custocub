@@ -400,4 +400,11 @@ final class IconProvider {
     func clear() {
         cache.removeAllObjects()
     }
+
+    /// 清除内存与磁盘图标缓存。磁盘缓存只用于应用已卸载后的兜底显示；
+    /// 历史快照图标保存在快照侧车目录里，不会被这里删除。
+    func clearAll() {
+        cache.removeAllObjects()
+        try? FileManager.default.removeItem(at: IconDiskCache.directory)
+    }
 }
