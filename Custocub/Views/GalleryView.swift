@@ -7,6 +7,8 @@ struct GalleryView: View {
 
     @State private var iconHistoryApp: AppRecord?
     @State private var appStoryApp: AppRecord?
+    @FocusState private var focusedCardID: String?
+    @State private var gridWidth: CGFloat = 0
 
     private let columns = [
         GridItem(.adaptive(minimum: 172, maximum: 230), spacing: 14)
@@ -40,25 +42,88 @@ struct GalleryView: View {
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
-                        ScrollView {
-                            LazyVGrid(columns: columns, spacing: 14) {
-                                ForEach(items) { item in
-                                    GalleryCard(
-                                        item: item,
-                                        isSelected: store.selectedAppID == item.app.id,
-                                        isManager: store.isManagerNode(item.app),
-                                        hasIconHistory: store.hasIconHistory(for: item.app),
-                                        onShowIconHistory: { iconHistoryApp = item.app }
-                                    )
-                                    .onTapGesture {
-                                        store.selectedAppID = item.app.id
-                                    }
-                                    .contextMenu {
-                                        cardContextMenu(for: item)
+                        ScrollViewReader { proxy in
+                            ScrollView {
+                                LazyVGrid(columns: columns, spacing: 14) {
+                                    ForEach(items) { item in
+                                        GalleryCard(
+                                            item: item,
+                                            isSelected: store.selectedAppID == item.app.id,
+                                            isManager: store.isManagerNode(item.app),
+                                            hasIconHistory: store.hasIconHistory(for: item.app),
+                                            onShowIconHistory: { iconHistoryApp = item.app }
+                                        )
+                                        .id(item.id)
+                                        .focusable()
+                                        .focused($focusedCardID, equals: item.id)
+                                        .onTapGesture {
+                                            select(item)
+                                        }
+                                        .onKeyPress(.return) {
+                                            open(item)
+                                            return .handled
+                                        }
+                                        .onKeyPress(.space) {
+                                            select(item)
+                                            return .handled
+                                        }
+                                        .onKeyPress(.leftArrow) {
+                                            moveFocus(by: -1, items: items, proxy: proxy)
+                                            return .handled
+                                        }
+                                        .onKeyPress(.rightArrow) {
+                                            moveFocus(by: 1, items: items, proxy: proxy)
+                                            return .handled
+                                        }
+                                        .onKeyPress(.upArrow) {
+                                            moveFocus(by: -gridColumnCount, items: items, proxy: proxy)
+                                            return .handled
+                                        }
+                                        .onKeyPress(.downArrow) {
+                                            moveFocus(by: gridColumnCount, items: items, proxy: proxy)
+                                            return .handled
+                                        }
+                                        .contextMenu {
+                                            cardContextMenu(for: item)
+                                        }
                                     }
                                 }
+                                .padding(18)
                             }
-                            .padding(18)
+                            .onGeometryChange(for: CGFloat.self) { proxy in
+                                proxy.size.width
+                            } action: { width in
+                                gridWidth = width
+                            }
+                            .onAppear {
+                                // 首次进入展示框时把键盘焦点放到当前选中项或第一张卡片。
+                                guard focusedCardID == nil, let first = items.first?.id else { return }
+                                let target = items.contains { $0.id == store.selectedAppID }
+                                    ? (store.selectedAppID ?? first)
+                                    : first
+                                focusedCardID = target
+                                store.selectedAppID = target
+                            }
+                            .onChange(of: focusedCardID) { _, id in
+                                guard let id, items.contains(where: { $0.id == id }) else { return }
+                                store.selectedAppID = id
+                                withAnimation(.easeInOut(duration: 0.12)) {
+                                    proxy.scrollTo(id, anchor: .center)
+                                }
+                            }
+                            .onChange(of: store.selectedAppID) { _, id in
+                                // 命令面板等外部入口选中应用时，把键盘焦点同步过去。
+                                guard let id,
+                                      items.contains(where: { $0.id == id }),
+                                      focusedCardID != id else { return }
+                                focusedCardID = id
+                            }
+                            .onChange(of: items.map(\.id)) { _, ids in
+                                // 筛选后当前焦点不在列表里时只清除焦点，避免抢走搜索框输入。
+                                if let focusedCardID, !ids.contains(focusedCardID) {
+                                    self.focusedCardID = nil
+                                }
+                            }
                         }
                     }
                 }
@@ -316,6 +381,43 @@ struct GalleryView: View {
             store.galleryTypeFilters.remove(type)
         } else {
             store.galleryTypeFilters.insert(type)
+        }
+    }
+
+    private var gridColumnCount: Int {
+        guard gridWidth > 0 else { return 1 }
+        // 与 LazyVGrid 的 adaptive(minimum: 172, spacing: 14) 保持一致：
+        // 左右各 18pt 内边距，间距 14pt。
+        let available = max(gridWidth - 36, 1)
+        return max(1, Int((available + 14) / (172 + 14)))
+    }
+
+    private func select(_ item: GalleryItem) {
+        focusedCardID = item.id
+        store.selectedAppID = item.id
+    }
+
+    private func open(_ item: GalleryItem) {
+        select(item)
+        guard item.status == .installed,
+              FileManager.default.fileExists(atPath: item.app.path) else { return }
+        NSWorkspace.shared.open(URL(fileURLWithPath: item.app.path))
+    }
+
+    private func moveFocus(by offset: Int, items: [GalleryItem], proxy: ScrollViewProxy) {
+        guard !items.isEmpty else { return }
+
+        let current = focusedCardID ?? store.selectedAppID
+        let index = current.flatMap { id in
+            items.firstIndex { $0.id == id }
+        } ?? 0
+        let target = min(max(index + offset, 0), items.count - 1)
+        let id = items[target].id
+
+        focusedCardID = id
+        store.selectedAppID = id
+        withAnimation(.easeInOut(duration: 0.12)) {
+            proxy.scrollTo(id, anchor: .center)
         }
     }
 

@@ -354,6 +354,7 @@ The Gallery is an icon-grid view of your software collection:
 - Multi-select filters for installed/uninstalled status, source, platform, and system/third-party type.
 - The summary chips at the top are also filters: click **Installed**, **Uninstalled**, **System**, or **Third-party** to toggle them.
 - The toolbar shows how many apps are currently visible.
+- **Keyboard navigation**: focus a card, move with ←/→/↑/↓, press Return to open an installed app, or Space to select it and show details.
 
 The sidebar also has three snapshot-comparison views:
 
@@ -388,6 +389,7 @@ Press **⌘K** to open a keyboard-driven command palette:
 - Jump to any saved snapshot
 - Run actions such as rescan, save snapshot, open Homebrew, open the Gallery, open Favorites, or launch Presentation Mode
 - Use ↑/↓ to choose, Return to run, and Esc to close
+- Choosing an app switches to the right list, selects the row, and scrolls it into view
 
 ### Presentation mode
 

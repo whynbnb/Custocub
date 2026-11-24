@@ -759,6 +759,12 @@ private struct AppTable: View {
                 selection = store.selectedAppID
             }
         }
+        .background(
+            TableRowScroller(
+                selectedID: store.selectedAppID,
+                rowIDs: filtered.map(\.id)
+            )
+        )
         .sheet(item: $storyApp) { app in
             AppStorySheet(app: app)
                 .environmentObject(store)
