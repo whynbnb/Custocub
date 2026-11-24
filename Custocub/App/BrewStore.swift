@@ -75,6 +75,8 @@ final class BrewStore: ObservableObject {
     @Published private(set) var inventory: BrewInventory?
     @Published private(set) var isLoading = false
     @Published private(set) var hasLoaded = false
+    /// 是否真正发起过一次清单读取，用于区分「还没开始」和「读取失败」。
+    @Published private(set) var hasAttemptedLoad = false
     @Published private(set) var lastLoadedAt: Date?
 
     @Published private(set) var snapshots: [BrewSnapshot] = []
@@ -612,7 +614,7 @@ final class BrewStore: ObservableObject {
     /// 安装探索到的包。安装完成后列表里的「已安装」标记会自动更新。
     func install(_ entry: BrewCatalogEntry) async {
         _ = await runCommand(
-            ["install"] + (entry.kind.commandFlag.map { [$0] } ?? []) + [entry.name],
+            ["install"] + (entry.kind.commandFlag.map { [$0] } ?? []) + [entry.commandName],
             title: L.t("安装 %@", entry.name)
         )
     }
@@ -628,13 +630,16 @@ final class BrewStore: ObservableObject {
         guard isAvailable else { return }
 
         isLoading = true
+        hasAttemptedLoad = true
         defer { isLoading = false }
 
         if let loaded = await BrewService.loadInventory() {
             inventory = loaded
             lastLoadedAt = Date()
             hasLoaded = true
-            if let selectedPackageID, loaded.package(id: selectedPackageID) == nil {
+            let validIDs = Set(loaded.all.map(\.id))
+            selection = selection.intersection(validIDs)
+            if let selectedPackageID, !validIDs.contains(selectedPackageID) {
                 self.selectedPackageID = nil
             }
         } else {
@@ -753,6 +758,7 @@ final class BrewStore: ObservableObject {
         runningProcess = nil
         inventory = nil
         hasLoaded = false
+        hasAttemptedLoad = false
         lastLoadedAt = nil
         selection.removeAll()
         selectedPackageID = nil
@@ -776,6 +782,8 @@ final class BrewStore: ObservableObject {
     func rediscover() {
         executableURL = BrewService.locateExecutable()
         detectedVersion = Self.detectVersionSynchronously()
+        guard isAvailable else { return }
+        Task { await load(force: true) }
     }
 
     func clearLog() {
@@ -806,8 +814,8 @@ final class BrewStore: ObservableObject {
     }
 
     func uninstall(_ packages: [BrewPackage]) async {
-        let formulae = packages.filter { $0.kind == .formula }.map(\.name)
-        let casks = packages.filter { $0.kind == .cask }.map(\.name)
+        let formulae = packages.filter { $0.kind == .formula }.map(\.commandName)
+        let casks = packages.filter { $0.kind == .cask }.map(\.commandName)
 
         if !formulae.isEmpty {
             _ = await runCommand(
@@ -825,7 +833,7 @@ final class BrewStore: ObservableObject {
 
     func upgrade(_ packages: [BrewPackage]) async {
         guard !packages.isEmpty else { return }
-        let names = packages.map(\.name)
+        let names = packages.map(\.commandName)
 
         // 传进来的包都已经由当前策略判定为可更新（`brew info` 与界面用同一套环境变量），
         // 因此这里只需要在贪婪模式下补上 `--greedy`，保证命令与列表一致。
@@ -844,21 +852,21 @@ final class BrewStore: ObservableObject {
 
     func reinstall(_ package: BrewPackage) async {
         _ = await runCommand(
-            ["reinstall"] + (package.kind == .cask ? ["--cask"] : []) + [package.name],
+            ["reinstall"] + (package.kind == .cask ? ["--cask"] : []) + [package.commandName],
             title: L.t("重新安装 %@", package.name)
         )
     }
 
     func pin(_ package: BrewPackage) async {
         _ = await runCommand(
-            ["pin"] + (package.kind == .cask ? ["--cask"] : []) + [package.name],
+            ["pin"] + (package.kind == .cask ? ["--cask"] : []) + [package.commandName],
             title: L.t("固定 %@", package.name)
         )
     }
 
     func unpin(_ package: BrewPackage) async {
         _ = await runCommand(
-            ["unpin"] + (package.kind == .cask ? ["--cask"] : []) + [package.name],
+            ["unpin"] + (package.kind == .cask ? ["--cask"] : []) + [package.commandName],
             title: L.t("取消固定 %@", package.name)
         )
     }
@@ -908,14 +916,18 @@ final class BrewStore: ObservableObject {
             casks: inventory.casks
         )
 
-        snapshots.insert(snapshot, at: 0)
-        persist(snapshot)
+        do {
+            try snapshotRepository.save(snapshot)
+            snapshots.insert(snapshot, at: 0)
+        } catch {
+            errorMessage = L.t("无法保存 Homebrew 快照：%@", error.localizedDescription)
+        }
     }
 
     func deleteSnapshot(id: UUID) {
-        snapshots.removeAll { $0.id == id }
         do {
             try snapshotRepository.delete(id: id)
+            snapshots.removeAll { $0.id == id }
         } catch {
             errorMessage = L.t("无法删除 Homebrew 快照：%@", error.localizedDescription)
         }
@@ -925,19 +937,23 @@ final class BrewStore: ObservableObject {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty,
               let index = snapshots.firstIndex(where: { $0.id == id }) else { return }
-        snapshots[index].name = trimmed
-        persist(snapshots[index])
+        var updated = snapshots[index]
+        updated.name = trimmed
+        do {
+            try snapshotRepository.save(updated)
+            snapshots[index] = updated
+        } catch {
+            errorMessage = L.t("无法保存 Homebrew 快照：%@", error.localizedDescription)
+        }
     }
 
     func updateSnapshotNote(id: UUID, note: String) {
         guard let index = snapshots.firstIndex(where: { $0.id == id }) else { return }
-        snapshots[index].note = note
-        persist(snapshots[index])
-    }
-
-    private func persist(_ snapshot: BrewSnapshot) {
+        var updated = snapshots[index]
+        updated.note = note
         do {
-            try snapshotRepository.save(snapshot)
+            try snapshotRepository.save(updated)
+            snapshots[index] = updated
         } catch {
             errorMessage = L.t("无法保存 Homebrew 快照：%@", error.localizedDescription)
         }
@@ -952,8 +968,8 @@ final class BrewStore: ObservableObject {
             return
         }
         let text = BrewfileBuilder.text(
-            formulae: inventory.formulae.map(\.name),
-            casks: inventory.casks.map(\.name),
+            formulae: inventory.formulae.map(\.commandName),
+            casks: inventory.casks.map(\.commandName),
             header: L.t("由 Custocub 生成 · %@", Date().formatted(date: .abbreviated, time: .shortened))
         )
         BrewExport.save(
@@ -1007,7 +1023,7 @@ final class BrewStore: ObservableObject {
     func exportCurrentFormulae() {
         guard let inventory else { return }
         let text = BrewfileBuilder.text(
-            formulae: inventory.formulae.map(\.name),
+            formulae: inventory.formulae.map(\.commandName),
             casks: [],
             header: L.t("由 Custocub 生成 · %@ · Formula", Date().formatted(date: .abbreviated, time: .shortened))
         )
@@ -1018,7 +1034,7 @@ final class BrewStore: ObservableObject {
         guard let inventory else { return }
         let text = BrewfileBuilder.text(
             formulae: [],
-            casks: inventory.casks.map(\.name),
+            casks: inventory.casks.map(\.commandName),
             header: L.t("由 Custocub 生成 · %@ · Cask", Date().formatted(date: .abbreviated, time: .shortened))
         )
         BrewExport.save(text: text, suggestedName: "Brewfile-Cask", contentType: .brewfile)
@@ -1075,30 +1091,37 @@ final class BrewStore: ObservableObject {
     }
 
     /// 标准清理：等价于 `brew cleanup`。
-    /// 移除过期下载、旧版本 keg、残留锁文件和日志，并自动移除无用依赖。
+    /// 移除过期下载、旧版本 keg、残留锁文件和日志。
+    /// 无用依赖需要单独运行 autoremove。
     func cleanupStandard() async {
-        lastCleanupFreedBytes = cleanupReport?.estimatedFreeBytes
-        await runCommand(["cleanup"], title: L.t("清理缓存与旧版本"))
-        await analyzeCleanup(force: true)
+        await runCleanup(["cleanup"], title: L.t("清理缓存与旧版本"))
     }
 
     /// 深度清理：等价于 `brew cleanup --prune=all`。
     /// 删除所有缓存下载（包括最新版本），能释放最多空间。
     func cleanupAll() async {
-        lastCleanupFreedBytes = cleanupReport?.estimatedFreeBytes
-        await runCommand(["cleanup", "--prune=all"], title: L.t("清理全部缓存"))
-        await analyzeCleanup(force: true)
+        await runCleanup(["cleanup", "--prune=all"], title: L.t("清理全部缓存"))
     }
 
     /// 彻底清空下载缓存目录，等价于删除 `$(brew --cache)`。
     /// 下次安装或升级时会重新下载。
     func cleanupEverything() async {
-        lastCleanupFreedBytes = cleanupReport?.estimatedFreeBytes
-        await runCommand(
-            ["cleanup", "--prune=all", "--scrub"],
-            title: L.t("清空下载缓存")
-        )
+        await runCleanup(["cleanup", "--prune=all", "--scrub"], title: L.t("清空下载缓存"))
+    }
+
+    /// 执行清理命令，并在成功后用清理前后可释放空间的差值
+    /// 估算实际释放量。失败或被取消时不再显示上一次的估算值。
+    private func runCleanup(_ arguments: [String], title: String) async {
+        let before = cleanupReport?.estimatedFreeBytes
+        let succeeded = await runCommand(arguments, title: title)
         await analyzeCleanup(force: true)
+
+        guard succeeded else {
+            lastCleanupFreedBytes = nil
+            return
+        }
+        guard let before else { return }
+        lastCleanupFreedBytes = max(0, before - (cleanupReport?.estimatedFreeBytes ?? 0))
     }
 
     /// 试运行清理，只显示会删除什么。
@@ -1109,7 +1132,7 @@ final class BrewStore: ObservableObject {
     /// 只清理某个包的旧版本。
     func cleanupPackage(_ package: BrewPackage) async {
         await runCommand(
-            ["cleanup"] + (package.kind == .cask ? ["--cask"] : []) + [package.name],
+            ["cleanup", package.commandName],
             title: L.t("清理 %@ 的旧版本", package.name)
         )
         await analyzeCleanup(force: true)

@@ -228,28 +228,37 @@ struct CommandPaletteView: View {
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            ScrollView {
-                LazyVStack(spacing: 2) {
-                    ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                        if index == 0 || entries[index - 1].section != entry.section {
-                            Text(entry.section)
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 14)
-                                .padding(.top, 10)
-                                .padding(.bottom, 2)
-                        }
-
-                        resultRow(entry, isSelected: index == selectedIndex)
-                            .onTapGesture {
-                                selectedIndex = index
-                                run(entry)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 2) {
+                        ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+                            if index == 0 || entries[index - 1].section != entry.section {
+                                Text(entry.section)
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 14)
+                                    .padding(.top, 10)
+                                    .padding(.bottom, 2)
                             }
+
+                            resultRow(entry, isSelected: index == selectedIndex)
+                                .id(entry.id)
+                                .onTapGesture {
+                                    selectedIndex = index
+                                    run(entry)
+                                }
+                        }
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.bottom, 8)
+                }
+                .onChange(of: selectedIndex) { _, index in
+                    guard entries.indices.contains(index) else { return }
+                    withAnimation(.easeInOut(duration: 0.12)) {
+                        proxy.scrollTo(entries[index].id, anchor: .center)
                     }
                 }
-                .padding(.horizontal, 8)
-                .padding(.bottom, 8)
             }
         }
     }

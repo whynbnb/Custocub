@@ -70,8 +70,12 @@ struct BrewUpgradeView: View {
                     systemImage: "arrow.triangle.2.circlepath",
                     description: Text(L.t("开启 Homebrew 功能后才能升级已安装的包。"))
                 )
-            } else if !brew.hasLoaded && brew.isLoading {
-                loadingView
+            } else if !brew.hasLoaded {
+                if brew.isLoading || !brew.hasAttemptedLoad {
+                    loadingView
+                } else {
+                    loadFailedView
+                }
             } else if outdatedPackages.isEmpty {
                 emptyView
             } else {
@@ -261,6 +265,19 @@ struct BrewUpgradeView: View {
             ProgressView()
             Text(L.t("正在读取 Homebrew 包列表…"))
                 .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var loadFailedView: some View {
+        ContentUnavailableView {
+            Label(L.t("无法读取 Homebrew 包列表。"), systemImage: "exclamationmark.triangle")
+        } actions: {
+            Button(L.t("重试")) {
+                Task { await brew.load(force: true) }
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(brew.isLoading || brew.isRunningCommand)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

@@ -168,7 +168,7 @@ struct BrewServicesView: View {
             .disabled(brew.isRunningCommand || registeredCount == 0)
 
             Button {
-                Task { await brew.cleanupServices() }
+                confirmAction = .cleanup
             } label: {
                 Label(L.t("清理无用服务"), systemImage: "trash")
             }

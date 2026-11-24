@@ -37,15 +37,18 @@ struct AppIconView: View {
         self.app = app
         self.size = size
         self.cornerRadius = cornerRadius
-        if let snapshotID = app.iconSnapshotID {
-            let snapshotIcon = SnapshotIconStore.cachedIcon(snapshotID: snapshotID, app: app)
-            let stored = app.iconData.flatMap { NSImage(data: $0) }
-            _image = State(initialValue: snapshotIcon ?? stored)
+        // 带 iconData 的记录一定来自快照（实时扫描不保存图标）。
+        // 即使缓存构建失败、没有 iconSnapshotID，也必须优先显示
+        // 快照里保存的历史图标，而不是当前磁盘上的新图标。
+        let stored = app.iconData.flatMap { NSImage(data: $0) }
+        if stored != nil {
+            _image = State(initialValue: stored)
+        } else if let snapshotID = app.iconSnapshotID {
+            _image = State(initialValue: SnapshotIconStore.cachedIcon(snapshotID: snapshotID, app: app))
         } else {
             let cached = IconProvider.shared.cachedIcon(forPath: app.path)
                 ?? app.bundleIdentifier.flatMap { IconProvider.shared.cachedIcon(forBundleID: $0) }
-            let stored = app.iconData.flatMap { NSImage(data: $0) }
-            _image = State(initialValue: cached ?? stored)
+            _image = State(initialValue: cached)
         }
     }
 
@@ -81,11 +84,15 @@ struct AppIconView: View {
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .task(id: iconCacheKey) {
+            if let stored = app.iconData.flatMap({ NSImage(data: $0) }) {
+                if image == nil {
+                    image = stored
+                }
+                return
+            }
             if let snapshotID = app.iconSnapshotID {
                 if let loaded = await SnapshotIconStore.iconAsync(snapshotID: snapshotID, app: app) {
                     image = loaded
-                } else if image == nil, let stored = app.iconData.flatMap({ NSImage(data: $0) }) {
-                    image = stored
                 }
                 return
             }
@@ -108,10 +115,9 @@ struct AppIconView: View {
             }
         }
         .onChange(of: app.path) {
-            guard app.iconSnapshotID == nil else { return }
+            guard app.iconSnapshotID == nil, app.iconData == nil else { return }
             image = IconProvider.shared.cachedIcon(forPath: app.path)
                 ?? app.bundleIdentifier.flatMap { IconProvider.shared.cachedIcon(forBundleID: $0) }
-                ?? app.iconData.flatMap { NSImage(data: $0) }
         }
     }
 }

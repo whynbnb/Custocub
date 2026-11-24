@@ -122,12 +122,18 @@ struct BrewPackage: Identifiable, Codable, Hashable, Sendable {
 
     var dependencyKey: String { Self.dependencyKey(for: name) }
 
+    /// 命令行里使用的完整名称。第三方 tap 的 formula 必须带上 tap
+    /// 前缀，否则 `brew install foo` 可能解析到同名的核心 formula。
+    var commandName: String {
+        fullName.isEmpty ? name : fullName
+    }
+
     var installCommand: String {
-        Self.command("install", kind: kind, names: [name])
+        Self.command("install", kind: kind, names: [commandName])
     }
 
     var uninstallCommand: String {
-        Self.command("uninstall", kind: kind, names: [name])
+        Self.command("uninstall", kind: kind, names: [commandName])
     }
 
     var upgradeCommand: String { upgradeCommand(policy: .current) }
@@ -137,13 +143,13 @@ struct BrewPackage: Identifiable, Codable, Hashable, Sendable {
         Self.command(
             "upgrade",
             kind: kind,
-            names: [name],
+            names: [commandName],
             extraArguments: policy.arguments(for: "upgrade")
         )
     }
 
     var reinstallCommand: String {
-        Self.command("reinstall", kind: kind, names: [name])
+        Self.command("reinstall", kind: kind, names: [commandName])
     }
 
     static func command(

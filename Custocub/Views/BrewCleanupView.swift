@@ -248,7 +248,7 @@ struct BrewCleanupView: View {
                 CleanupActionRow(
                     title: L.t("标准清理"),
                     command: "brew cleanup",
-                    description: L.t("移除过期下载、旧版本、残留锁文件与日志，并自动移除无用依赖。"),
+                    description: L.t("移除过期下载、旧版本、残留锁文件与日志。无用依赖可在下方单独移除。"),
                     symbol: "trash",
                     color: .accentColor
                 ) {

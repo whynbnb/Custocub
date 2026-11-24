@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 struct ComparisonView: View {
     @EnvironmentObject private var store: CustocubStore
+    @EnvironmentObject private var brew: BrewStore
     @Environment(\.dismiss) private var dismiss
 
     @State private var olderID: UUID?
@@ -14,13 +15,31 @@ struct ComparisonView: View {
     @State private var showsCasks = false
 
     private var caskChanges: [BrewCaskChange] {
-        guard let olderSnapshot, let newerSnapshot else { return [] }
-        return BrewCaskChange.compare(olderSnapshot, newerSnapshot)
+        guard let older = caskSnapshot(olderSnapshot),
+              let newer = caskSnapshot(newerSnapshot) else { return [] }
+        return BrewCaskChange.compare(older, newer)
     }
 
     private var canCompareCasks: Bool {
         guard let olderSnapshot, let newerSnapshot else { return false }
-        return !olderSnapshot.casks.isEmpty || !newerSnapshot.casks.isEmpty
+        // 当前状态本身不保存 Cask；Homebrew 清单未加载时无法知道
+        // 实时 Cask，宁可隐藏这个页签，也不要显示成全部新增/移除。
+        let liveInvolved = store.isLiveSnapshot(olderSnapshot) || store.isLiveSnapshot(newerSnapshot)
+        if liveInvolved && brew.inventory == nil { return false }
+
+        guard let older = caskSnapshot(olderSnapshot),
+              let newer = caskSnapshot(newerSnapshot) else { return false }
+        return !older.casks.isEmpty || !newer.casks.isEmpty
+    }
+
+    /// 比较 Cask 时，用已加载的 Homebrew 清单补全「当前状态」。
+    private func caskSnapshot(_ snapshot: AppSnapshot?) -> AppSnapshot? {
+        guard let snapshot, store.isLiveSnapshot(snapshot) else { return snapshot }
+        guard let inventory = brew.inventory else { return snapshot }
+        var enriched = snapshot
+        enriched.casks = inventory.casks.map(BrewCaskRecord.init(from:))
+        enriched.brewVersion = inventory.brewVersion
+        return enriched
     }
 
     var body: some View {
@@ -49,6 +68,11 @@ struct ComparisonView: View {
         }
         .frame(minWidth: 900, minHeight: 650)
         .onAppear(perform: configureInitialSelection)
+        .onChange(of: canCompareCasks) { _, canCompare in
+            if !canCompare {
+                showsCasks = false
+            }
+        }
     }
 
     private var header: some View {

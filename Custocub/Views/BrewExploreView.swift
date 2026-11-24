@@ -363,7 +363,7 @@ struct BrewExploreView: View {
             Divider()
 
             Button(L.t("查看包详情")) {
-                Task { await brew.run(L.t("查看 %@ 详情", entry.name), arguments: ["info", entry.name]) }
+                Task { await brew.run(L.t("查看 %@ 详情", entry.name), arguments: ["info", entry.commandName]) }
             }
         } else {
             Text(L.t("未选择包"))

@@ -66,6 +66,7 @@ final class CustocubStore: ObservableObject {
     @Published private(set) var snapshots: [AppSnapshot] = [] {
         didSet {
             iconHistoryCache.removeAll()
+            iconHistoryCountCache.removeAll()
             if let id = gallerySnapshotID, !snapshots.contains(where: { $0.id == id }) {
                 gallerySnapshotID = nil
             }
@@ -73,6 +74,9 @@ final class CustocubStore: ObservableObject {
     }
     /// 图标历史按应用缓存；快照列表变化时清空。
     private var iconHistoryCache: [String: [AppIconHistoryEntry]] = [:]
+    /// 只记录图标版本数量的轻量缓存。卡片和洞察页只需要知道
+    /// “是否有多个图标版本”，不应该为此把历史 PNG 全部读进内存。
+    private var iconHistoryCountCache: [String: Int] = [:]
     @Published var sidebarSelection: SidebarSelection? = .installed
     @Published var selectedAppID: String?
 
@@ -130,6 +134,21 @@ final class CustocubStore: ObservableObject {
 
     var activeSelection: SidebarSelection {
         sidebarSelection ?? .installed
+    }
+
+    /// 当前页面的选中项是否依赖实时扫描结果。刷新后只有这些页面
+    /// 需要校验并清除已经不存在的选择；已卸载列表、历史快照和展示框
+    /// 时间机器里的应用本来就不在当前扫描结果中，不能一律清空。
+    private var selectionDependsOnLiveApps: Bool {
+        switch activeSelection {
+        case .installed, .own, .source, .newlyInstalled, .updated:
+            return true
+        case .gallery, .favorites, .collection:
+            // 展示框里可能选中已卸载的历史应用，刷新扫描结果时不能清掉。
+            return false
+        case .uninstalled, .insights, .brew, .snapshot:
+            return false
+        }
     }
 
     /// 扫描完成前使用上一次的侧边栏计数，避免列表逐步刷新。
@@ -222,6 +241,11 @@ final class CustocubStore: ObservableObject {
         if let liveSnapshot { result.append(liveSnapshot) }
         result.append(contentsOf: snapshots)
         return result
+    }
+
+    /// 用于判断比较视图里的一侧是否来自「当前状态」。
+    func isLiveSnapshot(_ snapshot: AppSnapshot?) -> Bool {
+        snapshot?.id == liveSnapshotID
     }
 
     var selectedSnapshot: AppSnapshot? {
@@ -594,8 +618,35 @@ final class CustocubStore: ObservableObject {
     }
 
     /// 快照里是否出现过不止一个图标版本。
+    ///
+    /// 只比较指纹，不读取侧车 PNG。展示框每张卡片和洞察页都会调用
+    /// 这里，如果顺带加载全部历史图标，懒加载就失去意义了。
     func hasIconHistory(for app: AppRecord) -> Bool {
-        iconHistory(for: app).count > 1
+        iconHistoryFingerprintCount(for: app) > 1
+    }
+
+    private func iconHistoryFingerprintCount(for app: AppRecord) -> Int {
+        let key = comparisonKey(for: app)
+        if let cached = iconHistoryCountCache[key] {
+            return cached
+        }
+
+        var count = 0
+        var lastFingerprint: String?
+        for snapshot in snapshots.sorted(by: { $0.createdAt < $1.createdAt }) {
+            guard let item = snapshot.apps.first(where: { comparisonKey(for: $0) == key }) else {
+                continue
+            }
+            let fingerprint = item.iconFingerprint
+                ?? item.iconData.map { SnapshotIconStore.fingerprint(for: $0) }
+            guard let fingerprint, !fingerprint.isEmpty else { continue }
+            if lastFingerprint == fingerprint { continue }
+            count += 1
+            lastFingerprint = fingerprint
+        }
+
+        iconHistoryCountCache[key] = count
+        return count
     }
 
     /// 汇总一个应用在全部历史快照中的档案。
@@ -906,7 +957,8 @@ final class CustocubStore: ObservableObject {
             selectedAppID = nil
         }
 
-        if let selectedAppID, !scannedApps.contains(where: { $0.id == selectedAppID }) {
+        if let selectedAppID, selectionDependsOnLiveApps,
+           !scannedApps.contains(where: { $0.id == selectedAppID }) {
             self.selectedAppID = nil
         }
 
@@ -1124,17 +1176,19 @@ final class CustocubStore: ObservableObject {
     }
 
     func deleteSnapshot(id: UUID) {
-        snapshots.removeAll { $0.id == id }
-        if case .snapshot(let selectedID) = activeSelection, selectedID == id {
-            sidebarSelection = .installed
-            selectedAppID = nil
-        }
         do {
+            // 先删除磁盘文件，成功后再更新界面。否则删除失败时
+            // 快照会从列表里消失，重启后又重新出现。
             try repository.delete(id: id)
+            snapshots.removeAll { $0.id == id }
+            if case .snapshot(let selectedID) = activeSelection, selectedID == id {
+                sidebarSelection = .installed
+                selectedAppID = nil
+            }
+            statusMessage = L.t("已删除快照")
         } catch {
             errorMessage = L.t("无法删除快照文件：%@", error.localizedDescription)
         }
-        statusMessage = L.t("已删除快照")
     }
 
     func renameSnapshot(id: UUID, name: String) {

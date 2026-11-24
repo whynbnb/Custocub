@@ -46,8 +46,8 @@ struct BrewSnapshot: Identifiable, Codable, Hashable, Sendable {
     var outdatedCount: Int { packages.count { $0.isOutdated } }
     var pinnedCount: Int { packages.count { $0.isPinned } }
 
-    var formulaNames: [String] { formulae.map(\.name) }
-    var caskTokens: [String] { casks.map(\.name) }
+    var formulaNames: [String] { formulae.map(\.commandName) }
+    var caskTokens: [String] { casks.map(\.commandName) }
 }
 
 /// 生成 Brewfile 与安装命令。导出后可以直接交给 `brew bundle` 或复制执行。

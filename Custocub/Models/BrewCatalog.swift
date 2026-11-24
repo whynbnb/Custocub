@@ -102,15 +102,20 @@ struct BrewCatalogEntry: Identifiable, Codable, Hashable, Sendable {
     var isDeprecatedOrDisabled: Bool { isDeprecated || isDisabled }
 
     var installCommand: String {
-        BrewPackage.command("install", kind: kind, names: [name])
+        BrewPackage.command("install", kind: kind, names: [commandName])
     }
 
     var uninstallCommand: String {
-        BrewPackage.command("uninstall", kind: kind, names: [name])
+        BrewPackage.command("uninstall", kind: kind, names: [commandName])
     }
 
     var infoCommand: String {
-        "brew info \(name)"
+        "brew info \(commandName)"
+    }
+
+    /// 第三方 tap 的包需要带 tap 前缀才能在命令行中正确解析。
+    var commandName: String {
+        fullName.isEmpty ? name : fullName
     }
 
     var tapText: String {
@@ -352,7 +357,11 @@ struct BrewCatalogQuery: Sendable, Equatable {
                 return lhs.name < rhs.name
             }
         case .name:
-            return filtered.sorted { $0.name < $1.name }
+            let sorted = filtered.sorted { $0.name < $1.name }
+            if query.isEmpty, let limit = limit.count {
+                return Array(sorted.prefix(limit))
+            }
+            return sorted
         }
     }
 

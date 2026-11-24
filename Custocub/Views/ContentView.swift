@@ -88,6 +88,7 @@ struct ContentView: View {
         .sheet(isPresented: $showingComparison) {
             ComparisonView()
                 .environmentObject(store)
+                .environmentObject(brew)
         }
         .sheet(isPresented: $showingBrewConsole) {
             BrewConsoleView()
@@ -355,8 +356,12 @@ struct ContentView: View {
         WorkspaceLayoutStore.Mode.mode(for: store.activeSelection)
     }
 
-    /// 报告导出的数据源：优先当前选中的历史快照，否则用当前扫描结果。
+    /// 报告导出的数据源：优先当前展示的历史快照（含展示框时间机器），
+    /// 否则用当前扫描结果。
     private var reportSource: InventoryReportSource? {
+        if isGallerySelection, let snapshot = store.gallerySnapshot {
+            return .snapshot(snapshot)
+        }
         if let snapshot = store.selectedSnapshot {
             return .snapshot(snapshot)
         }
@@ -367,6 +372,15 @@ struct ContentView: View {
             return .snapshot(latest)
         }
         return nil
+    }
+
+    private var isGallerySelection: Bool {
+        switch store.activeSelection {
+        case .gallery, .favorites, .collection:
+            return true
+        default:
+            return false
+        }
     }
 
     private func exportReport(_ format: InventoryReportFormat) {

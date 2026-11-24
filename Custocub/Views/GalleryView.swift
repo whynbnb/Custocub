@@ -194,7 +194,7 @@ struct GalleryView: View {
                 HStack(spacing: 8) {
                     timelineNode(
                         title: L.t("今天"),
-                        count: store.apps.count,
+                        count: store.galleryItems.count,
                         snapshotID: nil,
                         symbol: "sparkles"
                     )

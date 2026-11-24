@@ -79,7 +79,7 @@ struct InsightsView: View {
             spacing: 10
         ) {
             InsightMetric(title: "应用", value: "\(store.apps.count)", symbol: "square.grid.2x2", color: .accentColor)
-            InsightMetric(title: "总体积", value: totalSizeText, symbol: "internaldrive", color: .blue)
+            InsightMetric(title: "总体积", value: store.totalSizeText, symbol: "internaldrive", color: .blue)
             InsightMetric(title: "快照", value: "\(store.snapshots.count)", symbol: "camera", color: .orange)
             InsightMetric(title: "图标变化", value: "\(iconChangeCount)", symbol: "photo.stack", color: .purple)
             InsightMetric(title: "展示框", value: "\(store.galleryItems.count)", symbol: "rectangle.grid.2x2", color: .teal)
@@ -373,12 +373,8 @@ struct InsightsView: View {
         store.apps.compactMap(\.sizeInBytes).reduce(0, +)
     }
 
-    private var totalSizeText: String {
-        measuredAppsSize.formatted(.byteCount(style: .file))
-    }
-
     private var iconChangeCount: Int {
-        store.apps.count { store.iconHistory(for: $0).count > 1 }
+        store.apps.count { store.hasIconHistory(for: $0) }
     }
 }
 

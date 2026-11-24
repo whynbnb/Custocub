@@ -287,7 +287,7 @@ A dedicated **Cleanup** tab analyzes and then runs Homebrew's real cleanup comma
 
 | Action | Command | What it does |
 | --- | --- | --- |
-| Standard cleanup | `brew cleanup` | Removes stale downloads, old kegs, stale lock files, logs, and autoremoves unneeded dependencies |
+| Standard cleanup | `brew cleanup` | Removes stale downloads, old kegs, stale lock files, and logs. Unneeded dependencies are removed separately |
 | Remove unneeded dependencies | `brew autoremove` | Uninstalls formulae installed only as dependencies that are no longer needed |
 | Clean all caches | `brew cleanup --prune=all` | Deletes every download cache, including current versions; installed packages stay |
 | Wipe download cache | `brew cleanup --prune=all --scrub` | Also clears the Ruby cache and temporary files |

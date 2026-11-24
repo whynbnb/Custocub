@@ -146,6 +146,7 @@ private struct BrewSnapshotDetailView: View {
     @State private var nameDraft = ""
     @State private var noteDraft = ""
     @FocusState private var nameFocused: Bool
+    @FocusState private var noteFocused: Bool
 
     private var filtered: [BrewPackage] {
         guard let kindFilter else { return snapshot.packages }
@@ -284,6 +285,7 @@ private struct BrewSnapshotDetailView: View {
                     .foregroundStyle(.secondary)
                 TextField(L.t("为这个快照添加备注…"), text: $noteDraft)
                     .textFieldStyle(.plain)
+                    .focused($noteFocused)
                     .onSubmit(commitNote)
             }
             .font(.callout)
@@ -294,13 +296,24 @@ private struct BrewSnapshotDetailView: View {
             nameDraft = snapshot.name
             noteDraft = snapshot.note
         }
-        .onChange(of: snapshot.id) {
+        .onChange(of: snapshot.id) { oldID, _ in
+            // 切换到另一个快照前，先把旧快照上未提交的名称/备注写回，
+            // 否则直接点另一个快照会让草稿被新快照的内容覆盖。
+            if let old = brew.snapshots.first(where: { $0.id == oldID }) {
+                commitNote(id: oldID, existing: old.note)
+                if isEditingName {
+                    commitName(id: oldID, existing: old.name)
+                }
+            }
             nameDraft = snapshot.name
             noteDraft = snapshot.note
             isEditingName = false
         }
         .onChange(of: nameFocused) { _, focused in
             if !focused && isEditingName { commitName() }
+        }
+        .onChange(of: noteFocused) { _, focused in
+            if !focused { commitNote() }
         }
         .onDisappear { commitNote() }
     }
@@ -314,19 +327,33 @@ private struct BrewSnapshotDetailView: View {
     }
 
     private func commitName() {
+        commitName(id: snapshot.id, existing: snapshot.name)
+    }
+
+    private func commitName(id: UUID, existing: String) {
         let trimmed = nameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            nameDraft = snapshot.name
+            nameDraft = existing
             isEditingName = false
             return
         }
-        brew.renameSnapshot(id: snapshot.id, name: trimmed)
+        let savedName = brew.snapshots.first(where: { $0.id == id })?.name ?? existing
+        guard trimmed != savedName else {
+            isEditingName = false
+            return
+        }
+        brew.renameSnapshot(id: id, name: trimmed)
         isEditingName = false
     }
 
     private func commitNote() {
-        guard noteDraft != snapshot.note else { return }
-        brew.updateSnapshotNote(id: snapshot.id, note: noteDraft)
+        commitNote(id: snapshot.id, existing: snapshot.note)
+    }
+
+    private func commitNote(id: UUID, existing: String) {
+        let savedNote = brew.snapshots.first(where: { $0.id == id })?.note ?? existing
+        guard noteDraft != savedNote else { return }
+        brew.updateSnapshotNote(id: id, note: noteDraft)
     }
 }
 

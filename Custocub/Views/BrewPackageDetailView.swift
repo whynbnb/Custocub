@@ -5,6 +5,8 @@ struct BrewPackageDetailView: View {
     @EnvironmentObject private var brew: BrewStore
     let package: BrewPackage?
 
+    @State private var pendingUninstall: BrewPackage?
+
     var body: some View {
         Group {
             if let package {
@@ -18,6 +20,25 @@ struct BrewPackageDetailView: View {
             }
         }
         .navigationTitle("Homebrew 包详情")
+        .confirmationDialog(
+            L.t("卸载 %d 个包？", 1),
+            isPresented: Binding(
+                get: { pendingUninstall != nil },
+                set: { if !$0 { pendingUninstall = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(L.t("卸载"), role: .destructive) {
+                guard let package = pendingUninstall else { return }
+                pendingUninstall = nil
+                Task { await brew.uninstall([package]) }
+            }
+            Button(L.t("取消"), role: .cancel) {
+                pendingUninstall = nil
+            }
+        } message: {
+            Text(L.t("包文件会被移除。依赖关系由 Homebrew 处理。"))
+        }
     }
 
     private func detail(for package: BrewPackage) -> some View {
@@ -324,13 +345,13 @@ struct BrewPackageDetailView: View {
     private func perform(_ item: PackageCommand, for package: BrewPackage) {
         switch item.kind {
         case .install:
-            Task { await brew.install([package.name], kind: package.kind) }
+            Task { await brew.install([package.commandName], kind: package.kind) }
         case .upgrade:
             Task { await brew.upgrade([package]) }
         case .reinstall:
             Task { await brew.reinstall(package) }
         case .uninstall:
-            Task { await brew.uninstall([package]) }
+            pendingUninstall = package
         }
     }
 }

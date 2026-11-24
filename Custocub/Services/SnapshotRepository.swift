@@ -8,7 +8,7 @@ import Foundation
 struct SnapshotRepository: Sendable {
     let directoryURL: URL
 
-    private static let cacheVersion = 1
+    private static let cacheVersion = 2
 
     private struct SourceAttributes {
         let size: Int64
@@ -198,7 +198,8 @@ struct SnapshotRepository: Sendable {
             return nil
         }
 
-        for index in snapshot.apps.indices where snapshot.apps[index].iconFingerprint != nil {
+        for index in snapshot.apps.indices
+        where snapshot.apps[index].iconFingerprint?.isEmpty == false {
             snapshot.apps[index].iconSnapshotID = snapshot.id
         }
         return snapshot
@@ -213,6 +214,13 @@ struct SnapshotRepository: Sendable {
     ) throws -> AppSnapshot {
         var light = snapshot
         var iconCount = 0
+
+        // 重写前清空这个快照的侧车目录，避免旧版本缓存或已变更的
+        // 图标文件残留。原图仍完整保存在原始快照 JSON 里。
+        try? FileManager.default.removeItem(
+            at: iconsDirectoryURL.appendingPathComponent(snapshot.id.uuidString, isDirectory: true)
+        )
+        SnapshotIconStore.invalidateMemoryCache()
 
         for index in light.apps.indices {
             let app = light.apps[index]

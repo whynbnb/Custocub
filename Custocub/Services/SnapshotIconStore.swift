@@ -30,7 +30,10 @@ enum SnapshotIconStore {
     }
 
     static func fileURL(snapshotID: UUID, app: AppRecord, root: URL = rootDirectory) -> URL {
-        let name = fingerprint(for: Data(app.bundleKey.utf8))
+        // 用安装路径而不是 Bundle ID 作为文件名：同一台 Mac 上可能同时
+        // 存在两份 Bundle ID 相同的应用（例如正式版和 RC 版），只按
+        // Bundle ID 命名会让后写入的图标覆盖前一个。
+        let name = fingerprint(for: Data(app.path.utf8))
         return root
             .appendingPathComponent(snapshotID.uuidString, isDirectory: true)
             .appendingPathComponent(name)
@@ -101,6 +104,6 @@ enum SnapshotIconStore {
     }
 
     private static func cacheKey(snapshotID: UUID, app: AppRecord) -> NSString {
-        "\(snapshotID.uuidString)|\(app.bundleKey)" as NSString
+        "\(snapshotID.uuidString)|\(app.path)" as NSString
     }
 }

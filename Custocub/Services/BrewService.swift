@@ -290,8 +290,11 @@ enum BrewService {
 
         // 旧 token 的 cask 不会出现在 `brew info --installed` 中
         // （例如 vnc-viewer 已改名为 realvnc-connect-viewer），
-        // 因此用 `brew list --cask --versions` 补齐。
-        mergeInstalledCaskList(caskListResult.output, into: &inventory)
+        // 因此用 `brew list --cask --versions` 补齐。命令失败时
+        // 输出里可能只有警告/错误，不能当成 cask 列表解析。
+        if caskListResult.result.succeeded {
+            mergeInstalledCaskList(caskListResult.output, into: &inventory)
+        }
 
         inventory.brewVersion = shortVersion(from: versionResult.output)
         let prefixPath = prefixResult.output.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -308,6 +311,12 @@ enum BrewService {
         for line in output.split(separator: "\n") {
             let parts = line.split(separator: " ", omittingEmptySubsequences: true)
             guard let token = parts.first.map(String.init) else { continue }
+            // brew 偶尔会把 Warning/Error 提示混进同一个管道，只接受
+            // 形如 cask token 的行，避免生成 `Error:` 这样的假包。
+            guard token.range(
+                of: #"^[A-Za-z0-9@+._/-]+$"#,
+                options: .regularExpression
+            ) != nil else { continue }
             guard !known.contains(token.lowercased()) else { continue }
 
             known.insert(token.lowercased())

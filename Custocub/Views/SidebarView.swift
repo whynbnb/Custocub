@@ -21,8 +21,22 @@ struct SidebarView: View {
         .manual
     ]
 
+    /// 侧边栏选择使用自定义 Binding：只有用户点击侧边栏时才清除
+    /// 当前应用选择。命令面板、详情页和新建合集等操作会先切换分区、
+    /// 再选中某个应用，如果继续用 onChange 清空，会在事后把选择清掉。
+    private var sidebarSelectionBinding: Binding<SidebarSelection?> {
+        Binding(
+            get: { store.sidebarSelection },
+            set: { newValue in
+                store.selectedAppID = nil
+                store.sidebarSelection = newValue
+                store.syncSourceFilterForSelection()
+            }
+        )
+    }
+
     var body: some View {
-        List(selection: $store.sidebarSelection) {
+        List(selection: sidebarSelectionBinding) {
             Section("应用") {
                 SidebarRow(
                     title: "已安装应用",
@@ -212,10 +226,6 @@ struct SidebarView: View {
         .navigationTitle("Custocub")
         .safeAreaInset(edge: .bottom) {
             ScanStatusView()
-        }
-        .onChange(of: store.sidebarSelection) {
-            store.selectedAppID = nil
-            store.syncSourceFilterForSelection()
         }
         .onChange(of: brew.isAvailable) { _, available in
             // Homebrew 入口被隐藏时，避免停留在已不可见的页面。

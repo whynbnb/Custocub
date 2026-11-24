@@ -182,6 +182,10 @@ struct SnapshotAppsView: View {
             }
         }
         .navigationTitle(snapshot.name)
+        .onChange(of: snapshot.id) {
+            // 切换快照时回到应用列表，避免停在没有 Cask 的空白页。
+            showsCasks = false
+        }
     }
 }
 
@@ -273,8 +277,10 @@ struct SnapshotCaskListView: View {
                 .width(min: 90, ideal: 120, max: 170)
             }
             .contextMenu(forSelectionType: String.self) { ids in
-                let tokens = snapshot.casks.filter { ids.contains($0.id) }.map(\.token)
-                let targets = tokens.isEmpty ? snapshot.caskTokens : tokens
+                let selectedTokens = snapshot.casks
+                    .filter { ids.contains($0.id) }
+                    .map(\.token)
+                let targets = selectedTokens.isEmpty ? snapshot.caskTokens : selectedTokens
                 if !targets.isEmpty {
                     Button(L.t("复制安装命令")) {
                         BrewExport.copy(BrewPackage.command("install", kind: .cask, names: targets))
@@ -283,8 +289,12 @@ struct SnapshotCaskListView: View {
                         BrewExport.copy(BrewfileBuilder.plainList(targets))
                     }
                     Divider()
-                    Button(L.t("安装选中的 Cask")) {
-                        Task { await brewStore.install(targets, kind: .cask) }
+                    // 只在真正选中了行时提供安装操作。右键空白处时
+                    // 不能回退成「安装这个快照里的全部 Cask」。
+                    if !selectedTokens.isEmpty {
+                        Button(L.t("安装选中的 Cask")) {
+                            Task { await brewStore.install(selectedTokens, kind: .cask) }
+                        }
                     }
                 }
             }

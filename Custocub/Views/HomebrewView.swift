@@ -483,7 +483,7 @@ struct HomebrewView: View {
                     .fixedSize()
 
                 Button(L.t("卸载"), role: .destructive) {
-                    confirmUninstall = brew.filteredPackages.filter { brew.selection.contains($0.id) }
+                    confirmUninstall = brew.packages.filter { brew.selection.contains($0.id) }
                 }
                 .controlSize(.small)
             }
@@ -575,6 +575,8 @@ private struct BrewPackageTable: View {
     let packages: [BrewPackage]
     @Binding var selection: Set<String>
 
+    @State private var pendingUninstall: [BrewPackage] = []
+
     var body: some View {
         Table(packages, selection: $selection) {
             TableColumn("包") { package in
@@ -650,6 +652,26 @@ private struct BrewPackageTable: View {
             guard let id = ids.first, let package = brew.package(id: id) else { return }
             brew.copyInstallCommand(package)
         }
+        .confirmationDialog(
+            L.t("卸载 %d 个包？", pendingUninstall.count),
+            isPresented: Binding(
+                get: { !pendingUninstall.isEmpty },
+                set: { if !$0 { pendingUninstall = [] } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(L.t("卸载"), role: .destructive) {
+                let targets = pendingUninstall
+                pendingUninstall = []
+                brew.selection.removeAll()
+                Task { await brew.uninstall(targets) }
+            }
+            Button(L.t("取消"), role: .cancel) {
+                pendingUninstall = []
+            }
+        } message: {
+            Text(L.t("包文件会被移除。依赖关系由 Homebrew 处理。"))
+        }
         .overlay {
             if brew.isLoading && packages.isEmpty {
                 ProgressView(L.t("正在读取 Homebrew 包列表…"))
@@ -706,7 +728,7 @@ private struct BrewPackageTable: View {
             }
 
             Button(L.t("卸载"), role: .destructive) {
-                Task { await brew.uninstall(selected) }
+                pendingUninstall = selected
             }
         } else {
             Text(L.t("未选择包"))

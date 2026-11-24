@@ -478,6 +478,7 @@
 "点击「重新分析」查看可清理的缓存、旧版本和无用依赖。" = "Press “Analyze again” to see reclaimable cache, old versions, and unneeded dependencies.";
 "移除无用依赖" = "Remove unneeded dependencies";
 "移除过期下载、旧版本、残留锁文件与日志，并自动移除无用依赖。" = "Removes stale downloads, old versions, stale lock files, and logs, and autoremoves unneeded dependencies.";
+"移除过期下载、旧版本、残留锁文件与日志。无用依赖可在下方单独移除。" = "Removes stale downloads, old versions, stale lock files, and logs. Unneeded dependencies can be removed separately below.";
 "缓存占用" = "Cache usage";
 "运行 brew missing" = "Run brew missing";
 "还没有分析结果" = "No analysis yet";
