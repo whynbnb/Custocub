@@ -65,11 +65,24 @@ private struct SidebarCache: Codable {
 
 @MainActor
 final class CustocubStore: ObservableObject {
-    @Published private(set) var apps: [AppRecord] = []
+    @Published private(set) var apps: [AppRecord] = [] {
+        didSet {
+            // 只有应用身份（路径 / Bundle ID）变化时才失效缓存；
+            // 后台补体积会频繁更新 apps，不应反复清空图标历史缓存。
+            let identityChanged = oldValue.count != apps.count
+                || zip(oldValue, apps).contains {
+                    $0.path != $1.path || $0.bundleIdentifier != $1.bundleIdentifier
+                }
+            if identityChanged {
+                invalidateIdentityCaches()
+            }
+        }
+    }
     @Published private(set) var snapshots: [AppSnapshot] = [] {
         didSet {
             iconHistoryCache.removeAll()
             iconHistoryCountCache.removeAll()
+            duplicateBundleCache = nil
             if let id = gallerySnapshotID, !snapshots.contains(where: { $0.id == id }) {
                 gallerySnapshotID = nil
             }
@@ -80,6 +93,8 @@ final class CustocubStore: ObservableObject {
     /// 只记录图标版本数量的轻量缓存。卡片和洞察页只需要知道
     /// “是否有多个图标版本”，不应该为此把历史 PNG 全部读进内存。
     private var iconHistoryCountCache: [String: Int] = [:]
+    /// 同一 Bundle ID 同时出现在多份应用里时，用路径区分这些变体。
+    private var duplicateBundleCache: Set<String>?
     @Published var sidebarSelection: SidebarSelection? = .installed
     @Published var selectedAppID: String?
 
@@ -107,6 +122,8 @@ final class CustocubStore: ObservableObject {
     @Published var gallerySnapshotID: UUID?
     @Published private(set) var collections: [AppCollection] = []
     @Published private(set) var favoriteKeys: Set<String> = []
+    /// 旧版本把收藏/合集按 Bundle ID 保存；首次扫描完成后迁移为路径身份。
+    private var needsCollectionsMigration = false
 
     private let repository: SnapshotRepository
     private let scanner: AppScanner
@@ -328,14 +345,9 @@ final class CustocubStore: ObservableObject {
     /// 实时应用 + 历史快照中出现过、但当前已不存在的应用。
     var galleryItems: [GalleryItem] {
         var items: [GalleryItem] = []
-        var installedBundleIDs = Set<String>()
-        var installedPaths = Set<String>()
+        let installedKeys = Set(apps.map { comparisonKey(for: $0) })
 
         for app in apps {
-            installedPaths.insert(app.path)
-            if let bundleID = app.bundleIdentifier, !bundleID.isEmpty {
-                installedBundleIDs.insert(bundleID)
-            }
             items.append(GalleryItem(
                 id: app.path,
                 app: app,
@@ -349,14 +361,8 @@ final class CustocubStore: ObservableObject {
 
         for snapshot in snapshots {
             for app in snapshot.apps {
-                if let bundleID = app.bundleIdentifier, !bundleID.isEmpty {
-                    guard !installedBundleIDs.contains(bundleID) else { continue }
-                } else {
-                    guard !installedPaths.contains(app.path) else { continue }
-                }
-                guard !installedPaths.contains(app.path) else { continue }
-
-                let key = app.bundleIdentifier?.isEmpty == false ? app.bundleIdentifier! : app.path
+                let key = comparisonKey(for: app)
+                guard !installedKeys.contains(key) else { continue }
                 guard seenHistoricalKeys.insert(key).inserted else { continue }
 
                 items.append(GalleryItem(
@@ -413,7 +419,7 @@ final class CustocubStore: ObservableObject {
         case .collection(let id):
             guard let collection = collection(id) else { return [] }
             return galleryDisplayItems.filter {
-                collection.appKeys.contains(collectionKey(for: $0.app))
+                collectionContains(collection.appKeys, app: $0.app)
             }
         default:
             return galleryDisplayItems
@@ -444,18 +450,32 @@ final class CustocubStore: ObservableObject {
 
     // MARK: - 收藏与合集
 
+    /// 收藏/合集使用应用安装路径作为身份。同一个 Bundle ID 的多份应用
+    /// （例如正式版和 RC 版）因此可以分别收藏、分别加入合集。
     func collectionKey(for app: AppRecord) -> String {
-        if let bundleID = app.bundleIdentifier, !bundleID.isEmpty {
-            return bundleID
+        Self.pathIdentityPrefix + app.path
+    }
+
+    private static let pathIdentityPrefix = "path:"
+
+    private func collectionContains(_ keys: Set<String>, app: AppRecord) -> Bool {
+        if keys.contains(collectionKey(for: app)) { return true }
+        guard needsCollectionsMigration else { return false }
+        // 迁移前的旧数据：Bundle ID 或裸路径。
+        if keys.contains(app.path) { return true }
+        if let bundleID = app.bundleIdentifier, !bundleID.isEmpty,
+           keys.contains(bundleID) {
+            return true
         }
-        return app.path
+        return false
     }
 
     func isFavorite(_ app: AppRecord) -> Bool {
-        favoriteKeys.contains(collectionKey(for: app))
+        collectionContains(favoriteKeys, app: app)
     }
 
     func toggleFavorite(_ app: AppRecord) {
+        migrateCollectionsIfNeeded()
         let key = collectionKey(for: app)
         if favoriteKeys.contains(key) {
             favoriteKeys.remove(key)
@@ -502,12 +522,14 @@ final class CustocubStore: ObservableObject {
 
     func add(_ app: AppRecord, toCollection id: UUID) {
         guard let index = collections.firstIndex(where: { $0.id == id }) else { return }
+        migrateCollectionsIfNeeded()
         collections[index].appKeys.insert(collectionKey(for: app))
         saveCollections()
     }
 
     func remove(_ app: AppRecord, fromCollection id: UUID) {
         guard let index = collections.firstIndex(where: { $0.id == id }) else { return }
+        migrateCollectionsIfNeeded()
         collections[index].appKeys.remove(collectionKey(for: app))
         saveCollections()
     }
@@ -518,17 +540,16 @@ final class CustocubStore: ObservableObject {
 
     func isInCollection(_ app: AppRecord, collectionID: UUID) -> Bool {
         guard let collection = collection(collectionID) else { return false }
-        return collection.appKeys.contains(collectionKey(for: app))
+        return collectionContains(collection.appKeys, app: app)
     }
 
     func collectionItems(_ collection: AppCollection, from items: [GalleryItem]) -> [GalleryItem] {
-        items.filter { collection.appKeys.contains(collectionKey(for: $0.app)) }
+        items.filter { collectionContains(collection.appKeys, app: $0.app) }
     }
 
-    /// 侧边栏合集徽章：按实际能展示的应用计数，避免同一个 Bundle ID
-    /// 对应多份应用时出现“徽章 1、网格 2”的不一致。
+    /// 侧边栏合集徽章：按实际能展示的应用计数。
     func collectionItemCount(_ collection: AppCollection) -> Int {
-        galleryItems.count { collection.appKeys.contains(collectionKey(for: $0.app)) }
+        galleryItems.count { collectionContains(collection.appKeys, app: $0.app) }
     }
 
     private static var collectionsFileURL: URL {
@@ -539,6 +560,8 @@ final class CustocubStore: ObservableObject {
     }
 
     private struct CollectionsDocument: Codable {
+        /// 2 = 使用路径身份；旧文件没有这个字段。
+        var version: Int? = nil
         var favorites: Set<String> = []
         var collections: [AppCollection] = []
     }
@@ -550,6 +573,60 @@ final class CustocubStore: ObservableObject {
         }
         favoriteKeys = document.favorites
         collections = document.collections
+        needsCollectionsMigration = (document.version ?? 1) < 2
+    }
+
+    /// 把旧的 Bundle ID / 裸路径键迁移为 "path:<安装路径>"。
+    /// 同一 Bundle ID 的多个变体会各自获得一个键，之后可以独立收藏和移出。
+    private func migrateCollectionsIfNeeded() {
+        guard needsCollectionsMigration, hasScanned else { return }
+
+        var livePathsByBundle: [String: Set<String>] = [:]
+        for app in apps {
+            guard let bundleID = app.bundleIdentifier, !bundleID.isEmpty else { continue }
+            livePathsByBundle[bundleID, default: []].insert(app.path)
+        }
+
+        var newestSnapshotPathsByBundle: [String: Set<String>] = [:]
+        for snapshot in snapshots {
+            var pathsByBundle: [String: Set<String>] = [:]
+            for app in snapshot.apps {
+                guard let bundleID = app.bundleIdentifier, !bundleID.isEmpty else { continue }
+                pathsByBundle[bundleID, default: []].insert(app.path)
+            }
+            for (bundleID, paths) in pathsByBundle
+            where newestSnapshotPathsByBundle[bundleID] == nil {
+                newestSnapshotPathsByBundle[bundleID] = paths
+            }
+        }
+
+        var mapping: [String: [String]] = [:]
+        let legacyKeys = favoriteKeys.union(collections.flatMap { $0.appKeys })
+        for key in legacyKeys where !key.hasPrefix(Self.pathIdentityPrefix) {
+            if duplicateBundleIDs.contains(key) {
+                // 变体：迁移到所有已知路径，保持迁移前的收藏状态。
+                let paths = (livePathsByBundle[key] ?? [])
+                    .union(newestSnapshotPathsByBundle[key] ?? [])
+                if !paths.isEmpty {
+                    mapping[key] = paths.map { Self.pathIdentityPrefix + $0 }
+                }
+            } else if let livePath = livePathsByBundle[key]?.first {
+                mapping[key] = [Self.pathIdentityPrefix + livePath]
+            } else if let snapshotPath = newestSnapshotPathsByBundle[key]?.first {
+                mapping[key] = [Self.pathIdentityPrefix + snapshotPath]
+            } else if key.hasPrefix("/") || key.hasPrefix("~") {
+                mapping[key] = [Self.pathIdentityPrefix + key]
+            }
+        }
+
+        favoriteKeys = Set(favoriteKeys.flatMap { mapping[$0] ?? [$0] })
+        for index in collections.indices {
+            collections[index].appKeys = Set(
+                collections[index].appKeys.flatMap { mapping[$0] ?? [$0] }
+            )
+        }
+        needsCollectionsMigration = false
+        saveCollections()
     }
 
     private func saveCollections() {
@@ -559,7 +636,11 @@ final class CustocubStore: ObservableObject {
                 at: url.deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )
-            let document = CollectionsDocument(favorites: favoriteKeys, collections: collections)
+            let document = CollectionsDocument(
+                version: 2,
+                favorites: favoriteKeys,
+                collections: collections
+            )
             let data = try JSONEncoder().encode(document)
             try data.write(to: url, options: .atomic)
         } catch {
@@ -580,12 +661,47 @@ final class CustocubStore: ObservableObject {
         snapshots.first
     }
 
-    /// 跨快照匹配同一个应用：优先 Bundle ID，其次路径。
+    /// 跨快照匹配同一个应用。
+    ///
+    /// Bundle ID 唯一时继续用它，这样应用被移动位置也能识别为同一个；
+    /// 同一 Bundle ID 同时存在多份（例如正式版和 RC 版）时改用路径，
+    /// 把它们当成两个独立的变体。
     private func comparisonKey(for app: AppRecord) -> String {
-        if let bundleID = app.bundleIdentifier, !bundleID.isEmpty {
+        if let bundleID = app.bundleIdentifier, !bundleID.isEmpty,
+           !duplicateBundleIDs.contains(bundleID) {
             return "id:\(bundleID)"
         }
         return "path:\(app.path)"
+    }
+
+    /// 在任意一次扫描或快照中，同一 Bundle ID 对应多个路径时视为变体。
+    /// 只比较单个列表内部，避免把「应用被移动过」误判成两个变体。
+    private var duplicateBundleIDs: Set<String> {
+        if let duplicateBundleCache { return duplicateBundleCache }
+
+        var result = Set<String>()
+
+        func scan(_ list: [AppRecord]) {
+            var pathsByBundle: [String: Set<String>] = [:]
+            for app in list {
+                guard let bundleID = app.bundleIdentifier, !bundleID.isEmpty else { continue }
+                pathsByBundle[bundleID, default: []].insert(app.path)
+            }
+            result.formUnion(pathsByBundle.filter { $0.value.count > 1 }.keys)
+        }
+
+        scan(apps)
+        for snapshot in snapshots {
+            scan(snapshot.apps)
+        }
+        duplicateBundleCache = result
+        return result
+    }
+
+    private func invalidateIdentityCaches() {
+        duplicateBundleCache = nil
+        iconHistoryCache.removeAll()
+        iconHistoryCountCache.removeAll()
     }
 
     /// 最近快照之后新安装的应用：当前有、快照里没有。
@@ -971,6 +1087,7 @@ final class CustocubStore: ObservableObject {
         hasScanned = true
         lastScanAt = Date()
         isScanning = false
+        migrateCollectionsIfNeeded()
         statusMessage = cacheHits > 0
             ? L.t("已找到 %d 个应用（缓存 %d）", scannedApps.count, cacheHits)
             : L.t("已找到 %d 个应用", scannedApps.count)
