@@ -1177,9 +1177,32 @@ final class CustocubStore: ObservableObject {
 
     private func loadSnapshots() {
         do {
-            snapshots = try repository.load().sorted { $0.createdAt > $1.createdAt }
+            var loaded = try repository.load().sorted { $0.createdAt > $1.createdAt }
+            Self.deduplicateSnapshotIcons(in: &loaded)
+            snapshots = loaded
         } catch {
             errorMessage = L.t("无法读取快照：%@", error.localizedDescription)
+        }
+    }
+
+    /// 多个快照里未变化的图标通常是同一份 PNG 数据。JSON 解码会为
+    /// 每个快照各生成一份 Data；这里按内容合并成同一个存储，四个快照
+    /// 的 40MB 图标数据通常可以降到十几 MB，同时保留 192px 清晰度。
+    private static func deduplicateSnapshotIcons(in snapshots: inout [AppSnapshot]) {
+        guard snapshots.count > 1 else { return }
+        var canonical: [Data: Data] = [:]
+        canonical.reserveCapacity(1024)
+
+        for snapshotIndex in snapshots.indices {
+            for appIndex in snapshots[snapshotIndex].apps.indices {
+                guard let data = snapshots[snapshotIndex].apps[appIndex].iconData,
+                      !data.isEmpty else { continue }
+                if let existing = canonical[data] {
+                    snapshots[snapshotIndex].apps[appIndex].iconData = existing
+                } else {
+                    canonical[data] = data
+                }
+            }
         }
     }
 

@@ -59,8 +59,15 @@ final class IconProvider {
 
     private let cache = NSCache<NSString, NSImage>()
 
+    /// 全高分辨率图标可能在 1024×1024 左右，几百个应用同时缓存会占用
+    /// 数百 MB。界面里最大的使用场景是 92pt 展示卡片（Retina 约 184px），
+    /// 因此统一缓存 256px 缩略图，并用总成本限制兜底。
+    nonisolated private static let maxPixelSize: CGFloat = 256
+    nonisolated private static let cacheCostLimit = 48 * 1024 * 1024
+
     private init() {
         cache.countLimit = 600
+        cache.totalCostLimit = Self.cacheCostLimit
     }
 
     func cachedIcon(forPath path: String) -> NSImage? {
@@ -84,7 +91,7 @@ final class IconProvider {
         }.value
 
         if let image {
-            cache.setObject(image, forKey: path as NSString)
+            cacheImage(image, forKey: path as NSString)
         }
         return image
     }
@@ -100,7 +107,7 @@ final class IconProvider {
         }.value
 
         if let image {
-            cache.setObject(image, forKey: key)
+            cacheImage(image, forKey: key)
         }
         return image
     }
@@ -118,48 +125,15 @@ final class IconProvider {
     ///     看起来是新的，也重新渲染并覆盖当前应用的图标。
     ///   - forcePaths: 本次扫描中发现版本/更新时间变化的应用路径，
     ///     这些应用必须重新渲染图标。
+    /// 只把 192px PNG 写进磁盘缓存，不再把全部图标预加载进内存。
+    /// 表格和展示框会在行真正出现时按需加载缩略图，避免窗口一打开
+    /// 就为几百个应用同时持有 NSImage。
     func prefetch(
         apps: [AppRecord],
         forceDiskRewrite: Bool = false,
         forcePaths: Set<String> = []
     ) async {
-        await prefetchIntoMemory(paths: apps.map(\.path))
         await storeIconsOnDisk(apps: apps, force: forceDiskRewrite, forcePaths: forcePaths)
-    }
-
-    private func prefetchIntoMemory(paths: [String]) async {
-        let missing = paths.filter { cachedIcon(forPath: $0) == nil }
-        guard !missing.isEmpty else { return }
-
-        let chunkSize = 8
-        var start = 0
-
-        while start < missing.count {
-            if Task.isCancelled { return }
-            let end = min(start + chunkSize, missing.count)
-            let chunk = Array(missing[start..<end])
-
-            let loaded = await withTaskGroup(of: (String, NSImage?).self) { group in
-                for path in chunk {
-                    group.addTask {
-                        (path, Self.loadIcon(forPath: path))
-                    }
-                }
-                var results: [(String, NSImage?)] = []
-                for await result in group {
-                    results.append(result)
-                }
-                return results
-            }
-
-            for (path, image) in loaded {
-                if let image {
-                    cache.setObject(image, forKey: path as NSString)
-                }
-            }
-
-            start = end
-        }
     }
 
     /// 把当前扫描到的应用图标渲染成 192px PNG 写进缓存。
@@ -204,11 +178,20 @@ final class IconProvider {
         }
     }
 
+    private func cacheImage(_ image: NSImage, forKey key: NSString) {
+        let width = max(Int(image.size.width), 1)
+        let height = max(Int(image.size.height), 1)
+        cache.setObject(image, forKey: key, cost: width * height * 4)
+    }
+
     nonisolated private static func bundleKey(_ bundleID: String) -> NSString {
         "bundle:\(bundleID)" as NSString
     }
 
-    nonisolated private static func loadIcon(forPath path: String) -> NSImage? {
+    nonisolated private static func loadIcon(
+        forPath path: String,
+        maxPixelSize pixelSize: CGFloat = maxPixelSize
+    ) -> NSImage? {
         guard FileManager.default.fileExists(atPath: path) else { return nil }
         // 优先直接读取 bundle 里的图标文件。
         //
@@ -218,14 +201,19 @@ final class IconProvider {
         // 系统应用例外：它们大量使用 Assets.car，目录里的 .icns 往往只是
         // 空白占位图，直接读取会得到白块，所以系统应用仍交给 NSWorkspace。
         if !path.hasPrefix("/System/"),
-           let direct = directIcon(forPath: path) {
+           let direct = directIcon(forPath: path, maxPixelSize: pixelSize) {
             return direct
         }
-        return NSWorkspace.shared.icon(forFile: path)
+        let workspaceIcon = NSWorkspace.shared.icon(forFile: path)
+        return downsampled(workspaceIcon, maxPixelSize: pixelSize)
     }
 
-    /// 从 `.app` 的 Info.plist 和 Resources 目录查找图标文件。
-    nonisolated static func directIcon(forPath path: String) -> NSImage? {
+    /// 从 `.app` 的 Info.plist 和 Resources 目录查找图标文件，
+    /// 并直接生成界面需要的缩略图，避免长期持有原始大图。
+    nonisolated static func directIcon(
+        forPath path: String,
+        maxPixelSize: CGFloat = maxPixelSize
+    ) -> NSImage? {
         let appURL = URL(fileURLWithPath: path)
         let resources = appURL.appendingPathComponent("Contents", isDirectory: true)
             .appendingPathComponent("Resources", isDirectory: true)
@@ -262,10 +250,56 @@ final class IconProvider {
 
         for candidate in candidates where fileManager.fileExists(atPath: candidate.path) {
             if let image = NSImage(contentsOf: candidate) {
-                return image
+                return downsampled(image, maxPixelSize: maxPixelSize)
             }
         }
         return nil
+    }
+
+    /// 把原始图标缩放到固定上限，返回只包含缩略图位图的 NSImage。
+    ///
+    /// `NSImage(contentsOf:)` 会保留原始 ICNS/PNG 的完整 representation，
+    /// 行视图即使只显示 30pt，也会在内存里留下接近原始尺寸的位图。
+    nonisolated static func downsampled(_ image: NSImage, maxPixelSize: CGFloat) -> NSImage {
+        var proposed = NSRect(x: 0, y: 0, width: maxPixelSize, height: maxPixelSize)
+        guard let cgImage = image.cgImage(forProposedRect: &proposed, context: nil, hints: nil) else {
+            return image
+        }
+
+        let width = CGFloat(cgImage.width)
+        let height = CGFloat(cgImage.height)
+        let longest = max(width, height)
+        guard longest > maxPixelSize else {
+            return NSImage(cgImage: cgImage, size: NSSize(width: width, height: height))
+        }
+
+        let scale = maxPixelSize / longest
+        let targetWidth = max(1, Int((width * scale).rounded()))
+        let targetHeight = max(1, Int((height * scale).rounded()))
+        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+
+        guard let context = CGContext(
+            data: nil,
+            width: targetWidth,
+            height: targetHeight,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return image }
+
+        context.interpolationQuality = .high
+        context.setAllowsAntialiasing(true)
+        context.draw(
+            cgImage,
+            in: CGRect(x: 0, y: 0, width: targetWidth, height: targetHeight)
+        )
+
+        guard let thumbnail = context.makeImage() else { return image }
+        return NSImage(
+            cgImage: thumbnail,
+            size: NSSize(width: targetWidth, height: targetHeight)
+        )
     }
 
     /// 把应用图标渲染成固定尺寸 PNG，用于写入快照。
@@ -301,7 +335,10 @@ final class IconProvider {
     }
 
     nonisolated static func renderPNG(forPath path: String, pixelSize: CGFloat = 192) -> Data? {
-        guard let source = loadIcon(forPath: path) else { return nil }
+        // 快照和磁盘缓存按 192px 保存；读取时先拿 2 倍左右的源图，
+        // 再缩放到目标尺寸，避免缩略图二次缩放后发虚。
+        let sourcePixelSize = max(pixelSize * 2, 384)
+        guard let source = loadIcon(forPath: path, maxPixelSize: sourcePixelSize) else { return nil }
         // 直接请求目标像素的位图表示。
         //
         // 之前用 `source.size`（通常是 32pt）作为建议尺寸，系统只会给出

@@ -32,12 +32,17 @@ struct SnapshotRepository: Sendable {
 
         var snapshots: [AppSnapshot] = []
         for file in files where file.pathExtension.lowercased() == "json" {
-            do {
-                let data = try Data(contentsOf: file)
-                snapshots.append(try Self.decoder.decode(AppSnapshot.self, from: data))
-            } catch {
-                // 单个损坏的快照文件不应阻止其他历史快照加载。
-                print("[Custocub] 跳过无法读取的快照 \(file.lastPathComponent): \(error)")
+            // 快照 JSON 通常有十几 MB，且图标是 base64。逐个文件放进
+            // autoreleasepool，避免 Foundation 的临时缓冲在循环外累积；
+            // mappedIfSafe 让大文件走可回收的映射，而不是常驻堆内存。
+            autoreleasepool {
+                do {
+                    let data = try Data(contentsOf: file, options: [.mappedIfSafe])
+                    snapshots.append(try Self.decoder.decode(AppSnapshot.self, from: data))
+                } catch {
+                    // 单个损坏的快照文件不应阻止其他历史快照加载。
+                    print("[Custocub] 跳过无法读取的快照 \(file.lastPathComponent): \(error)")
+                }
             }
         }
         return snapshots

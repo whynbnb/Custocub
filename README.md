@@ -429,7 +429,8 @@ There is no separate scan-time icon log. If you want a richer icon history, save
   - Cache entries expire after 7 days.
   - Unchanged apps are not re-walked on every scan.
   - Settings → Data → **Clear Size Cache & Recalculate** forces a full re-measure.
-- **Async icons** are loaded off the main thread and prefetched in the background after scanning.
+- **Async icons** are loaded off the main thread on demand as rows appear. Icons are kept as 256px thumbnails with a 48 MB cache cap instead of full-resolution images.
+- **Lean snapshots** are decoded with memory-mapped files, and identical icon data across snapshots is shared in memory.
 - **Hold ⌥ while clicking Rescan** to force a full refresh: the button turns orange, every icon is re-rendered and every app size is measured again, bypassing both caches.
 - **Batched size updates** avoid refreshing the whole table for every app.
 - **Native SwiftUI Table** is used for NSTableView-backed virtualization, native scrollbars, and resizable columns.
